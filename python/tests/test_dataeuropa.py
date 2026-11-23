@@ -1,3 +1,5 @@
+import json
+
 import pytest
 
 import dataeuropa as de
@@ -201,3 +203,26 @@ def test_live_download_checksum(tmp_path):
     dist = de.distributions("68c2be5c43136b247fe74d41")
     row = dist[dist.checksum_algorithm == "sha1"].iloc[0]
     assert de.download(row, tmp_path)
+
+
+def test_load_distribution_refuses_pages():
+    with pytest.raises(ValueError, match="web page"):
+        de.load_distribution({"url": "https://example.org/dataset/1", "format": "HTML"})
+
+
+def test_distributions_files_only(monkeypatch):
+    import dataeuropa.client as client
+    record = json.loads((FILES.parent / "responses" / "edge_cases.json").read_text(encoding="utf-8"))["dataset"]
+    monkeypatch.setattr(client, "get_dataset", lambda *a, **k: record)
+    every = de.distributions("x", as_dataframe=False)
+    files = de.distributions("x", files_only=True, as_dataframe=False)
+    assert {r["kind"] for r in every} == {"file", "service", "unknown", "none"}
+    assert [r["id"] for r in files] == [r["id"] for r in every if r["kind"] == "file"]
+
+
+@live
+def test_live_files_only():
+    # A dataset whose distributions include WMS/WFS services as well as files.
+    every = de.distributions("3b26eacb-825d-4bf9-9ef2-9278c4a481ad")
+    files = de.distributions("3b26eacb-825d-4bf9-9ef2-9278c4a481ad", files_only=True)
+    assert 0 < len(files) < len(every) and set(files.kind) == {"file"}

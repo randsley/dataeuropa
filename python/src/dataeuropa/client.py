@@ -347,9 +347,17 @@ def _keywords(d: dict, lang: str = "en") -> list:
     return [k.get("label") for k in d.get("keywords") or [] if k.get("language") in (lang, None)]
 
 
-def distributions(dataset_id: str, *, lang: str = "en", as_dataframe: bool = True):
-    """Distributions (files / services) of a dataset as a table."""
-    return _tabulate(_distribution_rows(get_dataset(dataset_id, raw=True), lang), as_dataframe)
+def distributions(dataset_id: str, *, lang: str = "en", files_only: bool = False, as_dataframe: bool = True):
+    """Distributions (files, services, pages) of a dataset as a table, one row each.
+
+    The ``kind`` column says what each one is: ``"file"``, ``"service"`` (WMS, WFS, APIs, feeds),
+    ``"page"`` (a web page), ``"none"`` (no usable URL, e.g. a localhost placeholder) or
+    ``"unknown"``. ``files_only=True`` keeps only files.
+    """
+    rows = _distribution_rows(get_dataset(dataset_id, raw=True), lang)
+    if files_only:
+        rows = [r for r in rows if r["kind"] == "file"]
+    return _tabulate(rows, as_dataframe)
 
 
 def _distribution_rows(d: dict, lang: str = "en") -> list[dict]:
@@ -372,6 +380,8 @@ def _distribution_rows(d: dict, lang: str = "en") -> list[dict]:
             "download_url": dl[0] if dl else None,
             "access_url": acc[0] if acc else None,
             "url": (dl[0] if dl else (acc[0] if acc else None)),
+            "kind": _distribution_kind((x.get("format") or {}).get("id"), x.get("media_type"),
+                                       dl[0] if dl else (acc[0] if acc else None), dl[0] if dl else None),
         })
     return rows
 
@@ -540,50 +550,114 @@ def download(url_or_row: str | dict, dest: str | os.PathLike | None = None, *, c
 
 # ---------------------------------------------------------------- load into a table
 
-# Format ids, media types and file extensions that map to a readable file format.
+# Format ids, media types and file extensions that map to a readable file format. Keys are
+# matched after _format_key(): lowercase, look-alike letters folded, leading dot removed.
 _FILE_FORMATS = {
     "csv": "csv", "text/csv": "csv", "csv/utf8": "csv", "comma separated value (csv)": "csv",
+    "tsv": "csv", "text/tab-separated-values": "csv",  # the CSV reader detects the tab delimiter
     "json": "json", "application/json": "json",
-    "xlsx": "xlsx", "xlsm": "xlsx",
+    "xlsx": "xlsx", "xlsm": "xlsx", "excel (.xlsx)": "xlsx",
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "xlsx",
+    "vnd.openxmlformats-officedocument.spreadsheetml.sheet": "xlsx",
     "parquet": "parquet", "application/vnd.apache.parquet": "parquet", "application/x-parquet": "parquet",
 }
 # Media types and extensions of compressed archives, which must be unpacked before reading.
 _ARCHIVES = {"application/zip", "application/x-zip-compressed", "application/gzip", "application/x-gzip",
              "application/x-tar", "zip", "gz", "tgz", "tar"}
 # Format ids of services (map servers, APIs) rather than files. Ids ending in "_srvc" count too.
+# Atom and RSS feeds count as services: in INSPIRE they list files rather than being one.
 _SERVICE_FORMATS = {
-    "wms", "wfs", "wcs", "wmts", "ogc:wms", "ogc:wfs", "api", "open-api", "ogc api features",
-    "ogcapi-features", "arcgis geoservices rest api", "application/vnd.ogc.wms_xml", "sparql",
+    "wms", "wfs", "wcs", "wmts", "ogc:wms", "ogc:wfs", "ogc:wcs", "ogc:wmts", "ogc:ows-c", "api", "open-api",
+    "ogc api features", "ogcapi-features", "ogcfeat", "arcgis geoservices rest api", "rest", "esri rest",
+    "application/vnd.ogc.wms_xml", "sparql", "sparqlq", "inspire download service", "atom", "rss",
+    "application/atom+xml", "application/rss+xml",
 }
+# Format ids and media types of web pages (landing pages, links, viewers) rather than files.
+_PAGE_FORMATS = {
+    "html", "text/html", "application/xhtml+xml", "web page", "html_simpl", "www:link",
+    "www:link-1.0-http--link", "www:link-1.0-http--metadata-url", "url", "view", "doi", "map_prvw",
+}
+# Look-alike letters some publishers type in format ids (Cyrillic а е о р с х, both cases).
+_LOOKALIKES = str.maketrans("\u0430\u0435\u043e\u0440\u0441\u0445\u0410\u0415\u041e\u0420\u0421\u0425",
+                            "aeopcxAEOPCX")
+
+
+def _format_key(value: str) -> str:
+    """A format id, media type or extension as matched against the tables above."""
+    key = value.strip().translate(_LOOKALIKES).lower()
+    if key.startswith("file:///"):
+        key = key.rsplit("/", 1)[-1]
+    return key.lstrip(".")
+
+
+def _url_extension(url: str | None) -> str | None:
+    """The file extension of a URL's last path part, without query or fragment; None if none."""
+    if not isinstance(url, str) or not url:
+        return None
+    path = url.split("?", 1)[0].split("#", 1)[0].rstrip("/")
+    last = path.rsplit("/", 1)[-1]
+    return last.rsplit(".", 1)[-1] if "." in last else None
 
 
 def _file_format(fmt: str | None = None, media_type: str | None = None, url: str | None = None) -> str | None:
-    """``"csv"``, ``"json"``, ``"xlsx"``, ``"parquet"``, ``"service"``, ``"archive"`` or None (unknown).
+    """``"csv"``, ``"json"``, ``"xlsx"``, ``"parquet"``, ``"service"``, ``"archive"``, ``"page"`` or
+    None (unknown).
 
     A compressed media type or file extension (ZIP, gzip, tar) means ``"archive"``, whatever the
     format id says. Otherwise looks at the format id, then the media type, then the file
-    extension, and uses the first one it recognises.
+    extension, and uses the first one it recognises as a service or a readable file. ``"page"``
+    (a web page) only when one of them says so and none names a service or a file.
     """
-    ext = None
-    if isinstance(url, str) and url:
-        path = url.split("?", 1)[0].split("#", 1)[0].rstrip("/")
-        last = path.rsplit("/", 1)[-1]
-        ext = last.rsplit(".", 1)[-1] if "." in last else None
+    ext = _url_extension(url)
     for cand in (media_type, ext):
-        if isinstance(cand, str) and cand.strip().lower() in _ARCHIVES:
+        if isinstance(cand, str) and _format_key(cand) in _ARCHIVES:
             return "archive"
-    for cand in (fmt, media_type, ext):
-        if not isinstance(cand, str) or not cand.strip():
-            continue
-        key = cand.strip().lower()
-        if key.startswith("file:///"):
-            key = key.rsplit("/", 1)[-1]
+    keys = [_format_key(c) for c in (fmt, media_type, ext) if isinstance(c, str) and c.strip()]
+    for key in keys:
         if key in _SERVICE_FORMATS or key.endswith("_srvc"):
             return "service"
         if key in _FILE_FORMATS:
             return _FILE_FORMATS[key]
-    return None
+    return "page" if any(k in _PAGE_FORMATS for k in keys) else None
+
+
+# Format ids that say nothing about the content ("onLine" is ISO 19115 for "a link").
+_NO_FORMAT = {"online", "other", "inconnu", "unknown", "n/a"}
+# Hosts that only appear in placeholder URLs.
+_PLACEHOLDER_HOSTS = {"localhost", "127.0.0.1", "0.0.0.0", "::1", ""}
+
+
+def _distribution_kind(fmt: str | None = None, media_type: str | None = None, url: str | None = None,
+                       download_url: str | None = None) -> str:
+    """What a distribution is: ``"file"``, ``"service"``, ``"page"``, ``"none"`` (no usable URL) or
+    ``"unknown"``.
+
+    ``"none"``: no URL, a scheme other than http(s) or ftp, or a placeholder host (localhost).
+    ``"service"``: an OGC query in the URL (``service=WMS``, ``request=GetCapabilities``), or a
+    service format. ``"page"``: a web-page format, or no format and an ``.html`` URL. ``"file"``:
+    any other format or media type, or a download URL. Otherwise ``"unknown"``. Format ids that
+    say nothing (``onLine``, ``OTHER``) count as no format.
+    """
+    import re
+    from urllib.parse import urlparse
+
+    if not isinstance(url, str) or not url.strip():
+        return "none"
+    parts = urlparse(url.strip())
+    if parts.scheme.lower() not in ("http", "https", "ftp") or (parts.hostname or "").lower() in _PLACEHOLDER_HOSTS:
+        return "none"
+    if re.search(r"(^|&)(service=(wms|wfs|wcs|wmts|csw|wps|sos)|request=getcapabilities)(&|$)",
+                 parts.query, re.IGNORECASE):
+        return "service"
+    f = _file_format(fmt, media_type, url)
+    if f in ("service", "page"):
+        return f
+    if f is not None or any(isinstance(v, str) and v.strip() and _format_key(v) not in _NO_FORMAT
+                            for v in (fmt, media_type)):
+        return "file"
+    if (_url_extension(url) or "").lower() in ("html", "htm"):
+        return "page"
+    return "file" if isinstance(download_url, str) and download_url.strip() else "unknown"
 
 
 def _check_payload(path: str | os.PathLike) -> None:
@@ -686,7 +760,7 @@ def load_distribution(url_or_row: str | dict, *, format: str | None = None, shee
         raise ValueError("no URL available for this distribution")
     if format is not None:
         fmt = _file_format(format)
-        if fmt in (None, "service"):
+        if fmt in (None, "service", "archive", "page"):
             raise ValueError(f"format must be one of csv, json, xlsx, parquet (got {format!r})")
     else:
         fmt = _file_format(row.get("format"), row.get("media_type"), url)
@@ -694,6 +768,8 @@ def load_distribution(url_or_row: str | dict, *, format: str | None = None, shee
         raise ValueError(f"{url} is a service ({row.get('format')}), not a file; open it with a client for that service")
     if fmt == "archive":
         raise ValueError(f"{url} is a compressed archive; use download() and unpack it")
+    if fmt == "page":
+        raise ValueError(f"{url} is a web page, not a file")
     if fmt is None:
         raise ValueError(f"cannot tell the file format of {url}; pass format='csv', 'json', 'xlsx' or 'parquet'")
     with tempfile.TemporaryDirectory() as tmp:

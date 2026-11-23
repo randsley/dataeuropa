@@ -94,3 +94,20 @@ test_that("live download checked against a SHA-1 checksum", {
   row <- dist[!is.na(dist$checksum_algorithm) & dist$checksum_algorithm == "sha1", ][1, ]
   expect_true(file.exists(de_download(row, scratch)))
 })
+
+test_that("pages are refused, and files_only keeps only files", {
+  expect_error(de_load_distribution(list(url = "https://example.org/dataset/1", format = "HTML")), "web page")
+  record <- jsonlite::fromJSON(file.path(files, "..", "responses", "edge_cases.json"), simplifyVector = FALSE)$dataset
+  local_mocked_bindings(de_get_dataset = function(...) record, .package = "dataeuropa")
+  every <- de_distributions("x")
+  only <- de_distributions("x", files_only = TRUE)
+  expect_setequal(every$kind, c("file", "service", "unknown", "none"))
+  expect_equal(only$id, every$id[every$kind == "file"])
+})
+
+test_that("live files_only", {
+  skip_if(Sys.getenv("DATAEUROPA_OFFLINE") == "1", "offline")
+  every <- de_distributions("3b26eacb-825d-4bf9-9ef2-9278c4a481ad")
+  only <- de_distributions("3b26eacb-825d-4bf9-9ef2-9278c4a481ad", files_only = TRUE)
+  expect_true(nrow(only) > 0 && nrow(only) < nrow(every) && all(only$kind == "file"))
+})

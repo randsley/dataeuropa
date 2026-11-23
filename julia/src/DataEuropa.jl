@@ -348,12 +348,19 @@ _keywords(d, lang::AbstractString="en") =
     String[string(k.label) for k in something(_get(d, :keywords), []) if _get(k, :language) in (lang, nothing)]
 
 """
-    distributions(id; lang="en") -> DataFrame
+    distributions(id; lang="en", files_only=false) -> DataFrame
 
-Distributions (files / services) of a dataset. The `url` column is the download URL if
-present, otherwise the access URL.
+Distributions (files, services, pages) of a dataset, one row each. The `url` column is the
+download URL if present, otherwise the access URL.
+
+The `kind` column says what each one is: `"file"`, `"service"` (WMS, WFS, APIs, feeds), `"page"`
+(a web page), `"none"` (no usable URL, e.g. a localhost placeholder) or `"unknown"`.
+`files_only=true` keeps only files.
 """
-distributions(id::AbstractString; lang::AbstractString="en") = _distribution_table(get_dataset(id; raw=true), lang)
+function distributions(id::AbstractString; lang::AbstractString="en", files_only::Bool=false)
+    df = _distribution_table(get_dataset(id; raw=true), lang)
+    return files_only && hasproperty(df, :kind) ? df[df.kind .== "file", :] : df
+end
 
 # One row per distribution of a raw dataset record; `url` is the download URL, else the access URL.
 function _distribution_table(d, lang::AbstractString="en")
@@ -368,7 +375,9 @@ function _distribution_table(d, lang::AbstractString="en")
          checksum = something(cs_value, missing), checksum_algorithm = something(cs_algo, missing),
          license = something(_get(_get(x, :license), :id), missing),
          modified = something(_get(x, :modified), missing),
-         download_url = dl, access_url = ac, url = ismissing(dl) ? ac : dl)
+         download_url = dl, access_url = ac, url = ismissing(dl) ? ac : dl,
+         kind = _distribution_kind(_get(_get(x, :format), :id), _get(x, :media_type),
+                                   ismissing(dl) ? (ismissing(ac) ? nothing : ac) : dl, ismissing(dl) ? nothing : dl))
     end
     return isempty(rows) ? DataFrame(id=String[], url=String[]) : DataFrame(rows)
 end
@@ -537,44 +546,93 @@ end
 # ---------------------------------------------------------------- load into a table
 
 # Format ids, media types and file extensions that map to a readable file format.
+# Keys are matched after _format_key(): lowercase, look-alike letters folded, leading dot removed.
 const _FILE_FORMATS = Dict(
     "csv" => "csv", "text/csv" => "csv", "csv/utf8" => "csv", "comma separated value (csv)" => "csv",
+    "tsv" => "csv", "text/tab-separated-values" => "csv",   # the CSV reader detects the tab delimiter
     "json" => "json", "application/json" => "json",
-    "xlsx" => "xlsx", "xlsm" => "xlsx",
+    "xlsx" => "xlsx", "xlsm" => "xlsx", "excel (.xlsx)" => "xlsx",
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" => "xlsx",
+    "vnd.openxmlformats-officedocument.spreadsheetml.sheet" => "xlsx",
     "parquet" => "parquet", "application/vnd.apache.parquet" => "parquet", "application/x-parquet" => "parquet",
 )
 # Media types and extensions of compressed archives, which must be unpacked before reading.
 const _ARCHIVES = Set(["application/zip", "application/x-zip-compressed", "application/gzip",
                        "application/x-gzip", "application/x-tar", "zip", "gz", "tgz", "tar"])
 # Format ids of services (map servers, APIs) rather than files. Ids ending in "_srvc" count too.
-const _SERVICE_FORMATS = Set(["wms", "wfs", "wcs", "wmts", "ogc:wms", "ogc:wfs", "api", "open-api",
-    "ogc api features", "ogcapi-features", "arcgis geoservices rest api", "application/vnd.ogc.wms_xml", "sparql"])
+# Atom and RSS feeds count as services: in INSPIRE they list files rather than being one.
+const _SERVICE_FORMATS = Set(["wms", "wfs", "wcs", "wmts", "ogc:wms", "ogc:wfs", "ogc:wcs", "ogc:wmts",
+    "ogc:ows-c", "api", "open-api", "ogc api features", "ogcapi-features", "ogcfeat",
+    "arcgis geoservices rest api", "rest", "esri rest", "application/vnd.ogc.wms_xml", "sparql", "sparqlq",
+    "inspire download service", "atom", "rss", "application/atom+xml", "application/rss+xml"])
+# Format ids and media types of web pages (landing pages, links, viewers) rather than files.
+const _PAGE_FORMATS = Set(["html", "text/html", "application/xhtml+xml", "web page", "html_simpl", "www:link",
+    "www:link-1.0-http--link", "www:link-1.0-http--metadata-url", "url", "view", "doi", "map_prvw"])
+# Look-alike letters some publishers type in format ids (Cyrillic а е о р с х, both cases).
+const _LOOKALIKES = Dict('а' => 'a', 'е' => 'e', 'о' => 'o', 'р' => 'p', 'с' => 'c', 'х' => 'x',
+                         'А' => 'A', 'Е' => 'E', 'О' => 'O', 'Р' => 'P', 'С' => 'C', 'Х' => 'X')
+# Format ids that say nothing about the content ("onLine" is ISO 19115 for "a link").
+const _NO_FORMAT = Set(["online", "other", "inconnu", "unknown", "n/a"])
+# Hosts that only appear in placeholder URLs.
+const _PLACEHOLDER_HOSTS = Set(["localhost", "127.0.0.1", "0.0.0.0", "::1", ""])
 
 _str(x) = (x === nothing || x === missing) ? nothing : string(x)
+_hastext(x) = x !== nothing && !isempty(strip(x))
 
-# "csv", "json", "xlsx", "parquet", "service", "archive" or nothing (unknown). A compressed media
-# type or extension means "archive" whatever the format id says; otherwise the first recognised
-# of format id, media type, file extension wins.
+# A format id, media type or extension as matched against the tables above.
+function _format_key(value)
+    key = lowercase(map(c -> get(_LOOKALIKES, c, c), strip(value)))
+    startswith(key, "file:///") && (key = String(last(split(key, '/'))))
+    return String(lstrip(key, '.'))
+end
+
+# The file extension of a URL's last path part, without query or fragment; nothing if none.
+function _url_extension(url)
+    (url === nothing || isempty(url)) && return nothing
+    path = rstrip(first(split(first(split(url, '?'; limit=2)), '#'; limit=2)), '/')
+    last_part = last(split(path, '/'))
+    return occursin('.', last_part) ? String(last(split(last_part, '.'))) : nothing
+end
+
+# "csv", "json", "xlsx", "parquet", "service", "archive", "page" or nothing (unknown). A compressed
+# media type or extension means "archive" whatever the format id says; otherwise the first of
+# format id, media type, file extension recognised as a service or readable file wins. "page" only
+# when one of them says so and none names a service or a file.
 function _file_format(fmt=nothing, media_type=nothing, url=nothing)
     fmt, media_type, url = _str(fmt), _str(media_type), _str(url)
-    ext = nothing
-    if url !== nothing && !isempty(url)
-        path = rstrip(first(split(first(split(url, '?'; limit=2)), '#'; limit=2)), '/')
-        last_part = last(split(path, '/'))
-        ext = occursin('.', last_part) ? String(last(split(last_part, '.'))) : nothing
-    end
+    ext = _url_extension(url)
     for cand in (media_type, ext)
-        cand !== nothing && lowercase(strip(cand)) in _ARCHIVES && return "archive"
+        cand !== nothing && _format_key(cand) in _ARCHIVES && return "archive"
     end
-    for cand in (fmt, media_type, ext)
-        (cand === nothing || isempty(strip(cand))) && continue
-        key = lowercase(strip(cand))
-        startswith(key, "file:///") && (key = String(last(split(key, '/'))))
+    keys = [_format_key(c) for c in (fmt, media_type, ext) if _hastext(c)]
+    for key in keys
         (key in _SERVICE_FORMATS || endswith(key, "_srvc")) && return "service"
         haskey(_FILE_FORMATS, key) && return _FILE_FORMATS[key]
     end
-    return nothing
+    return any(in(_PAGE_FORMATS), keys) ? "page" : nothing
+end
+
+# What a distribution is: "file", "service", "page", "none" (no usable URL) or "unknown".
+# "none": no URL, a scheme other than http(s) or ftp, or a placeholder host (localhost).
+# "service": an OGC query in the URL (service=WMS, request=GetCapabilities), or a service format.
+# "page": a web-page format, or no format and an .html URL. "file": any other format or media
+# type, or a download URL. Otherwise "unknown". Format ids that say nothing (onLine, OTHER) count
+# as no format.
+function _distribution_kind(fmt=nothing, media_type=nothing, url=nothing, download_url=nothing)
+    fmt, media_type, url, download_url = _str(fmt), _str(media_type), _str(url), _str(download_url)
+    _hastext(url) || return "none"
+    u = strip(url)
+    m = match(r"^([A-Za-z][A-Za-z0-9+.-]*)://(?:[^@/?#]*@)?(\[[^\]]*\]|[^:/?#]*)", u)
+    m === nothing && return "none"
+    host = lowercase(strip(m[2], ['[', ']']))
+    (lowercase(m[1]) in ("http", "https", "ftp") && !(host in _PLACEHOLDER_HOSTS)) || return "none"
+    query = occursin('?', u) ? first(split(split(u, '?'; limit=2)[2], '#'; limit=2)) : ""
+    occursin(r"(^|&)(service=(wms|wfs|wcs|wmts|csw|wps|sos)|request=getcapabilities)(&|$)"i, query) && return "service"
+    f = _file_format(fmt, media_type, url)
+    f in ("service", "page") && return f
+    (f !== nothing || any(v -> _hastext(v) && !(_format_key(v) in _NO_FORMAT), (fmt, media_type))) && return "file"
+    lowercase(something(_url_extension(url), "")) in ("html", "htm") && return "page"
+    return _hastext(download_url) ? "file" : "unknown"
 end
 
 # Refuse a downloaded file that is an archive or an HTML page rather than data.
@@ -681,7 +739,7 @@ function load_distribution(x; format=nothing, sheet=nothing)
     (url === nothing || isempty(url)) && throw(ArgumentError("no URL available for this distribution"))
     if format !== nothing
         fmt = _file_format(format)
-        fmt in (nothing, "service", "archive") &&
+        fmt in (nothing, "service", "archive", "page") &&
             throw(ArgumentError("format must be one of csv, json, xlsx, parquet (got $(repr(format)))"))
     else
         fmt = x isa AbstractString ? _file_format(nothing, nothing, url) :
@@ -689,6 +747,7 @@ function load_distribution(x; format=nothing, sheet=nothing)
     end
     fmt == "service" && throw(ArgumentError("$url is a service, not a file; open it with a client for that service"))
     fmt == "archive" && throw(ArgumentError("$url is a compressed archive; use download_distribution and unpack it"))
+    fmt == "page" && throw(ArgumentError("$url is a web page, not a file"))
     fmt === nothing && throw(ArgumentError("cannot tell the file format of $url; pass format=\"csv\", \"json\", \"xlsx\" or \"parquet\""))
     return mktempdir() do tmp
         path = download_distribution(x, joinpath(tmp, "distribution.$fmt"))

@@ -298,12 +298,23 @@ de_keywords <- function(d, lang = "en") {
   if (is.null(kw)) character() else kw
 }
 
-#' Distributions (files and services) of a dataset
+#' Distributions (files, services, pages) of a dataset
 #'
-#' The `url` column is the download URL if present, otherwise the access URL.
+#' One row per distribution. The `url` column is the download URL if present, otherwise the
+#' access URL. The `kind` column says what each one is: `"file"`, `"service"` (WMS, WFS, APIs,
+#' feeds), `"page"` (a web page), `"none"` (no usable URL, e.g. a localhost placeholder) or
+#' `"unknown"`.
 #' @inheritParams de_get_dataset
+#' @param files_only Keep only distributions whose `kind` is `"file"`.
 #' @export
-de_distributions <- function(id, lang = "en") de_distribution_table(de_get_dataset(id, raw = TRUE), lang)
+de_distributions <- function(id, lang = "en", files_only = FALSE) {
+  df <- de_distribution_table(de_get_dataset(id, raw = TRUE), lang)
+  if (files_only && "kind" %in% names(df)) {
+    df <- df[df$kind == "file", , drop = FALSE]
+    rownames(df) <- NULL
+  }
+  df
+}
 
 # One row per distribution of a raw dataset record; `url` is the download URL, else the access URL.
 de_distribution_table <- function(d, lang = "en") {
@@ -316,6 +327,7 @@ de_distribution_table <- function(d, lang = "en") {
                checksum = cs$value, checksum_algorithm = cs$algorithm,
                license = chr(x$license$id), modified = chr(x$modified),
                download_url = dl, access_url = ac, url = if (is.na(dl)) ac else dl,
+               kind = de_distribution_kind(x$format$id, x$media_type, if (is.na(dl)) ac else dl, dl),
                stringsAsFactors = FALSE)
   })
   bind_rows_base(rows)
@@ -463,42 +475,93 @@ de_download <- function(x, dest = ".", verify = TRUE, resume = TRUE) {
 # ---------------------------------------------------------------- load into a table
 
 # Format ids, media types and file extensions that map to a readable file format.
+# Keys are matched after de_format_key(): lowercase, look-alike letters folded, leading dot removed.
 .file_formats <- c(
   "csv" = "csv", "text/csv" = "csv", "csv/utf8" = "csv", "comma separated value (csv)" = "csv",
+  "tsv" = "csv", "text/tab-separated-values" = "csv",   # the CSV reader detects the tab delimiter
   "json" = "json", "application/json" = "json",
-  "xlsx" = "xlsx", "xlsm" = "xlsx",
+  "xlsx" = "xlsx", "xlsm" = "xlsx", "excel (.xlsx)" = "xlsx",
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" = "xlsx",
+  "vnd.openxmlformats-officedocument.spreadsheetml.sheet" = "xlsx",
   "parquet" = "parquet", "application/vnd.apache.parquet" = "parquet", "application/x-parquet" = "parquet")
 # Media types and extensions of compressed archives, which must be unpacked before reading.
 .archives <- c("application/zip", "application/x-zip-compressed", "application/gzip", "application/x-gzip",
                "application/x-tar", "zip", "gz", "tgz", "tar")
 # Format ids of services (map servers, APIs) rather than files. Ids ending in "_srvc" count too.
-.service_formats <- c("wms", "wfs", "wcs", "wmts", "ogc:wms", "ogc:wfs", "api", "open-api", "ogc api features",
-                      "ogcapi-features", "arcgis geoservices rest api", "application/vnd.ogc.wms_xml", "sparql")
+# Atom and RSS feeds count as services: in INSPIRE they list files rather than being one.
+.service_formats <- c("wms", "wfs", "wcs", "wmts", "ogc:wms", "ogc:wfs", "ogc:wcs", "ogc:wmts", "ogc:ows-c",
+                      "api", "open-api", "ogc api features", "ogcapi-features", "ogcfeat",
+                      "arcgis geoservices rest api", "rest", "esri rest", "application/vnd.ogc.wms_xml",
+                      "sparql", "sparqlq", "inspire download service", "atom", "rss", "application/atom+xml",
+                      "application/rss+xml")
+# Format ids and media types of web pages (landing pages, links, viewers) rather than files.
+.page_formats <- c("html", "text/html", "application/xhtml+xml", "web page", "html_simpl", "www:link",
+                   "www:link-1.0-http--link", "www:link-1.0-http--metadata-url", "url", "view", "doi", "map_prvw")
+# Format ids that say nothing about the content ("onLine" is ISO 19115 for "a link").
+.no_format <- c("online", "other", "inconnu", "unknown", "n/a")
+# Hosts that only appear in placeholder URLs.
+.placeholder_hosts <- c("localhost", "127.0.0.1", "0.0.0.0", "::1", "")
+
+# A format id, media type or extension as matched against the tables above: look-alike letters
+# some publishers type (Cyrillic a e o p c x, both cases) folded, lowercase, leading dot removed.
+de_format_key <- function(value) {
+  key <- tolower(chartr("\u0430\u0435\u043e\u0440\u0441\u0445\u0410\u0415\u041e\u0420\u0421\u0425",
+                        "aeopcxAEOPCX", enc2utf8(trimws(value))))
+  if (startsWith(key, "file:///")) key <- sub("^.*/", "", key)
+  sub("^\\.+", "", key)
+}
+
+# The file extension of a URL's last path part, without query or fragment; NULL if none.
+de_url_extension <- function(url) {
+  if (is.null(url) || !nzchar(url)) return(NULL)
+  last <- sub("^.*/", "", sub("/+$", "", sub("[?#].*$", "", url)))
+  if (grepl(".", last, fixed = TRUE)) sub("^.*\\.", "", last) else NULL
+}
+
+has_text <- function(x) !is.null(x) && nzchar(trimws(x))
 
 str1 <- function(x) if (is.null(x) || length(x) == 0 || (is.atomic(x) && is.na(x[[1]]))) NULL else as.character(x[[1]])
 
-# "csv", "json", "xlsx", "parquet", "service", "archive" or NA (unknown). A compressed media type or
-# extension means "archive" whatever the format id says; otherwise the first recognised of format
-# id, media type, file extension wins.
+# "csv", "json", "xlsx", "parquet", "service", "archive", "page" or NA (unknown). A compressed media
+# type or extension means "archive" whatever the format id says; otherwise the first of format id,
+# media type, file extension recognised as a service or readable file wins. "page" only when one
+# of them says so and none names a service or a file.
 de_file_format <- function(fmt = NULL, media_type = NULL, url = NULL) {
   fmt <- str1(fmt); media_type <- str1(media_type); url <- str1(url)
-  ext <- NULL
-  if (!is.null(url) && nzchar(url)) {
-    path <- sub("/+$", "", sub("[?#].*$", "", url))
-    last <- sub("^.*/", "", path)
-    if (grepl(".", last, fixed = TRUE)) ext <- sub("^.*\\.", "", last)
-  }
+  ext <- de_url_extension(url)
   for (cand in list(media_type, ext))
-    if (!is.null(cand) && tolower(trimws(cand)) %in% .archives) return("archive")
-  for (cand in list(fmt, media_type, ext)) {
-    if (is.null(cand) || !nzchar(trimws(cand))) next
-    key <- tolower(trimws(cand))
-    if (startsWith(key, "file:///")) key <- sub("^.*/", "", key)
+    if (!is.null(cand) && de_format_key(cand) %in% .archives) return("archive")
+  keys <- vapply(Filter(has_text, list(fmt, media_type, ext)), de_format_key, "")
+  for (key in keys) {
     if (key %in% .service_formats || endsWith(key, "_srvc")) return("service")
     if (key %in% names(.file_formats)) return(unname(.file_formats[key]))
   }
-  NA_character_
+  if (any(keys %in% .page_formats)) "page" else NA_character_
+}
+
+# What a distribution is: "file", "service", "page", "none" (no usable URL) or "unknown".
+# "none": no URL, a scheme other than http(s) or ftp, or a placeholder host (localhost).
+# "service": an OGC query in the URL (service=WMS, request=GetCapabilities), or a service format.
+# "page": a web-page format, or no format and an .html URL. "file": any other format or media
+# type, or a download URL. Otherwise "unknown". Format ids that say nothing (onLine, OTHER) count
+# as no format.
+de_distribution_kind <- function(fmt = NULL, media_type = NULL, url = NULL, download_url = NULL) {
+  fmt <- str1(fmt); media_type <- str1(media_type); url <- str1(url); download_url <- str1(download_url)
+  if (!has_text(url)) return("none")
+  u <- trimws(url)
+  m <- regmatches(u, regexec("^([A-Za-z][A-Za-z0-9+.-]*)://(?:[^@/?#]*@)?(\\[[^]]*\\]|[^:/?#]*)", u, perl = TRUE))[[1]]
+  if (length(m) != 3) return("none")
+  host <- tolower(gsub("^\\[|\\]$", "", m[3]))
+  if (!(tolower(m[2]) %in% c("http", "https", "ftp")) || host %in% .placeholder_hosts) return("none")
+  query <- if (grepl("?", u, fixed = TRUE)) sub("#.*$", "", sub("^[^?]*\\?", "", u)) else ""
+  if (grepl("(^|&)(service=(wms|wfs|wcs|wmts|csw|wps|sos)|request=getcapabilities)(&|$)", query, ignore.case = TRUE))
+    return("service")
+  f <- de_file_format(fmt, media_type, url)
+  if (f %in% c("service", "page")) return(f)
+  informative <- function(v) has_text(v) && !(de_format_key(v) %in% .no_format)
+  if (!is.na(f) || informative(fmt) || informative(media_type)) return("file")
+  if (tolower(de_url_extension(url) %||% "") %in% c("html", "htm")) return("page")
+  if (has_text(download_url)) "file" else "unknown"
 }
 
 # Refuse a downloaded file that is an archive or an HTML page rather than data.
@@ -618,7 +681,7 @@ de_load_distribution <- function(x, format = NULL, sheet = NULL) {
   if (is.null(url) || !nzchar(url)) stop("no URL available for this distribution", call. = FALSE)
   if (!is.null(format)) {
     fmt <- de_file_format(format)
-    if (is.na(fmt) || fmt %in% c("service", "archive"))
+    if (is.na(fmt) || fmt %in% c("service", "archive", "page"))
       stop("format must be one of csv, json, xlsx, parquet (got '", format, "')", call. = FALSE)
   } else {
     fmt <- de_file_format(row$format, row$media_type, url)
@@ -627,6 +690,8 @@ de_load_distribution <- function(x, format = NULL, sheet = NULL) {
     stop(url, " is a service, not a file; open it with a client for that service", call. = FALSE)
   if (identical(fmt, "archive"))
     stop(url, " is a compressed archive; use de_download() and unpack it", call. = FALSE)
+  if (identical(fmt, "page"))
+    stop(url, " is a web page, not a file", call. = FALSE)
   if (is.na(fmt))
     stop("cannot tell the file format of ", url, "; pass format = \"csv\", \"json\", \"xlsx\" or \"parquet\"",
          call. = FALSE)

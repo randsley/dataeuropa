@@ -51,6 +51,9 @@ LIVE && @testset "live API" begin
     dist = distributions("5be153fa8b4c417561300530")
     budget = load_distribution(first(eachrow(filter(r -> r.format == "CSV", dist))))
     @test nrow(budget) > 0 && "Dépenses" in names(budget)
+    every = distributions("3b26eacb-825d-4bf9-9ef2-9278c4a481ad")
+    files = distributions("3b26eacb-825d-4bf9-9ef2-9278c4a481ad"; files_only=true)
+    @test 0 < nrow(files) < nrow(every) && all(==("file"), files.kind)
     # A 2 MB CSV on dados.gov.pt whose distribution carries a SHA-1 checksum.
     pt = distributions("68c2be5c43136b247fe74d41")
     mktempdir() do tmp

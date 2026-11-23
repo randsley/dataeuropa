@@ -37,7 +37,7 @@ Python `dataeuropa`, Julia `DataEuropa`, R `dataeuropa` (same verbs: search_data
 Use for aggregates and joins over the whole DCAT graph; for text search use the Search API instead (SPARQL text filters took ~30 s). Always add `LIMIT`; expect 10-40 s for GROUP BY over distributions. Prefixes: `dcat: <http://www.w3.org/ns/dcat#>`, `dct: <http://purl.org/dc/terms/>`. Count datasets: `SELECT (COUNT(?s) AS ?n) WHERE { ?s a dcat:Dataset }` (about 2.05 M at last check). Format and licence values come back as authority URIs, so strip to the last path segment.
 
 ## Pitfalls
-- Many distributions are services (WMS, WFS, INSPIRE DOWNLOAD SERVICE), not files; filter by `format` for tabular data (CSV, XLSX, JSON, PARQUET).
+- Many distributions are services (WMS, WFS, INSPIRE DOWNLOAD SERVICE, OGCFEAT, ATOM feeds) or web pages (HTML, `www:link`, `doi`), not files; filter by `format` for tabular data (CSV, XLSX, JSON, PARQUET). Watch for odd format ids: `.csv`, `onLine` (just "a link"), and Cyrillic look-alikes (`сsv`, `хlsx`). URLs with `service=WFS` or `request=GetCapabilities` are services whatever the format says.
 - Some publisher URLs are placeholders (`https://localhost/...`) or dead links; report and move on rather than retrying.
 - Licence ids are publisher-supplied and not normalised.
 - `limit` max 1000; for more, use scroll. Retry 429/5xx with backoff.

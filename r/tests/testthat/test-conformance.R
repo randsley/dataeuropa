@@ -26,6 +26,8 @@ run_case <- function(case) {
   data <- read_fixture(case$input)
   if (!is.null(case$select)) data <- data[[case$select]]
   switch(case$kind,
+    distribution_kind = list(values = lapply(data, function(r)
+      dataeuropa:::de_distribution_kind(r$format, r$media_type, r$url, r$download_url))),
     range_validator = list(values = lapply(data, function(r) dataeuropa:::de_range_validator(r$etag, r$last_modified))),
     resume_action = list(values = lapply(data, function(r)
       dataeuropa:::de_resume_action(r$status, r$content_range, r$offset))),

@@ -34,6 +34,9 @@ function _run(case)
         return Dict("values" => [DE._file_format(get(r, :format, nothing), get(r, :media_type, nothing),
                                                  get(r, :url, nothing)) for r in data])
     end
+    kind == "distribution_kind" &&
+        return Dict("values" => [DE._distribution_kind(get(r, :format, nothing), get(r, :media_type, nothing),
+                                                       get(r, :url, nothing), get(r, :download_url, nothing)) for r in data])
     kind == "range_validator" &&
         return Dict("values" => [DE._range_validator(r.etag, r.last_modified) for r in data])
     kind == "resume_action" &&

@@ -1,24 +1,127 @@
 [
- {"format": "CSV", "media_type": "text/csv", "url": "https://example.org/a.csv"},
- {"format": "csv/utf8", "url": "https://example.org/download"},
- {"format": "comma separated value (csv)"},
- {"format": "file:///srv/udata/ftype/csv"},
- {"format": "JSON", "url": "https://example.org/api/data"},
- {"format": "XLSX"},
- {"format": "XLSM"},
- {"format": "PARQUET"},
- {"format": "WMS_SRVC", "url": "https://example.org/wms?service=WMS"},
- {"format": "ogc:wfs"},
- {"format": "API"},
- {"format": "ZIP", "url": "https://example.org/data.zip"},
- {"format": "HTML", "media_type": "text/csv"},
- {"format": null, "media_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"},
- {"format": null, "media_type": null, "url": "https://example.org/files/Table.PARQUET?version=2#top"},
- {"format": "GEOJSON", "url": "https://example.org/map.geojson"},
- {"format": "XLS", "url": "https://example.org/old.xls"},
- {"url": "https://example.org/no-extension/"},
+ {
+  "format": "CSV",
+  "media_type": "text/csv",
+  "url": "https://example.org/a.csv"
+ },
+ {
+  "format": "csv/utf8",
+  "url": "https://example.org/download"
+ },
+ {
+  "format": "comma separated value (csv)"
+ },
+ {
+  "format": "file:///srv/udata/ftype/csv"
+ },
+ {
+  "format": "JSON",
+  "url": "https://example.org/api/data"
+ },
+ {
+  "format": "XLSX"
+ },
+ {
+  "format": "XLSM"
+ },
+ {
+  "format": "PARQUET"
+ },
+ {
+  "format": "WMS_SRVC",
+  "url": "https://example.org/wms?service=WMS"
+ },
+ {
+  "format": "ogc:wfs"
+ },
+ {
+  "format": "API"
+ },
+ {
+  "format": "ZIP",
+  "url": "https://example.org/data.zip"
+ },
+ {
+  "format": "HTML",
+  "media_type": "text/csv"
+ },
+ {
+  "format": null,
+  "media_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+ },
+ {
+  "format": null,
+  "media_type": null,
+  "url": "https://example.org/files/Table.PARQUET?version=2#top"
+ },
+ {
+  "format": "GEOJSON",
+  "url": "https://example.org/map.geojson"
+ },
+ {
+  "format": "XLS",
+  "url": "https://example.org/old.xls"
+ },
+ {
+  "url": "https://example.org/no-extension/"
+ },
  {},
- {"format": "CSV", "media_type": "application/zip", "url": "https://example.org/download/csv"},
- {"format": "CSV", "url": "https://example.org/data.csv.gz"},
- {"format": "JSON", "media_type": "application/json", "url": "https://example.org/data.zip"}
+ {
+  "format": "CSV",
+  "media_type": "application/zip",
+  "url": "https://example.org/download/csv"
+ },
+ {
+  "format": "CSV",
+  "url": "https://example.org/data.csv.gz"
+ },
+ {
+  "format": "JSON",
+  "media_type": "application/json",
+  "url": "https://example.org/data.zip"
+ },
+ {
+  "format": "сsv"
+ },
+ {
+  "format": "хlsx"
+ },
+ {
+  "format": ".csv"
+ },
+ {
+  "format": "excel (.xlsx)"
+ },
+ {
+  "format": "TSV",
+  "url": "https://example.org/t.tsv"
+ },
+ {
+  "format": "INSPIRE DOWNLOAD SERVICE"
+ },
+ {
+  "format": "OGCFEAT"
+ },
+ {
+  "format": "ATOM",
+  "url": "https://example.org/feed.xml"
+ },
+ {
+  "format": "HTML",
+  "url": "https://example.org/dataset"
+ },
+ {
+  "format": "web page"
+ },
+ {
+  "format": "www:link-1.0-http--link"
+ },
+ {
+  "format": null,
+  "media_type": "text/html"
+ },
+ {
+  "format": "PDF",
+  "url": "https://example.org/report.pdf"
+ }
 ]

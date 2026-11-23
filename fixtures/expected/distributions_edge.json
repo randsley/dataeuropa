@@ -12,7 +12,8 @@
    "modified": null,
    "download_url": null,
    "access_url": "http://service.example/wms",
-   "url": "http://service.example/wms"
+   "url": "http://service.example/wms",
+   "kind": "service"
   },
   {
    "id": "both",
@@ -26,7 +27,8 @@
    "modified": "2022-01-01",
    "download_url": "http://files.example/a.csv",
    "access_url": "http://files.example/",
-   "url": "http://files.example/a.csv"
+   "url": "http://files.example/a.csv",
+   "kind": "file"
   },
   {
    "id": "empty-download",
@@ -40,7 +42,8 @@
    "modified": null,
    "download_url": null,
    "access_url": "http://files.example/page",
-   "url": "http://files.example/page"
+   "url": "http://files.example/page",
+   "kind": "unknown"
   },
   {
    "id": "no-urls",
@@ -54,7 +57,8 @@
    "modified": null,
    "download_url": null,
    "access_url": null,
-   "url": null
+   "url": null,
+   "kind": "none"
   },
   {
    "id": "checksum-no-algorithm",
@@ -68,7 +72,8 @@
    "modified": null,
    "download_url": "http://files.example/c.csv",
    "access_url": null,
-   "url": "http://files.example/c.csv"
+   "url": "http://files.example/c.csv",
+   "kind": "file"
   },
   {
    "id": "checksum-spdx",
@@ -82,7 +87,8 @@
    "modified": null,
    "download_url": "http://files.example/d.csv",
    "access_url": null,
-   "url": "http://files.example/d.csv"
+   "url": "http://files.example/d.csv",
+   "kind": "file"
   },
   {
    "id": "checksum-crc",
@@ -96,7 +102,8 @@
    "modified": null,
    "download_url": "http://files.example/e.csv",
    "access_url": null,
-   "url": "http://files.example/e.csv"
+   "url": "http://files.example/e.csv",
+   "kind": "file"
   },
   {
    "id": "checksum-unknown",
@@ -110,7 +117,8 @@
    "modified": null,
    "download_url": "http://files.example/f.csv",
    "access_url": null,
-   "url": "http://files.example/f.csv"
+   "url": "http://files.example/f.csv",
+   "kind": "file"
   },
   {
    "id": "checksum-empty",
@@ -124,7 +132,8 @@
    "modified": null,
    "download_url": "http://files.example/g.csv",
    "access_url": null,
-   "url": "http://files.example/g.csv"
+   "url": "http://files.example/g.csv",
+   "kind": "file"
   }
  ]
 }

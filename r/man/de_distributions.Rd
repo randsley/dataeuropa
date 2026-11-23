@@ -2,15 +2,20 @@
 % Please edit documentation in R/dataeuropa.R
 \name{de_distributions}
 \alias{de_distributions}
-\title{Distributions (files and services) of a dataset}
+\title{Distributions (files, services, pages) of a dataset}
 \usage{
-de_distributions(id, lang = "en")
+de_distributions(id, lang = "en", files_only = FALSE)
 }
 \arguments{
 \item{id}{Dataset id as shown in search results.}
 
 \item{lang}{Preferred language.}
+
+\item{files_only}{Keep only distributions whose `kind` is `"file"`.}
 }
 \description{
-The `url` column is the download URL if present, otherwise the access URL.
+One row per distribution. The `url` column is the download URL if present, otherwise the
+access URL. The `kind` column says what each one is: `"file"`, `"service"` (WMS, WFS, APIs,
+feeds), `"page"` (a web page), `"none"` (no usable URL, e.g. a localhost placeholder) or
+`"unknown"`.
 }

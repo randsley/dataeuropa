@@ -54,3 +54,10 @@ end
                                                            checksum="0"^32, checksum_algorithm="md5"))
     end
 end
+
+@testset "files, services and pages" begin
+    @test_throws "web page" load_distribution((url="https://example.org/dataset/1", format="HTML"))
+    record = JSON3.read(read(joinpath(@__DIR__, "..", "..", "fixtures", "responses", "edge_cases.json"), String)).dataset
+    df = DataEuropa._distribution_table(record)
+    @test Set(df.kind) == Set(["file", "service", "unknown", "none"])
+end

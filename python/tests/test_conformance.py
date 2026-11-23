@@ -6,7 +6,7 @@ import pathlib
 
 import pytest
 
-from dataeuropa.client import (_distribution_rows, _facet_rows, _file_format, _file_hash, _keywords,
+from dataeuropa.client import (_distribution_kind, _distribution_rows, _facet_rows, _file_format, _file_hash, _keywords,
                                _range_validator, _resume_action, _read_table,
                                _sparql_rows, summarise_dataset)
 
@@ -38,6 +38,9 @@ def run(case):
         data = data[case["select"]]
     if kind == "file_format":
         return {"values": [_file_format(r.get("format"), r.get("media_type"), r.get("url")) for r in data]}
+    if kind == "distribution_kind":
+        return {"values": [_distribution_kind(r.get("format"), r.get("media_type"), r.get("url"), r.get("download_url"))
+                           for r in data]}
     if kind == "range_validator":
         return {"values": [_range_validator(r["etag"], r["last_modified"]) for r in data]}
     if kind == "resume_action":

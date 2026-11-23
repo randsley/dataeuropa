@@ -66,7 +66,8 @@ path = download_distribution(dist[1, :], "data/")
 !!! warning "Not every distribution is a file"
     Many distributions are services (WMS, WFS, INSPIRE download services) rather than files,
     and some publisher URLs are placeholders such as `https://localhost/...`.
-    Check the `format` column before downloading.
+    The `kind` column sorts them: `file`, `service`, `page` (a web page), `none` (no usable
+    URL) or `unknown`. `distributions(dataset_id; files_only=true)` keeps only files.
 
 When the portal lists a checksum for the file (the `checksum` and `checksum_algorithm`
 columns; MD5, SHA-1 or SHA-256), the download is checked against it. A mismatch deletes the

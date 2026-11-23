@@ -8,6 +8,7 @@ inputs, the expected outputs, and the list of cases that all three test suites r
 | `responses/*.json` | Real API responses recorded by `record.py`, trimmed to stay small |
 | `responses/resume.json` | Validators and replies to Range requests, for resuming downloads |
 | `responses/formats.json` | Format ids, media types and URLs for format detection |
+| `responses/kinds.json` | Distributions to sort into files, services, pages and unusable URLs |
 | `files/*` | Sample CSV, JSON, XLSX and Parquet files, written by `make_files.py` (kept byte for byte: see `.gitattributes`) |
 | `responses/edge_cases.json` | Hand-written records for cases the live data rarely shows (missing fields, language fallback, ties, unbound SPARQL variables) |
 | `cases.json` | The cases: which input to read, which conversion to run, with which arguments |
@@ -28,6 +29,7 @@ then guard against unintended changes, and the Julia and R tests check that they
 | `facets` | `_facet_rows` | `_facet_table` | `de_facet_table` |
 | `sparql` | `_sparql_rows` | `_sparql_result` | `de_sparql_table` |
 | `file_format` | `_file_format` | `_file_format` | `de_file_format` |
+| `distribution_kind` | `_distribution_kind` | `_distribution_kind` | `de_distribution_kind` |
 | `read_file` | `_read_table` | `_read_table` | `de_read_table` |
 | `file_hash` | `_file_hash` | `_file_hash` | `de_file_hash` |
 | `range_validator` | `_range_validator` | `_range_validator` | `de_range_validator` |

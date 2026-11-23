@@ -19,6 +19,7 @@
   {"name": "sparql_empty", "kind": "sparql", "input": "responses/edge_cases.json", "select": "sparql_empty"},
   {"name": "sparql_ask_false", "kind": "sparql", "input": "responses/edge_cases.json", "select": "sparql_ask_false"},
   {"name": "file_format", "kind": "file_format", "input": "responses/formats.json"},
+  {"name": "distribution_kind", "kind": "distribution_kind", "input": "responses/kinds.json"},
   {"name": "range_validator", "kind": "range_validator", "input": "responses/resume.json", "select": "validators"},
   {"name": "resume_action", "kind": "resume_action", "input": "responses/resume.json", "select": "replies"},
   {"name": "hash_comma_csv", "kind": "file_hash", "input": "files/comma.csv", "args": {"algorithms": ["md5", "sha1", "sha256"]}},

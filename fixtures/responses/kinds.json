@@ -1,0 +1,90 @@
+[
+ {
+  "format": "CSV",
+  "url": "https://example.org/a.csv",
+  "download_url": "https://example.org/a.csv"
+ },
+ {
+  "format": "PDF",
+  "url": "https://example.org/report.pdf"
+ },
+ {
+  "format": "SHP",
+  "url": "https://example.org/roads.zip"
+ },
+ {
+  "format": "WMS_SRVC",
+  "url": "https://example.org/wms"
+ },
+ {
+  "format": "XML",
+  "url": "https://example.org/ows?SERVICE=WFS&REQUEST=GetCapabilities"
+ },
+ {
+  "format": null,
+  "url": "https://example.org/geoserver/ows?request=GetCapabilities&service=wms"
+ },
+ {
+  "format": "HTML",
+  "url": "https://example.org/dataset/1"
+ },
+ {
+  "format": null,
+  "media_type": null,
+  "url": "https://example.org/info.html"
+ },
+ {
+  "format": null,
+  "url": "https://example.org/get",
+  "download_url": "https://example.org/get"
+ },
+ {
+  "format": null,
+  "url": "https://example.org/somewhere"
+ },
+ {
+  "format": "CSV",
+  "url": "https://localhost/data.csv"
+ },
+ {
+  "format": "CSV",
+  "url": "http://127.0.0.1:8080/data.csv"
+ },
+ {
+  "format": "CSV",
+  "url": "file:///C:/data/a.csv"
+ },
+ {
+  "format": "CSV",
+  "url": null
+ },
+ {
+  "format": "CSV",
+  "url": "   "
+ },
+ {
+  "format": "INSPIRE DOWNLOAD SERVICE",
+  "url": "https://example.org/atom.xml"
+ },
+ {
+  "format": "сsv",
+  "url": "https://example.org/b"
+ },
+ {
+  "format": "CSV",
+  "media_type": "application/zip",
+  "url": "https://example.org/c"
+ },
+ {
+  "format": "onLine",
+  "url": "https://example.org/d"
+ },
+ {
+  "format": "CSV",
+  "url": "ftp://ftp.example.org/a.csv"
+ },
+ {
+  "format": "CSV",
+  "url": "https://example.org/data?service=webshop"
+ }
+]
