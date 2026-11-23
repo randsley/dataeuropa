@@ -1,0 +1,488 @@
+{
+ "accrual_periodicity": {},
+ "catalog": {
+  "country": {
+   "id": "ie",
+   "label": "Ireland",
+   "resource": "http://publications.europa.eu/resource/authority/country/IRL"
+  },
+  "description": {
+   "de": "Open Data Portal Deutschland",
+   "en": "Open Data Portal Ireland",
+   "fr": "Portail des données ouvertes Irlande",
+   "pt": "Portal de Dados Abertos da Irlanda"
+  },
+  "homepage": "https://data.gov.ie",
+  "id": "data-gov-ie",
+  "issued": "2022-06-24T12:25:17Z",
+  "language": [
+   {
+    "id": "ga",
+    "label": "Irish",
+    "resource": "http://publications.europa.eu/resource/authority/language/GLE"
+   }
+  ],
+  "modified": "2023-02-10T20:35:45.162705",
+  "publisher": {
+   "email": "mailto:opendata@per.gov.ie",
+   "homepage": "https://www.gov.ie/en/organisation/department-of-public-expenditure-and-reform",
+   "name": "Government Reform Unit, Dept of Public Expenditure & Reform",
+   "type": "Agent"
+  },
+  "source_type": "dcat-ap",
+  "spatial_resource": [
+   {
+    "id": "ie",
+    "label": "Ireland",
+    "resource": "http://publications.europa.eu/resource/authority/country/IRL"
+   }
+  ],
+  "title": {
+   "de": "Daten.gov.ie",
+   "en": "Data.gov.ie",
+   "fr": "Data.gov.ie",
+   "pt": "Data.gov.ie"
+  }
+ },
+ "catalog_record": {
+  "issued": "2022-03-16T20:25:47Z",
+  "modified": "2026-08-10T09:31:53Z"
+ },
+ "categories": [
+  {
+   "resource": "https://data.gov.ie/Environment"
+  },
+  {
+   "id": "ENVI",
+   "label": {
+    "de": "Umwelt",
+    "en": "Environment",
+    "fr": "Environnement",
+    "pt": "Ambiente"
+   },
+   "resource": "http://publications.europa.eu/resource/authority/data-theme/ENVI"
+  }
+ ],
+ "conforms_to": [
+  {
+   "resource": "http://www.opengis.net/def/crs/EPSG/0/4326"
+  }
+ ],
+ "contact_point": [
+  {
+   "email": "mailto:opendata@marine.ie",
+   "name": "Marine Institute",
+   "type": "Organization"
+  }
+ ],
+ "corporate-body-classification": {
+  "id": "_NATIONAL",
+  "label": {
+   "title": {
+    "de": "Nationale Behörden",
+    "en": "National Authorities",
+    "fr": "Autorités nationales",
+    "pt": "Autoridades nacionais"
+   }
+  }
+ },
+ "country": {
+  "id": "ie",
+  "label": "Ireland",
+  "resource": "http://publications.europa.eu/resource/authority/country/IRL"
+ },
+ "description": {
+  "de": "Die Daten geben den Standort für die Schleppnetzfischerei in irischen Gewässern an. Zu den bekannten Attributen gehören Jahr, Gebiet, Fanggerättyp, Art, Jahreszeit, Tage pro Jahr (Days_Year), Anzahl d",
+  "en": "Data indicates the location for mid-water trawl fishing activity in Irish waters. Attributes when known include year, area, gear type, species, season, days per year (Days_Year), number of vessels (Ve",
+  "fr": "Les données indiquent la localisation des activités de pêche au chalut pélagique dans les eaux irlandaises. Les attributs connus comprennent l'année, la zone, le type d'engin, l'espèce, la saison, les",
+  "pt": "Os dados indicam a localização da atividade de pesca de arrasto pelágico nas águas irlandesas. Os atributos conhecidos incluem o ano, a zona, o tipo de arte, a espécie, a estação, os dias por ano (Dia"
+ },
+ "distributions": [
+  {
+   "access_url": [
+    "http://atlas.marine.ie/midata/Fisheries/Midwater_Trawl_Fishing.shapezip.zip"
+   ],
+   "description": {
+    "ga": "available as shp"
+   },
+   "download_url": [
+    "http://atlas.marine.ie/midata/Fisheries/Midwater_Trawl_Fishing.shapezip.zip"
+   ],
+   "format": {
+    "format_types": [
+     {
+      "id": "geographical",
+      "label": {
+       "en": "Geographical"
+      }
+     }
+    ],
+    "id": "SHP",
+    "label": "Esri Shape",
+    "resource": "http://publications.europa.eu/resource/authority/file-type/SHP"
+   },
+   "id": "b2be0748-de52-4091-bba1-a611e2657ac6",
+   "issued": "2024-02-26T01:52:11",
+   "license": {
+    "id": "https://creativecommons.org/licenses/by/4.0/",
+    "label": "https://creativecommons.org/licenses/by/4.0/",
+    "resource": "https://creativecommons.org/licenses/by/4.0/"
+   },
+   "media_type": "application/zip",
+   "modified": "2026-07-21T09:55:06",
+   "title": {
+    "ga": "Download Shapefile"
+   }
+  },
+  {
+   "access_url": [
+    "http://atlas.marine.ie/midata/Fisheries/Midwater_Trawl_Fishing.kml.zip"
+   ],
+   "description": {
+    "ga": "available as KML"
+   },
+   "download_url": [
+    "http://atlas.marine.ie/midata/Fisheries/Midwater_Trawl_Fishing.kml.zip"
+   ],
+   "format": {
+    "format_types": [
+     {
+      "id": "structured",
+      "label": {
+       "en": "Structured"
+      }
+     },
+     {
+      "id": "geographical",
+      "label": {
+       "en": "Geographical"
+      }
+     }
+    ],
+    "id": "KML",
+    "label": "KML",
+    "resource": "http://publications.europa.eu/resource/authority/file-type/KML"
+   },
+   "id": "0539345a-05e6-4a46-b8fc-fd30b2a82aa1",
+   "issued": "2024-02-26T01:52:11",
+   "license": {
+    "id": "https://creativecommons.org/licenses/by/4.0/",
+    "label": "https://creativecommons.org/licenses/by/4.0/",
+    "resource": "https://creativecommons.org/licenses/by/4.0/"
+   },
+   "media_type": "application/zip",
+   "modified": "2026-07-21T09:55:06",
+   "title": {
+    "ga": "Download KML"
+   }
+  },
+  {
+   "access_url": [
+    "http://atlas.marine.ie/arcgis/services/Fisheries/MapServer/WFSServer?request=GetFeature&service=WFS&TYPENAME=Fisheries:Midwater_Trawl_Fishing"
+   ],
+   "description": {
+    "ga": "available as GML"
+   },
+   "download_url": [
+    "http://atlas.marine.ie/arcgis/services/Fisheries/MapServer/WFSServer?request=GetFeature&service=WFS&TYPENAME=Fisheries:Midwater_Trawl_Fishing"
+   ],
+   "format": {
+    "format_types": [
+     {
+      "id": "structured",
+      "label": {
+       "en": "Structured"
+      }
+     },
+     {
+      "id": "geographical",
+      "label": {
+       "en": "Geographical"
+      }
+     }
+    ],
+    "id": "GML",
+    "label": "GML",
+    "resource": "http://publications.europa.eu/resource/authority/file-type/GML"
+   },
+   "id": "c7104a10-7b04-4cae-8079-5b4c7769a58f",
+   "issued": "2024-02-26T01:52:11",
+   "license": {
+    "id": "https://creativecommons.org/licenses/by/4.0/",
+    "label": "https://creativecommons.org/licenses/by/4.0/",
+    "resource": "https://creativecommons.org/licenses/by/4.0/"
+   },
+   "modified": "2026-07-21T09:55:06",
+   "title": {
+    "ga": "WFS GetFeature"
+   }
+  },
+  {
+   "access_url": [
+    "http://atlas.marine.ie/midata/Fisheries/Midwater_Trawl_Fishing.csv.zip"
+   ],
+   "description": {
+    "ga": "available as CSV"
+   },
+   "download_url": [
+    "http://atlas.marine.ie/midata/Fisheries/Midwater_Trawl_Fishing.csv.zip"
+   ],
+   "format": {
+    "format_types": [
+     {
+      "id": "tabular",
+      "label": {
+       "en": "Tabular"
+      }
+     },
+     {
+      "id": "textual",
+      "label": {
+       "en": "Textual"
+      }
+     }
+    ],
+    "id": "CSV",
+    "label": "CSV",
+    "resource": "http://publications.europa.eu/resource/authority/file-type/CSV"
+   },
+   "id": "2f00cbf5-fc02-4c49-a804-91a9ae18309b",
+   "issued": "2024-02-26T01:52:11",
+   "license": {
+    "id": "https://creativecommons.org/licenses/by/4.0/",
+    "label": "https://creativecommons.org/licenses/by/4.0/",
+    "resource": "https://creativecommons.org/licenses/by/4.0/"
+   },
+   "media_type": "application/zip",
+   "modified": "2026-07-21T09:55:06",
+   "title": {
+    "ga": "Download CSV"
+   }
+  },
+  {
+   "access_url": [
+    "http://atlas.marine.ie/arcgis/rest/services/Fisheries/MapServer/13?f=pjson"
+   ],
+   "description": {
+    "ga": "available as json"
+   },
+   "download_url": [
+    "http://atlas.marine.ie/arcgis/rest/services/Fisheries/MapServer/13?f=pjson"
+   ],
+   "format": {
+    "format_types": [
+     {
+      "id": "structured",
+      "label": {
+       "en": "Structured"
+      }
+     }
+    ],
+    "id": "JSON",
+    "label": "JSON",
+    "resource": "http://publications.europa.eu/resource/authority/file-type/JSON"
+   },
+   "id": "46a25ba8-e29b-4831-969e-f8b9e31d6821",
+   "issued": "2024-02-26T01:52:11",
+   "license": {
+    "id": "https://creativecommons.org/licenses/by/4.0/",
+    "label": "https://creativecommons.org/licenses/by/4.0/",
+    "resource": "https://creativecommons.org/licenses/by/4.0/"
+   },
+   "modified": "2026-07-21T09:55:06",
+   "title": {
+    "ga": "Download JSON"
+   }
+  },
+  {
+   "access_url": [
+    "http://atlas.marine.ie/arcgis/services/Fisheries/MapServer/WMSServer?REQUEST=GetMap&SERVICE=WMS&LAYERS=16&VERSION=1.3.0&FORMAT=image/png&CRS=CRS:84&BBOX=-11.5%2C50.5%2C-4%2C56.5&WIDTH=1000&HEIGHT=1000"
+   ],
+   "description": {
+    "ga": "available as WMS"
+   },
+   "format": {
+    "id": "WMS",
+    "label": "WMS"
+   },
+   "id": "ebfa8f2f-3361-44a0-8f82-dcc22f8122ce",
+   "issued": "2024-02-26T01:52:11",
+   "license": {
+    "id": "https://creativecommons.org/licenses/by/4.0/",
+    "label": "https://creativecommons.org/licenses/by/4.0/",
+    "resource": "https://creativecommons.org/licenses/by/4.0/"
+   },
+   "modified": "2026-07-21T09:55:06",
+   "title": {
+    "ga": "WMS GetMap"
+   }
+  }
+ ],
+ "id": "3b26eacb-825d-4bf9-9ef2-9278c4a481ad",
+ "identifier": [
+  "3b26eacb-825d-4bf9-9ef2-9278c4a481ad"
+ ],
+ "is_hvd": false,
+ "issued": "2014-04-03",
+ "keywords": [
+  {
+   "id": "resources",
+   "label": "resources",
+   "language": "ga"
+  },
+  {
+   "id": "fishing-ground",
+   "label": "fishing ground",
+   "language": "ga"
+  },
+  {
+   "id": "celtic-sea",
+   "label": "celtic sea",
+   "language": "ga"
+  },
+  {
+   "id": "shellfish",
+   "label": "shellfish",
+   "language": "ga"
+  },
+  {
+   "id": "hydrosphere",
+   "label": "hydrosphere",
+   "language": "ga"
+  },
+  {
+   "id": "environment",
+   "label": "environment",
+   "language": "ga"
+  },
+  {
+   "id": "north-atlantic-ocean",
+   "label": "north atlantic ocean",
+   "language": "ga"
+  },
+  {
+   "id": "geoscientificinformation",
+   "label": "geoscientificinformation",
+   "language": "ga"
+  },
+  {
+   "id": "fishery-resource",
+   "label": "fishery resource",
+   "language": "ga"
+  },
+  {
+   "id": "oceans",
+   "label": "oceans",
+   "language": "ga"
+  },
+  {
+   "id": "irish-sea-and-st.-georges-channel",
+   "label": "irish sea and st. georges channel",
+   "language": "ga"
+  },
+  {
+   "id": "fisheries-management",
+   "label": "fisheries management",
+   "language": "ga"
+  },
+  {
+   "id": "northeast-atlantic-ocean",
+   "label": "northeast atlantic ocean",
+   "language": "ga"
+  },
+  {
+   "id": "life-science",
+   "label": "life science",
+   "language": "ga"
+  },
+  {
+   "id": "inner-seas-off-the-west-coast-of-scotland",
+   "label": "inner seas off the west coast of scotland",
+   "language": "ga"
+  },
+  {
+   "id": "biology",
+   "label": "biology",
+   "language": "ga"
+  },
+  {
+   "id": "fish",
+   "label": "fish",
+   "language": "ga"
+  },
+  {
+   "id": "species-distribution",
+   "label": "species distribution",
+   "language": "ga"
+  }
+ ],
+ "landing_page": [
+  {
+   "resource": "http://atlas.marine.ie/arcgis/services/Fisheries/MapServer/WMSServer?REQUEST=GetMap&SERVICE=WMS&LAYERS=16&VERSION=1.3.0&FORMAT=image/png&CRS=CRS:84&BBOX=-11.5%2C50.5%2C-4%2C56.5&WIDTH=1000&HEIGHT=1000"
+  }
+ ],
+ "language": [
+  {
+   "id": "en",
+   "label": "English",
+   "resource": "http://publications.europa.eu/resource/authority/language/ENG"
+  }
+ ],
+ "modified": "2026-07-21T09:55:06",
+ "provenance": [
+  {
+   "label": "Polygons in dataset have either been digitised from expert and questionnaire data, or copied from previous Marine Institute survey data polygons.\n\nPolygons that have been digitised used reference base"
+  }
+ ],
+ "publisher": {
+  "name": "Marine Institute",
+  "resource": "https://data.gov.ie/organization/marine-institute",
+  "type": "Agent"
+ },
+ "quality_meas": {
+  "scoring": 220
+ },
+ "resource": "http://data.europa.eu/88u/dataset/3b26eacb-825d-4bf9-9ef2-9278c4a481ad",
+ "spatial": [
+  {
+   "coordinates": [
+    [
+     [
+      -10.3908,
+      51.4425
+     ],
+     [
+      -10.3908,
+      55.4379
+     ],
+     [
+      -5.8306,
+      55.4379
+     ],
+     [
+      -5.8306,
+      51.4425
+     ],
+     [
+      -10.3908,
+      51.4425
+     ]
+    ]
+   ],
+   "type": "Polygon"
+  }
+ ],
+ "spatial_resource": [],
+ "temporal": [
+  {
+   "gte": "2013-01-01T00:00:00Z",
+   "lte": "2013-09-01T00:00:00Z"
+  }
+ ],
+ "title": {
+  "de": "Küstennahe Schleppnetzfischerei",
+  "en": "Inshore Mid-water Trawl Fishing Activity",
+  "fr": "Activités de pêche côtière au chalut pélagique",
+  "pt": "Atividade de pesca costeira de arrasto pelo meio-mar"
+ }
+}

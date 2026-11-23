@@ -1,0 +1,195 @@
+{
+ "head": {
+  "link": [],
+  "vars": [
+   "d",
+   "title",
+   "periodicity"
+  ]
+ },
+ "results": {
+  "bindings": [
+   {
+    "d": {
+     "type": "uri",
+     "value": "http://data.europa.eu/88u/dataset/e5a55999-5a32-4a61-badb-2330ef723142"
+    },
+    "periodicity": {
+     "type": "uri",
+     "value": "http://publications.europa.eu/resource/authority/frequency/IRREG"
+    },
+    "title": {
+     "type": "literal",
+     "value": "H3Dv2 A0238, breuken in top Kiezeloöliet zand 4",
+     "xml:lang": "nl"
+    }
+   },
+   {
+    "d": {
+     "type": "uri",
+     "value": "http://data.europa.eu/88u/dataset/e5a55999-5a32-4a61-badb-2330ef723142"
+    },
+    "periodicity": {
+     "type": "uri",
+     "value": "http://publications.europa.eu/resource/authority/frequency/IRREG"
+    },
+    "title": {
+     "type": "literal",
+     "value": "H3Dv2 A0238, breaks in top Kiezeloöliet sand 4",
+     "xml:lang": "en-t-nl"
+    }
+   },
+   {
+    "d": {
+     "type": "uri",
+     "value": "http://data.europa.eu/88u/dataset/e5a55999-5a32-4a61-badb-2330ef723142"
+    },
+    "periodicity": {
+     "type": "uri",
+     "value": "http://publications.europa.eu/resource/authority/frequency/IRREG"
+    },
+    "title": {
+     "type": "literal",
+     "value": "H3Dv2 A0238, bricht in Top Kiezeloöliet Sand 4",
+     "xml:lang": "de-t-nl"
+    }
+   },
+   {
+    "d": {
+     "type": "uri",
+     "value": "http://data.europa.eu/88u/dataset/e5a55999-5a32-4a61-badb-2330ef723142"
+    },
+    "periodicity": {
+     "type": "uri",
+     "value": "http://publications.europa.eu/resource/authority/frequency/IRREG"
+    },
+    "title": {
+     "type": "literal",
+     "value": "H3Dv2 A0238, ruptures dans le sable de Kiezeloöliet 4",
+     "xml:lang": "fr-t-nl"
+    }
+   },
+   {
+    "d": {
+     "type": "uri",
+     "value": "http://data.europa.eu/88u/dataset/bc809749-37a0-41a6-8f74-ed59624b8516"
+    },
+    "periodicity": {
+     "type": "uri",
+     "value": "http://publications.europa.eu/resource/authority/frequency/OTHER"
+    },
+    "title": {
+     "type": "literal",
+     "value": "Digitale Topographische Karte 1 : 25 000 (1989-1999) - 3038 Glöwen"
+    }
+   },
+   {
+    "d": {
+     "type": "uri",
+     "value": "http://data.europa.eu/88u/dataset/bc809749-37a0-41a6-8f74-ed59624b8516"
+    },
+    "periodicity": {
+     "type": "uri",
+     "value": "http://publications.europa.eu/resource/authority/frequency/OTHER"
+    },
+    "title": {
+     "type": "literal",
+     "value": "1 skaitmeninis topografinis žemėlapis: 25 000 (1989–1999 m.) – 3038 liūtai",
+     "xml:lang": "lt-t-de-t0-mtec"
+    }
+   },
+   {
+    "d": {
+     "type": "uri",
+     "value": "http://data.europa.eu/88u/dataset/bc809749-37a0-41a6-8f74-ed59624b8516"
+    },
+    "periodicity": {
+     "type": "uri",
+     "value": "http://publications.europa.eu/resource/authority/frequency/OTHER"
+    },
+    "title": {
+     "type": "literal",
+     "value": "Цифрова топографска карта 1: 25 000 (1989-1999 г.) - 3038 лъва",
+     "xml:lang": "bg-t-de-t0-mtec"
+    }
+   },
+   {
+    "d": {
+     "type": "uri",
+     "value": "http://data.europa.eu/88u/dataset/bc809749-37a0-41a6-8f74-ed59624b8516"
+    },
+    "periodicity": {
+     "type": "uri",
+     "value": "http://publications.europa.eu/resource/authority/frequency/OTHER"
+    },
+    "title": {
+     "type": "literal",
+     "value": "Ψηφιακός τοπογραφικός χάρτης 1: 25 000 (1989-1999) - 3038 λιοντάρια",
+     "xml:lang": "el-t-de-t0-mtec"
+    }
+   },
+   {
+    "d": {
+     "type": "uri",
+     "value": "http://data.europa.eu/88u/dataset/bc809749-37a0-41a6-8f74-ed59624b8516"
+    },
+    "periodicity": {
+     "type": "uri",
+     "value": "http://publications.europa.eu/resource/authority/frequency/OTHER"
+    },
+    "title": {
+     "type": "literal",
+     "value": "Mapa topográfico digital 1 : 25 000 (1989-1999) - 3038 leones",
+     "xml:lang": "es-t-de-t0-mtec"
+    }
+   },
+   {
+    "d": {
+     "type": "uri",
+     "value": "http://data.europa.eu/88u/dataset/bc809749-37a0-41a6-8f74-ed59624b8516"
+    },
+    "periodicity": {
+     "type": "uri",
+     "value": "http://publications.europa.eu/resource/authority/frequency/OTHER"
+    },
+    "title": {
+     "type": "literal",
+     "value": "Digitálna topografická mapa 1 : 25 000 (1989-1999) - 3038 levov",
+     "xml:lang": "sk-t-de-t0-mtec"
+    }
+   },
+   {
+    "d": {
+     "type": "uri",
+     "value": "http://data.europa.eu/88u/dataset/bc809749-37a0-41a6-8f74-ed59624b8516"
+    },
+    "periodicity": {
+     "type": "uri",
+     "value": "http://publications.europa.eu/resource/authority/frequency/OTHER"
+    },
+    "title": {
+     "type": "literal",
+     "value": "Digitális topográfiai térkép 1 : 25 000 (1989-1999) - 3038 oroszlán",
+     "xml:lang": "hu-t-de-t0-mtec"
+    }
+   },
+   {
+    "d": {
+     "type": "uri",
+     "value": "http://data.europa.eu/88u/dataset/bc809749-37a0-41a6-8f74-ed59624b8516"
+    },
+    "periodicity": {
+     "type": "uri",
+     "value": "http://publications.europa.eu/resource/authority/frequency/OTHER"
+    },
+    "title": {
+     "type": "literal",
+     "value": "Digitální topografická mapa 1 : 25 000 (1989-1999) - 3038 lvů",
+     "xml:lang": "cs-t-de-t0-mtec"
+    }
+   }
+  ],
+  "distinct": false,
+  "ordered": true
+ }
+}

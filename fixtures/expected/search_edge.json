@@ -1,0 +1,55 @@
+{
+ "rows": [
+  {
+   "id": "all-missing",
+   "title": null,
+   "description": null,
+   "country": null,
+   "catalog": null,
+   "publisher": null,
+   "issued": null,
+   "modified": null,
+   "formats": [],
+   "n_distributions": 0,
+   "is_hvd": null,
+   "quality_score": null,
+   "landing_page": null,
+   "portal_url": "https://data.europa.eu/data/datasets/all-missing"
+  },
+  {
+   "id": "language-fallback",
+   "title": "Titre",
+   "description": "Descrição",
+   "country": "pt",
+   "catalog": null,
+   "publisher": null,
+   "issued": null,
+   "modified": null,
+   "formats": [
+    "CSV",
+    "JSON"
+   ],
+   "n_distributions": 5,
+   "is_hvd": true,
+   "quality_score": 0,
+   "landing_page": null,
+   "portal_url": "https://data.europa.eu/data/datasets/language-fallback"
+  },
+  {
+   "id": "plain-strings",
+   "title": "Plain title",
+   "description": "List description",
+   "country": null,
+   "catalog": "cat",
+   "publisher": "Publisher",
+   "issued": "2020-01-01",
+   "modified": "2021-02-03T04:05:06",
+   "formats": [],
+   "n_distributions": 0,
+   "is_hvd": false,
+   "quality_score": 12.5,
+   "landing_page": "http://landing.example/",
+   "portal_url": "https://data.europa.eu/data/datasets/plain-strings"
+  }
+ ]
+}

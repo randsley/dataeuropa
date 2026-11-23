@@ -124,7 +124,7 @@ de_summarise <- function(d, lang = "en") {
     country = chr(d$country$id), catalog = chr(d$catalog$id), publisher = chr(d$publisher$name),
     issued = chr(d$issued), modified = chr(d$modified),
     formats = paste(fmts, collapse = ","), n_distributions = length(dists),
-    is_hvd = isTRUE(d$is_hvd), quality_score = suppressWarnings(as.numeric(chr(d$quality_meas$scoring))),
+    is_hvd = if (is.null(d$is_hvd)) NA else as.logical(d$is_hvd), quality_score = suppressWarnings(as.numeric(chr(d$quality_meas$scoring))),
     landing_page = if (length(lp)) chr(lp[[1]]$resource) else NA_character_,
     portal_url = paste0("https://data.europa.eu/data/datasets/", chr(d$id)),
     stringsAsFactors = FALSE)
@@ -187,8 +187,13 @@ de_count <- function(q = NULL, ...) as.integer(de_search(q, limit = 0, ...)$coun
 de_get_dataset <- function(id, raw = FALSE, lang = "en") {
   d <- de_json(httr2::req_perform(de_req(paste0(SEARCH_URL, "/datasets/", id))))$result
   if (raw) return(d)
+  list(summary = de_summarise(d, lang), keywords = de_keywords(d, lang), raw = d)
+}
+
+# Keyword labels in `lang`, plus those with no language tag.
+de_keywords <- function(d, lang = "en") {
   kw <- unlist(lapply(d$keywords, function(k) if (is.null(k$language) || identical(k$language, lang)) k$label))
-  list(summary = de_summarise(d, lang), keywords = kw, raw = d)
+  if (is.null(kw)) character() else kw
 }
 
 #' Distributions (files and services) of a dataset
@@ -196,8 +201,10 @@ de_get_dataset <- function(id, raw = FALSE, lang = "en") {
 #' The `url` column is the download URL if present, otherwise the access URL.
 #' @inheritParams de_get_dataset
 #' @export
-de_distributions <- function(id, lang = "en") {
-  d <- de_get_dataset(id, raw = TRUE)
+de_distributions <- function(id, lang = "en") de_distribution_table(de_get_dataset(id, raw = TRUE), lang)
+
+# One row per distribution of a raw dataset record; `url` is the download URL, else the access URL.
+de_distribution_table <- function(d, lang = "en") {
   rows <- lapply(d$distributions %||% list(), function(x) {
     dl <- chr(x$download_url); ac <- chr(x$access_url)
     data.frame(id = chr(x$id), title = de_pick_lang(x$title, lang), format = chr(x$format$id),
@@ -235,16 +242,29 @@ de_facet_values <- function(facet, q = NULL, top = 50, ...) {
   fid <- if (facet %in% names(.facet_aliases)) unname(.facet_aliases[facet]) else facet
   res <- de_search(q, limit = 0, aggregation = TRUE,
                    extra = list(aggregationAllFields = "false", aggregationFields = fid), ...)
+  df <- de_facet_table(res, fid, top)
+  if (is.null(df)) stop("unknown facet '", facet, "'")
+  df
+}
+
+# Rows (id, label, count) of facet `fid` in a search result, most frequent first; NULL if absent.
+# `label` is the item's title, else its label, else its id; a missing count is 0. Ties keep the
+# API's order.
+de_facet_table <- function(res, fid, top = NULL) {
   for (f in res$facets) if (identical(f$id, fid)) {
-    rows <- lapply(f$items, function(i)
-      data.frame(id = chr(i$id), label = if (!is.null(i$title)) de_pick_lang(i$title) else chr(i$label %||% i$id),
-                 count = as.numeric(i$count %||% 0), stringsAsFactors = FALSE))
+    rows <- lapply(f$items, function(i) {
+      label <- de_pick_lang(i$title)
+      if (is.na(label) || !nzchar(label)) label <- chr(i$label)
+      if (is.na(label) || !nzchar(label)) label <- chr(i$id)
+      data.frame(id = chr(i$id), label = label, count = as.numeric(i$count %||% 0), stringsAsFactors = FALSE)
+    })
     df <- bind_rows_base(rows)
+    if (nrow(df) == 0) return(data.frame(id = character(), label = character(), count = numeric()))
     df <- df[order(-df$count), , drop = FALSE]
     rownames(df) <- NULL
     return(if (is.null(top)) df else utils::head(df, top))
   }
-  stop("unknown facet '", facet, "'")
+  NULL
 }
 
 #' Ids of all harvested catalogues
@@ -269,8 +289,12 @@ de_sparql <- function(query) {
   req <- de_req(SPARQL_URL) |>
     httr2::req_headers(Accept = "application/sparql-results+json") |>
     httr2::req_body_form(query = query)
-  j <- de_json(httr2::req_perform(req))
-  if (!is.null(j$boolean)) return(j$boolean)
+  de_sparql_table(de_json(httr2::req_perform(req)))
+}
+
+# ASK result as a logical, or SELECT bindings as a data frame of plain strings (NA when unbound).
+de_sparql_table <- function(j) {
+  if (!is.null(j$boolean)) return(isTRUE(j$boolean))
   cols <- unlist(j$head$vars)
   rows <- lapply(j$results$bindings, function(b) {
     as.data.frame(stats::setNames(lapply(cols, function(c) if (is.null(b[[c]])) NA_character_ else b[[c]]$value), cols),

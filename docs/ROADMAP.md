@@ -6,8 +6,8 @@ Suggested order: phase 1, then `load_distribution` and caching from phase 2, the
 
 ## 1. Make it trustworthy
 - [x] CI on GitHub Actions for all three languages: offline tests on every push, live tests on a weekly schedule.
-- [ ] Recorded fixtures (real API responses saved as JSON) for the offline tests; today they only cover small helpers.
-- [ ] Shared conformance suite: the same fixtures must produce the same table in Python, Julia and R.
+- [x] Recorded fixtures (real API responses saved as JSON) for the offline tests: `fixtures/`.
+- [x] Shared conformance suite: the same fixtures must produce the same table in Python, Julia and R (17 cases in `fixtures/cases.json`).
 - [ ] API-drift check: compare the live API against the published OpenAPI spec (`https://data.europa.eu/api/hub/search/openapi.yaml`) on a schedule.
 - [x] Run Julia `Pkg.test()` on a normal machine (the registry error was a wrong `Test` UUID in `julia/test/Project.toml`; fixed).
 - [x] Verify that `bbox` actually filters results. It does (overlap match), but drops datasets without a spatial extent (~47%); now validated client-side and documented.

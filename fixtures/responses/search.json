@@ -1,0 +1,1497 @@
+{
+ "count": 6224,
+ "facets": [],
+ "index": "dataset",
+ "results": [
+  {
+   "access_right": {},
+   "accrual_periodicity": {
+    "label": "annual",
+    "resource": "http://publications.europa.eu/resource/authority/frequency/ANNUAL"
+   },
+   "catalog": {
+    "country": {
+     "id": "de",
+     "label": "Germany",
+     "resource": "http://publications.europa.eu/resource/authority/country/DEU"
+    },
+    "description": {
+     "de": "Open Data Portal Deutschland",
+     "en": "Open Data Portal Germany",
+     "fr": "Portail des données ouvertes Allemagne",
+     "pt": "Portal de Dados Abertos Alemanha"
+    },
+    "homepage": "https://www.govdata.de",
+    "id": "govdata",
+    "issued": "2022-11-21T05:38:24Z",
+    "language": [
+     {
+      "id": "de",
+      "label": "German",
+      "resource": "http://publications.europa.eu/resource/authority/language/DEU"
+     }
+    ],
+    "modified": "2023-02-12T00:17:44.239270",
+    "publisher": {
+     "email": "mailto:info@govdata.de",
+     "homepage": "https://www.govdata.de",
+     "name": "GKSt GovData Freie und Hansestadt Hamburg",
+     "type": "Agent"
+    },
+    "source_type": "dcat-ap",
+    "spatial_resource": [
+     {
+      "id": "de",
+      "label": "Germany",
+      "resource": "http://publications.europa.eu/resource/authority/country/DEU"
+     }
+    ],
+    "title": {
+     "de": "GovData",
+     "en": "GovData",
+     "fr": "GovData",
+     "pt": "GovData"
+    }
+   },
+   "catalog_record": {
+    "issued": "2025-12-11T00:13:06Z",
+    "modified": "2026-11-19T00:04:58Z"
+   },
+   "categories": [
+    {
+     "id": "ENVI",
+     "label": {
+      "de": "Umwelt",
+      "en": "Environment",
+      "fr": "Environnement",
+      "pt": "Ambiente"
+     },
+     "resource": "http://publications.europa.eu/resource/authority/data-theme/ENVI"
+    },
+    {
+     "id": "TRAN",
+     "label": {
+      "de": "Verkehr",
+      "en": "Transport",
+      "fr": "Transports",
+      "pt": "Transportes"
+     },
+     "resource": "http://publications.europa.eu/resource/authority/data-theme/TRAN"
+    },
+    {
+     "id": "AGRI",
+     "label": {
+      "de": "Landwirtschaft, Fischerei, Forstwirtschaft und Nahrungsmittel",
+      "en": "Agriculture, fisheries, forestry and food",
+      "fr": "Agriculture, pêche, sylviculture et alimentation",
+      "pt": "Agricultura, pesca, silvicultura e alimentação"
+     },
+     "resource": "http://publications.europa.eu/resource/authority/data-theme/AGRI"
+    }
+   ],
+   "contact_point": [
+    {
+     "email": "mailto:gwdc@bafg.de",
+     "name": "Bundesanstalt für Gewässerkunde",
+     "type": "Organization",
+     "url": [
+      "https://gemstat.org"
+     ]
+    }
+   ],
+   "corporate-body-classification": {
+    "id": "_NATIONAL",
+    "label": {
+     "title": {
+      "de": "Nationale Behörden",
+      "en": "National Authorities",
+      "fr": "Autorités nationales",
+      "pt": "Autoridades nacionais"
+     }
+    }
+   },
+   "country": {
+    "id": "de",
+    "label": "Germany",
+    "resource": "http://publications.europa.eu/resource/authority/country/DEU"
+   },
+   "description": {
+    "de": "This dataset comprises data from the GEMStat database that are available under an open data license (CC BY 4.0 or equivalent). It is made available on the Zenodo repository. GEMStat provides access to",
+    "en": "This dataset comprises data from the GEMStat database that are available under an open data license (CC BY 4.0 or equivalent). It is made available on the Zenodo repository. GEMStat provides access to",
+    "fr": "This dataset comprises data from the GEMStat database that are available under an open data license (CC BY 4.0 or equivalent). It is made available on the Zenodo repository. GEMStat provides access to",
+    "pt": "Este conjunto de dados inclui dados da base de dados GEMStat que estão disponíveis ao abrigo de uma licença de dados abertos (CC BY 4.0 ou equivalente). Está disponível no repositório Zenodo. O GEMSta"
+   },
+   "distributions": [
+    {
+     "access_url": [
+      "https://doi.org/10.5281/zenodo.13881899"
+     ],
+     "description": {
+      "de": "UNEP GEMS/Water Global Freshwater Quality Archive"
+     },
+     "download_url": [
+      "https://doi.org/10.5281/zenodo.13881899"
+     ],
+     "format": {
+      "format_types": [
+       {
+        "id": "tabular",
+        "label": {
+         "en": "Tabular"
+        }
+       },
+       {
+        "id": "textual",
+        "label": {
+         "en": "Textual"
+        }
+       }
+      ],
+      "id": "CSV",
+      "label": "CSV",
+      "resource": "http://publications.europa.eu/resource/authority/file-type/CSV"
+     },
+     "id": "96be35c9-9292-4b7c-b3cd-dd785ec61798",
+     "issued": "2026-11-18T01:19:59.220988",
+     "license": {
+      "id": "http://dcat-ap.de/def/licenses/cc-by/4.0",
+      "label": "http://dcat-ap.de/def/licenses/cc-by/4.0",
+      "resource": "http://dcat-ap.de/def/licenses/cc-by/4.0"
+     },
+     "modified": "2026-11-18T01:19:59.211418",
+     "page": [
+      {
+       "resource": "https://gemstat.org"
+      }
+     ],
+     "title": {
+      "de": "UNEP GEMS/Water Global Freshwater Quality Archive"
+     }
+    }
+   ],
+   "id": "fb38ac32-1459-48d9-8390-f8dd2e43e0cc",
+   "identifier": [
+    "fb38ac32-1459-48d9-8390-f8dd2e43e0cc"
+   ],
+   "index": "dataset",
+   "is_hvd": false,
+   "issued": "2024-08-12",
+   "keywords": [
+    {
+     "id": "gemswater",
+     "label": "gemswater",
+     "language": "de"
+    },
+    {
+     "id": "unep",
+     "label": "unep",
+     "language": "de"
+    },
+    {
+     "id": "opendata",
+     "label": "opendata",
+     "language": "de"
+    },
+    {
+     "id": "water-quality",
+     "label": "water-quality",
+     "language": "de"
+    },
+    {
+     "id": "gemstat",
+     "label": "gemstat",
+     "language": "de"
+    },
+    {
+     "id": "global",
+     "label": "global",
+     "language": "de"
+    },
+    {
+     "id": "freshwater",
+     "label": "freshwater",
+     "language": "de"
+    }
+   ],
+   "language": [
+    {
+     "id": "de",
+     "label": "German",
+     "resource": "http://publications.europa.eu/resource/authority/language/DEU"
+    }
+   ],
+   "modified": "2026-07-14",
+   "publisher": {
+    "email": "gwdc@bafg.de",
+    "homepage": "https://gemstat.org",
+    "name": "Bundesanstalt für Gewässerkunde",
+    "type": "Agent"
+   },
+   "quality_meas": {
+    "scoring": 575
+   },
+   "resource": "http://data.europa.eu/88u/dataset/fb38ac32-1459-48d9-8390-f8dd2e43e0cc",
+   "spatial": [
+    {
+     "coordinates": [
+      [
+       [
+        -180,
+        90
+       ],
+       [
+        180,
+        90
+       ],
+       [
+        180,
+        -90
+       ],
+       [
+        -180,
+        -90
+       ],
+       [
+        -180,
+        90
+       ]
+      ]
+     ],
+     "type": "Polygon"
+    }
+   ],
+   "spatial_resource": [],
+   "temporal": [
+    {
+     "gte": "1906-09-10T00:00:00Z",
+     "lte": "2024-12-31T00:00:00Z"
+    }
+   ],
+   "title": {
+    "de": "UNEP GEMS/Water Global Freshwater Quality Archive",
+    "en": "UNEP GEMS/Water Global Freshwater Quality Archive",
+    "fr": "GEMS/Water Global Freshwater Quality Archive du PNUE",
+    "pt": "UNEP GEMS/Water Global Freshwater Quality Archive"
+   },
+   "type": {
+    "resource": "http://inspire.ec.europa.eu/metadata-codelist/ResourceType/dataset"
+   }
+  },
+  {
+   "accrual_periodicity": {
+    "label": "annual",
+    "resource": "http://publications.europa.eu/resource/authority/frequency/ANNUAL"
+   },
+   "catalog": {
+    "count": 680862,
+    "country": {
+     "id": "de",
+     "label": "Germany",
+     "resource": "http://publications.europa.eu/resource/authority/country/DEU"
+    },
+    "description": {
+     "de": "Geodatenportal Deutschland",
+     "en": "Geo Data Portal Germany",
+     "fr": "Portail de données géographiques Allemagne",
+     "pt": "Geo Data Portal Alemanha"
+    },
+    "homepage": "https://www.geoportal.de/",
+    "id": "gdi-de",
+    "issued": "2022-11-21T05:37:11Z",
+    "language": [
+     {
+      "id": "de",
+      "label": "German",
+      "resource": "http://publications.europa.eu/resource/authority/language/DEU"
+     }
+    ],
+    "modified": "2023-02-28T10:38:59Z",
+    "publisher": {
+     "email": "mailto:support@geoportal.de",
+     "homepage": "https://www.bkg.bund.de",
+     "name": "Bundesamt für Kartographie und Geodäsie",
+     "type": "Agent"
+    },
+    "source_type": "geospatial",
+    "spatial_resource": [
+     {
+      "id": "de",
+      "label": "Germany",
+      "resource": "http://publications.europa.eu/resource/authority/country/DEU"
+     }
+    ],
+    "title": {
+     "de": "GDI-DE",
+     "en": "GDI-DE",
+     "fr": "GDI-DE",
+     "pt": "GDI-DE"
+    }
+   },
+   "catalog_record": {
+    "issued": "2025-12-13T03:19:35Z",
+    "modified": "2026-07-25T03:27:29Z"
+   },
+   "categories": [
+    {
+     "id": "ENVI",
+     "label": {
+      "de": "Umwelt",
+      "en": "Environment",
+      "fr": "Environnement",
+      "pt": "Ambiente"
+     },
+     "resource": "http://publications.europa.eu/resource/authority/data-theme/ENVI"
+    }
+   ],
+   "contact_point": [
+    {
+     "address": "Am Mainzer Tor 1, Koblenz, 56068, Deutschland",
+     "email": "mailto:gwdc@bafg.de",
+     "name": "GEMS/Water Data Centre",
+     "type": "Individual",
+     "url": [
+      "https://gemstat.org"
+     ]
+    }
+   ],
+   "corporate-body-classification": {
+    "id": "_NATIONAL",
+    "label": {
+     "title": {
+      "de": "Nationale Behörden",
+      "en": "National Authorities",
+      "fr": "Autorités nationales",
+      "pt": "Autoridades nacionais"
+     }
+    }
+   },
+   "country": {
+    "id": "de",
+    "label": "Germany",
+    "resource": "http://publications.europa.eu/resource/authority/country/DEU"
+   },
+   "description": {
+    "de": "This dataset comprises data from the GEMStat database that are available under an open data license (CC BY 4.0 or equivalent). It is made available on the Zenodo repository. GEMStat provides access to"
+   },
+   "distributions": [
+    {
+     "access_url": [
+      "https://doi.org/10.5281/zenodo.13881899"
+     ],
+     "format": {
+      "format_types": [
+       {
+        "id": "tabular",
+        "label": {
+         "en": "Tabular"
+        }
+       },
+       {
+        "id": "textual",
+        "label": {
+         "en": "Textual"
+        }
+       }
+      ],
+      "id": "CSV",
+      "label": "CSV",
+      "resource": "http://publications.europa.eu/resource/authority/file-type/CSV"
+     },
+     "id": "2edc07c8-82be-4812-97f0-f94332440b5b",
+     "issued": "2024-10-08",
+     "license": {
+      "description": "Creative Commons Attribution 4.0 International",
+      "id": "CC_BY_4_0",
+      "label": "Creative Commons Attribution 4.0 International",
+      "resource": "http://spdx.org/licenses/CC-BY-4.0"
+     },
+     "modified": "2026-02-02",
+     "rights": {
+      "label": "Es gelten keine Bedingungen"
+     }
+    }
+   ],
+   "id": "fb38ac32-1459-48d9-8390-f8dd2e43e0cc~~1",
+   "identifier": [
+    "https://registry.gdi-de.org/id/de.bund.bfg.csw/fb38ac32-1459-48d9-8390-f8dd2e43e0cc",
+    "M39600204121"
+   ],
+   "index": "dataset",
+   "is_hvd": false,
+   "issued": "2024-10-08",
+   "keywords": [
+    {
+     "id": "water-quality",
+     "label": "Water Quality",
+     "language": "de"
+    },
+    {
+     "id": "opendata",
+     "label": "opendata",
+     "language": "de"
+    },
+    {
+     "id": "freshwater",
+     "label": "Freshwater",
+     "language": "de"
+    },
+    {
+     "id": "global",
+     "label": "Global",
+     "language": "de"
+    },
+    {
+     "id": "gems-water",
+     "label": "GEMS/Water",
+     "language": "de"
+    },
+    {
+     "id": "gemstat",
+     "label": "GEMStat",
+     "language": "de"
+    },
+    {
+     "id": "unep",
+     "label": "UNEP",
+     "language": "de"
+    }
+   ],
+   "language": [
+    {
+     "id": "en",
+     "label": "English",
+     "resource": "http://publications.europa.eu/resource/authority/language/ENG"
+    }
+   ],
+   "modified": "2026-02-02",
+   "page": [
+    {
+     "resource": "https://gemstat.org"
+    }
+   ],
+   "provenance": [
+    {
+     "label": "The dataset consists of data from the GEMStat database. Water quality data in the GEMStat database are voluntarily provided by countries and organizations worldwide within the framework of the GEMS/Wa"
+    }
+   ],
+   "qualified_attribution": [],
+   "quality_meas": {
+    "scoring": 280
+   },
+   "resource": "http://data.europa.eu/88u/dataset/fb38ac32-1459-48d9-8390-f8dd2e43e0cc~~1",
+   "spatial": [
+    {
+     "coordinates": [
+      [
+       [
+        -180,
+        90
+       ],
+       [
+        180,
+        90
+       ],
+       [
+        180,
+        -90
+       ],
+       [
+        -180,
+        -90
+       ],
+       [
+        -180,
+        90
+       ]
+      ]
+     ],
+     "type": "Polygon"
+    }
+   ],
+   "spatial_resource": [],
+   "temporal": [
+    {
+     "gte": "1906-09-10T00:00:00Z",
+     "lte": "2024-12-31T00:00:00Z"
+    }
+   ],
+   "title": {
+    "de": "UNEP GEMS/Water Global Freshwater Quality Archive"
+   },
+   "topic_category": [
+    {
+     "id": "environment",
+     "label": {
+      "en": "Environment"
+     },
+     "resource": "http://inspire.ec.europa.eu/metadata-codelist/TopicCategory/environment"
+    },
+    {
+     "id": "inlandWaters",
+     "label": {
+      "en": "Inland Waters"
+     },
+     "resource": "http://inspire.ec.europa.eu/metadata-codelist/TopicCategory/inlandWaters"
+    }
+   ]
+  },
+  {
+   "access_right": {},
+   "catalog": {
+    "country": {
+     "id": "de",
+     "label": "Germany",
+     "resource": "http://publications.europa.eu/resource/authority/country/DEU"
+    },
+    "description": {
+     "de": "Open Data Portal Deutschland",
+     "en": "Open Data Portal Germany",
+     "fr": "Portail des données ouvertes Allemagne",
+     "pt": "Portal de Dados Abertos Alemanha"
+    },
+    "homepage": "https://www.govdata.de",
+    "id": "govdata",
+    "issued": "2022-11-21T05:38:24Z",
+    "language": [
+     {
+      "id": "de",
+      "label": "German",
+      "resource": "http://publications.europa.eu/resource/authority/language/DEU"
+     }
+    ],
+    "modified": "2023-02-12T00:17:44.239270",
+    "publisher": {
+     "email": "mailto:info@govdata.de",
+     "homepage": "https://www.govdata.de",
+     "name": "GKSt GovData Freie und Hansestadt Hamburg",
+     "type": "Agent"
+    },
+    "source_type": "dcat-ap",
+    "spatial_resource": [
+     {
+      "id": "de",
+      "label": "Germany",
+      "resource": "http://publications.europa.eu/resource/authority/country/DEU"
+     }
+    ],
+    "title": {
+     "de": "GovData",
+     "en": "GovData",
+     "fr": "GovData",
+     "pt": "GovData"
+    }
+   },
+   "catalog_record": {
+    "issued": "2026-07-22T23:55:59Z",
+    "modified": "2026-11-19T04:42:33Z"
+   },
+   "categories": [
+    {
+     "id": "TECH",
+     "label": {
+      "de": "Wissenschaft und Technologie",
+      "en": "Science and technology",
+      "fr": "Science et technologie",
+      "pt": "Ciência e tecnologia"
+     },
+     "resource": "http://publications.europa.eu/resource/authority/data-theme/TECH"
+    },
+    {
+     "id": "REGI",
+     "label": {
+      "de": "Regionen und Städte",
+      "en": "Regions and cities",
+      "fr": "Régions et villes",
+      "pt": "Regiões e cidades"
+     },
+     "resource": "http://publications.europa.eu/resource/authority/data-theme/REGI"
+    },
+    {
+     "id": "ENVI",
+     "label": {
+      "de": "Umwelt",
+      "en": "Environment",
+      "fr": "Environnement",
+      "pt": "Ambiente"
+     },
+     "resource": "http://publications.europa.eu/resource/authority/data-theme/ENVI"
+    }
+   ],
+   "contact_point": [
+    {
+     "email": "mailto:Postfach-B25@bgr.de",
+     "name": "Bundesanstalt für Geowissenschaften und Rohstoffe (BGR)",
+     "type": "Organization"
+    }
+   ],
+   "corporate-body-classification": {
+    "id": "_NATIONAL",
+    "label": {
+     "title": {
+      "de": "Nationale Behörden",
+      "en": "National Authorities",
+      "fr": "Autorités nationales",
+      "pt": "Autoridades nacionais"
+     }
+    }
+   },
+   "country": {
+    "id": "de",
+    "label": "Germany",
+    "resource": "http://publications.europa.eu/resource/authority/country/DEU"
+   },
+   "description": {
+    "de": "The dataset contains 131 records of water quality analysis from streams in the Spreewitz Glacial Channel, located in the southern reclamation area of the Lusatian Mining District. Over recent decades,",
+    "en": "The dataset contains 131 records of water quality analysis from streams in the Spreewitz Glacial Channel, located in the southern reclamation area of the Lusatian Mining District. Over recent decades,",
+    "fr": "The dataset contains 131 records of water quality analysis from streams in the Spreewitz Glacial Channel, located in the southern reclamation area of the Lusatian Mining District. Over recent decades,",
+    "pt": "O conjunto de dados contém 131 registros de análise da qualidade da água de córregos no Canal Glacial Spreewitz, localizado na área de recuperação sul do Distrito Mineiro da Lusácia. Nas últimas décad"
+   },
+   "distributions": [
+    {
+     "access_url": [
+      "https://download.bgr.de/bgr/grundwasser/SpreewitzGlacialChannel/csv/SpreewitzGlacialChannel.zip"
+     ],
+     "description": {
+      "de": "SpreewitzGlacialChannel in Format csv",
+      "en": "SpreewitzGlacialChannel in Format csv",
+      "fr": "SpreewitzGlacialChannel au format csv",
+      "pt": "SpreewitzGlacialCanal em Formato csv"
+     },
+     "download_url": [
+      "https://download.bgr.de/bgr/grundwasser/SpreewitzGlacialChannel/csv/SpreewitzGlacialChannel.zip"
+     ],
+     "format": {
+      "format_types": [
+       {
+        "id": "tabular",
+        "label": {
+         "en": "Tabular"
+        }
+       },
+       {
+        "id": "textual",
+        "label": {
+         "en": "Textual"
+        }
+       }
+      ],
+      "id": "CSV",
+      "label": "CSV",
+      "resource": "http://publications.europa.eu/resource/authority/file-type/CSV"
+     },
+     "id": "6036a761-8601-4507-9d69-c6fb83f4d319",
+     "issued": "2026-11-04T08:55:49.188925",
+     "license": {
+      "id": "http://dcat-ap.de/def/licenses/cc-by/4.0",
+      "label": "http://dcat-ap.de/def/licenses/cc-by/4.0",
+      "resource": "http://dcat-ap.de/def/licenses/cc-by/4.0"
+     },
+     "media_type": "application/zip",
+     "modified": "2026-11-13T12:25:11.439171",
+     "page": [
+      {
+       "resource": "https://www.bgr.bund.de/DE/Themen/Grundwasser/Projekte/Bergbaufolgelandschaften/QuESt/quest.html"
+      }
+     ],
+     "title": {
+      "de": "SpreewitzGlacialChannel (csv)",
+      "en": "SpreewitzGlacialChannel (csv)",
+      "fr": "SpreewitzGlacialChannel (csv)",
+      "pt": "SpreewitzCanal Glacial (csv)"
+     }
+    }
+   ],
+   "id": "741b5afb-5660-43f5-9d48-0fe219e22fe8",
+   "identifier": [
+    "741b5afb-5660-43f5-9d48-0fe219e22fe8"
+   ],
+   "index": "dataset",
+   "is_hvd": false,
+   "issued": "2026-06-19",
+   "keywords": [
+    {
+     "id": "surface-water-management",
+     "label": "surface-water-management",
+     "language": "de"
+    },
+    {
+     "id": "opendata",
+     "label": "opendata",
+     "language": "de"
+    },
+    {
+     "id": "amd-drainage",
+     "label": "amd-drainage",
+     "language": "de"
+    },
+    {
+     "id": "freshwater-quality",
+     "label": "freshwater-quality",
+     "language": "de"
+    },
+    {
+     "id": "water-quality",
+     "label": "water-quality",
+     "language": "de"
+    },
+    {
+     "id": "natural-risk-zones",
+     "label": "natural-risk-zones",
+     "language": "de"
+    },
+    {
+     "id": "lignite-mining",
+     "label": "lignite-mining",
+     "language": "de"
+    },
+    {
+     "id": "post-mining",
+     "label": "post-mining",
+     "language": "de"
+    }
+   ],
+   "language": [
+    {
+     "id": "en",
+     "label": "English",
+     "resource": "http://publications.europa.eu/resource/authority/language/ENG"
+    }
+   ],
+   "modified": "2026-06-23",
+   "publisher": {
+    "email": "Postfach-B25@bgr.de",
+    "name": "Bundesanstalt für Geowissenschaften und Rohstoffe (BGR)",
+    "type": "Agent"
+   },
+   "quality_meas": {
+    "scoring": 625
+   },
+   "resource": "http://data.europa.eu/88u/dataset/741b5afb-5660-43f5-9d48-0fe219e22fe8",
+   "spatial": [
+    {
+     "coordinates": [
+      [
+       [
+        14.3541,
+        51.5062
+       ],
+       [
+        14.5341,
+        51.5062
+       ],
+       [
+        14.5341,
+        51.4159
+       ],
+       [
+        14.3541,
+        51.4159
+       ],
+       [
+        14.3541,
+        51.5062
+       ]
+      ]
+     ],
+     "type": "Polygon"
+    }
+   ],
+   "spatial_resource": [],
+   "temporal": [
+    {
+     "gte": "2024-04-01T00:00:00Z",
+     "lte": "2026-05-31T00:00:00Z"
+    }
+   ],
+   "title": {
+    "de": "Dataset of River Water Quality in the Spreewitz Glacial Channel, Saxony, Germany (2024–2026)",
+    "en": "Dataset of River Water Quality in the Spreewitz Glacial Channel, Saxony, Germany (2024-2026)",
+    "fr": "Dataset of River Water Quality in the Spreewitz Glacial Channel, Saxony, Germany (2024-2026)",
+    "pt": "Conjunto de dados sobre a qualidade da água do rio no canal glacial de Spreewitz, Saxónia, Alemanha (2024-2026)"
+   },
+   "type": {
+    "resource": "http://inspire.ec.europa.eu/metadata-codelist/ResourceType/dataset"
+   }
+  },
+  {
+   "applicable_legislation": [
+    "http://data.europa.eu/eli/dir/2007/2/2019-06-26"
+   ],
+   "catalog": {
+    "count": 680862,
+    "country": {
+     "id": "de",
+     "label": "Germany",
+     "resource": "http://publications.europa.eu/resource/authority/country/DEU"
+    },
+    "description": {
+     "de": "Geodatenportal Deutschland",
+     "en": "Geo Data Portal Germany",
+     "fr": "Portail de données géographiques Allemagne",
+     "pt": "Geo Data Portal Alemanha"
+    },
+    "homepage": "https://www.geoportal.de/",
+    "id": "gdi-de",
+    "issued": "2022-11-21T05:37:11Z",
+    "language": [
+     {
+      "id": "de",
+      "label": "German",
+      "resource": "http://publications.europa.eu/resource/authority/language/DEU"
+     }
+    ],
+    "modified": "2023-02-28T10:38:59Z",
+    "publisher": {
+     "email": "mailto:support@geoportal.de",
+     "homepage": "https://www.bkg.bund.de",
+     "name": "Bundesamt für Kartographie und Geodäsie",
+     "type": "Agent"
+    },
+    "source_type": "geospatial",
+    "spatial_resource": [
+     {
+      "id": "de",
+      "label": "Germany",
+      "resource": "http://publications.europa.eu/resource/authority/country/DEU"
+     }
+    ],
+    "title": {
+     "de": "GDI-DE",
+     "en": "GDI-DE",
+     "fr": "GDI-DE",
+     "pt": "GDI-DE"
+    }
+   },
+   "catalog_record": {
+    "issued": "2026-07-25T17:46:41Z",
+    "modified": "2026-08-03T12:24:13Z"
+   },
+   "categories": [
+    {
+     "id": "TECH",
+     "label": {
+      "de": "Wissenschaft und Technologie",
+      "en": "Science and technology",
+      "fr": "Science et technologie",
+      "pt": "Ciência e tecnologia"
+     },
+     "resource": "http://publications.europa.eu/resource/authority/data-theme/TECH"
+    }
+   ],
+   "contact_point": [
+    {
+     "email": "mailto:Postfach-B25@bgr.de",
+     "name": "Bundesanstalt für Geowissenschaften und Rohstoffe (BGR)",
+     "type": "Organization"
+    }
+   ],
+   "corporate-body-classification": {
+    "id": "_NATIONAL",
+    "label": {
+     "title": {
+      "de": "Nationale Behörden",
+      "en": "National Authorities",
+      "fr": "Autorités nationales",
+      "pt": "Autoridades nacionais"
+     }
+    }
+   },
+   "country": {
+    "id": "de",
+    "label": "Germany",
+    "resource": "http://publications.europa.eu/resource/authority/country/DEU"
+   },
+   "description": {
+    "de": "Der Datensatz enthält 131 Einträge zur Wasserqualität in den Fließgewässern der Spreewitzer Rinne, die sich im südlichen Teil des Sanierungsgebiets des Lausitzer Reviers befindet. In den letzten Jahrz",
+    "en": "The dataset contains 131 records of water quality analysis from streams in the Spreewitz Glacial Channel, located in the southern reclamation area of the Lusatian Mining District. Over recent decades,",
+    "fr": "L'ensemble de données contient 131 entrées sur la qualité de l'eau dans les cours d'eau de la Spreewitzer Rinne, située dans la partie sud de la zone d'assainissement du district de Lausitz. Au cours ",
+    "pt": "O conjunto de dados contém 131 entradas sobre a qualidade da água nos rios do Spreewitzer Rinne, que está localizado na parte sul da área de reabilitação do reservatório da Lusácia. Nas últimas década"
+   },
+   "distributions": [
+    {
+     "access_url": [
+      "https://download.bgr.de/bgr/grundwasser/SpreewitzGlacialChannel/csv/SpreewitzGlacialChannel.zip"
+     ],
+     "description": {
+      "de": "SpreewitzGlacialChannel im Format csv",
+      "en": "SpreewitzGlacialChannel in Format csv",
+      "fr": "SpreewitzGlacialChannel en format csv",
+      "pt": "SpreewitzGlacialChannel em Formato csv"
+     },
+     "format": {
+      "format_types": [
+       {
+        "id": "tabular",
+        "label": {
+         "en": "Tabular"
+        }
+       },
+       {
+        "id": "textual",
+        "label": {
+         "en": "Textual"
+        }
+       }
+      ],
+      "id": "CSV",
+      "label": "CSV",
+      "resource": "http://publications.europa.eu/resource/authority/file-type/CSV"
+     },
+     "id": "b4a56912-5607-475b-bba6-427ac741d3c8",
+     "issued": "2026-06-19",
+     "representation_technique": [
+      {
+       "id": "textTable",
+       "label": {
+        "en": "Text table"
+       },
+       "resource": "http://inspire.ec.europa.eu/metadata-codelist/SpatialRepresentationType/textTable"
+      }
+     ],
+     "title": {
+      "de": "SpreewitzGlacialKanal (csv)",
+      "en": "SpreewitzGlacialChannel (csv)",
+      "fr": "SpreewitzGlacialChannel (csv)",
+      "pt": "SpreewitzGlacialChannel (csv)"
+     }
+    }
+   ],
+   "id": "741b5afb-5660-43f5-9d48-0fe219e22fe8~~1",
+   "identifier": [
+    "https://registry.gdi-de.org/id/de.bund.bgr.csw/2a28840f-ca98-33c3-d83b-6726727e7635"
+   ],
+   "index": "dataset",
+   "is_hvd": false,
+   "issued": "2026-06-19",
+   "keywords": [
+    {
+     "id": "amd-drainage",
+     "label": "AMD Drainage",
+     "language": "en"
+    },
+    {
+     "id": "water-quality",
+     "label": "Water Quality",
+     "language": "en"
+    },
+    {
+     "id": "post-mining",
+     "label": "Post-Mining",
+     "language": "en"
+    },
+    {
+     "id": "opendata",
+     "label": "opendata",
+     "language": "en"
+    }
+   ],
+   "language": [
+    {
+     "id": "en",
+     "label": "English",
+     "resource": "http://publications.europa.eu/resource/authority/language/ENG"
+    }
+   ],
+   "page": [
+    {
+     "description": {
+      "en": "Quest Project"
+     },
+     "resource": "https://www.bgr.bund.de/DE/Themen/Grundwasser/Projekte/Bergbaufolgelandschaften/QuESt/quest.html",
+     "title": {
+      "en": "Quest Project"
+     }
+    }
+   ],
+   "provenance": [
+    {
+     "label": "Data has been retrieved by the BGR by taking samples at the running waters in the Spreewitz Glacial Channel, namely the Spree River, the Kleine Spree River and the Schwarzer Schoeps River and Struga C"
+    }
+   ],
+   "qualified_attribution": [],
+   "quality_meas": {
+    "scoring": 245
+   },
+   "reference_system": [
+    {
+     "id": "EPSG:25833",
+     "label": "EPSG:25833",
+     "resource": "http://www.opengis.net/def/crs/EPSG/0/25833"
+    }
+   ],
+   "resource": "http://data.europa.eu/88u/dataset/741b5afb-5660-43f5-9d48-0fe219e22fe8~~1",
+   "spatial": [
+    {
+     "coordinates": [
+      [
+       [
+        14.3541,
+        51.5062
+       ],
+       [
+        14.5341,
+        51.5062
+       ],
+       [
+        14.5341,
+        51.4159
+       ],
+       [
+        14.3541,
+        51.4159
+       ],
+       [
+        14.3541,
+        51.5062
+       ]
+      ]
+     ],
+     "type": "Polygon"
+    }
+   ],
+   "spatial_resource": [],
+   "temporal": [
+    {
+     "gte": "2024-04-01T00:00:00Z",
+     "lte": "2026-05-31T00:00:00Z"
+    }
+   ],
+   "title": {
+    "de": "Datensatz zur Wasserqualität in Fließgewässern der Spreewitzer Rinne, Sachsen, Deutschland (2024-2026)",
+    "en": "Dataset of River Water Quality in the Spreewitz Glacial Channel, Saxony, Germany (2024–2026)",
+    "fr": "Ensemble de données sur la qualité de l’eau dans les cours d’eau de la rivière Spreewitzer Rinne, Saxe, Allemagne (2024-2026)",
+    "pt": "Conjunto de dados sobre a qualidade da água nos rios de Spreewitzer Rinne, Saxónia, Alemanha (2024-2026)"
+   },
+   "topic_category": [
+    {
+     "id": "geoscientificInformation",
+     "label": {
+      "en": "Geoscientific Information"
+     },
+     "resource": "http://inspire.ec.europa.eu/metadata-codelist/TopicCategory/geoscientificInformation"
+    }
+   ]
+  },
+  {
+   "access_right": {},
+   "accrual_periodicity": {
+    "label": "unknown",
+    "resource": "http://publications.europa.eu/resource/authority/frequency/UNKNOWN"
+   },
+   "catalog": {
+    "country": {
+     "id": "de",
+     "label": "Germany",
+     "resource": "http://publications.europa.eu/resource/authority/country/DEU"
+    },
+    "description": {
+     "de": "Open Data Portal Deutschland",
+     "en": "Open Data Portal Germany",
+     "fr": "Portail des données ouvertes Allemagne",
+     "pt": "Portal de Dados Abertos Alemanha"
+    },
+    "homepage": "https://www.govdata.de",
+    "id": "govdata",
+    "issued": "2022-11-21T05:38:24Z",
+    "language": [
+     {
+      "id": "de",
+      "label": "German",
+      "resource": "http://publications.europa.eu/resource/authority/language/DEU"
+     }
+    ],
+    "modified": "2023-02-12T00:17:44.239270",
+    "publisher": {
+     "email": "mailto:info@govdata.de",
+     "homepage": "https://www.govdata.de",
+     "name": "GKSt GovData Freie und Hansestadt Hamburg",
+     "type": "Agent"
+    },
+    "source_type": "dcat-ap",
+    "spatial_resource": [
+     {
+      "id": "de",
+      "label": "Germany",
+      "resource": "http://publications.europa.eu/resource/authority/country/DEU"
+     }
+    ],
+    "title": {
+     "de": "GovData",
+     "en": "GovData",
+     "fr": "GovData",
+     "pt": "GovData"
+    }
+   },
+   "catalog_record": {
+    "issued": "2025-10-25T23:47:44Z",
+    "modified": "2026-11-21T00:32:59Z"
+   },
+   "categories": [
+    {
+     "id": "ENVI",
+     "label": {
+      "de": "Umwelt",
+      "en": "Environment",
+      "fr": "Environnement",
+      "pt": "Ambiente"
+     },
+     "resource": "http://publications.europa.eu/resource/authority/data-theme/ENVI"
+    }
+   ],
+   "contact_point": [
+    {
+     "name": "Stadt Bielefeld - Umweltamt",
+     "type": "Organization"
+    }
+   ],
+   "corporate-body-classification": {
+    "id": "_NATIONAL",
+    "label": {
+     "title": {
+      "de": "Nationale Behörden",
+      "en": "National Authorities",
+      "fr": "Autorités nationales",
+      "pt": "Autoridades nacionais"
+     }
+    }
+   },
+   "country": {
+    "id": "de",
+    "label": "Germany",
+    "resource": "http://publications.europa.eu/resource/authority/country/DEU"
+   },
+   "creator": [
+    {
+     "homepage": "https://www.bielefeld.de/umwelt",
+     "name": "Stadt Bielefeld - Umweltamt",
+     "type": "Organization"
+    },
+    {
+     "homepage": "https://www.bielefeld.de/umwelt",
+     "name": "Stadt Bielefeld - Umweltamt",
+     "type": "Agent"
+    }
+   ],
+   "description": {
+    "de": "<div>\n<div>Darstellung der Messpunkte des Bielefelder Gewässergüteuntersuchungsprogramms an den Bielefelder Fließgewässern.</div>\n</div>\n\n<div> </div>\n",
+    "en": "<div>\n<div>Representation of the measuring points of the Bielefeld water quality study program at the Bielefeld rivers.</div>\n</div>\n\n<div> </div>\n",
+    "fr": "<div>\n<div>Représentation des points de mesure du programme de contrôle de la qualité des eaux de Bielefeld sur les cours d'eau de Bielefeld.</div>\n</div>\n\n<div> </div>\n",
+    "pt": "<div>\n<div>Representação dos pontos de medição do programa de estudo da qualidade da água de Bielefeld nos rios Bielefeld.</div>\n</div>\n\n<div> </div>\n"
+   },
+   "distributions": [
+    {
+     "access_url": [
+      "https://open-data.bielefeld.de/dataset/93e35f11-eaf5-4b66-a9eb-7f87c923a906/resource/9eb864a6-7ef4-4617-9946-33c4f76f01bd"
+     ],
+     "description": {
+      "de": "<div>\n<div>Darstellung der Messpunkte des Bielefelder Gewässergüteuntersuchungsprogramms an den Bielefelder Fließgewässern.</div>\n\n<div> </div>\n\n<div>Web Map Service (WMS):  </div>\n\n<div>http://www.bi"
+     },
+     "format": {
+      "format_types": [
+       {
+        "id": "structured",
+        "label": {
+         "en": "Structured"
+        }
+       },
+       {
+        "id": "geographical",
+        "label": {
+         "en": "Geographical"
+        }
+       },
+       {
+        "id": "textual",
+        "label": {
+         "en": "Textual"
+        }
+       }
+      ],
+      "id": "WMS_SRVC",
+      "label": "WMS",
+      "resource": "http://publications.europa.eu/resource/authority/file-type/WMS_SRVC"
+     },
+     "id": "e791e272-845c-4894-8628-91ac52990bb0",
+     "issued": "2023-07-07T13:13:47+02:00",
+     "language": [
+      {
+       "id": "de",
+       "label": "German",
+       "resource": "http://publications.europa.eu/resource/authority/language/DEU"
+      }
+     ],
+     "license": {
+      "id": "http://dcat-ap.de/def/licenses/cc-by/4.0",
+      "label": "http://dcat-ap.de/def/licenses/cc-by/4.0",
+      "resource": "http://dcat-ap.de/def/licenses/cc-by/4.0"
+     },
+     "modified": "2023-07-07T13:14:45+02:00",
+     "page": [
+      {
+       "resource": "https://open-data.bielefeld.de/dataset/93e35f11-eaf5-4b66-a9eb-7f87c923a906/resource/9eb864a6-7ef4-4617-9946-33c4f76f01bd"
+      }
+     ],
+     "title": {
+      "de": "Gewässergüte-Messpunkte - WMS"
+     }
+    },
+    {
+     "access_url": [
+      "https://open-data.bielefeld.de/dataset/93e35f11-eaf5-4b66-a9eb-7f87c923a906/resource/66d2c9c9-70de-4a7d-876d-1d0df6c1ae86"
+     ],
+     "description": {
+      "de": "<p>Darstellung der Messpunkte des Bielefelder Gewässergüteuntersuchungsprogramms an den Bielefelder Fließgewässern.</p>\n\n<p>Web Feature Service (WFS):</p>\n\n<p>http://www.bielefeld01.de/md/WFS/gewaesse"
+     },
+     "format": {
+      "format_types": [
+       {
+        "id": "structured",
+        "label": {
+         "en": "Structured"
+        }
+       },
+       {
+        "id": "geographical",
+        "label": {
+         "en": "Geographical"
+        }
+       },
+       {
+        "id": "textual",
+        "label": {
+         "en": "Textual"
+        }
+       }
+      ],
+      "id": "WFS_SRVC",
+      "label": "WFS",
+      "resource": "http://publications.europa.eu/resource/authority/file-type/WFS_SRVC"
+     },
+     "id": "cbcd2e26-507b-404b-a123-621f0c8dbd31",
+     "issued": "2023-07-07T13:16:22+02:00",
+     "language": [
+      {
+       "id": "de",
+       "label": "German",
+       "resource": "http://publications.europa.eu/resource/authority/language/DEU"
+      }
+     ],
+     "license": {
+      "id": "http://dcat-ap.de/def/licenses/cc-by/4.0",
+      "label": "http://dcat-ap.de/def/licenses/cc-by/4.0",
+      "resource": "http://dcat-ap.de/def/licenses/cc-by/4.0"
+     },
+     "modified": "2023-07-07T13:20:18+02:00",
+     "page": [
+      {
+       "resource": "https://open-data.bielefeld.de/dataset/93e35f11-eaf5-4b66-a9eb-7f87c923a906/resource/66d2c9c9-70de-4a7d-876d-1d0df6c1ae86"
+      }
+     ],
+     "title": {
+      "de": "Gewässergüte-Messpunkte - WFS"
+     }
+    },
+    {
+     "access_url": [
+      "https://open-data.bielefeld.de/dataset/93e35f11-eaf5-4b66-a9eb-7f87c923a906/resource/b07bb8cb-786a-41c2-8caf-32b2bf26dc75"
+     ],
+     "description": {
+      "de": "<p>siehe Metadatenbeschreibung:</p>\n\n<p>https://www.bielefeld01.de/md/WMS/gewaesserguete_messpunkte?FORMAT=HTML_WMS</p>\n"
+     },
+     "format": {
+      "format_types": [
+       {
+        "id": "tabular",
+        "label": {
+         "en": "Tabular"
+        }
+       },
+       {
+        "id": "textual",
+        "label": {
+         "en": "Textual"
+        }
+       }
+      ],
+      "id": "CSV",
+      "label": "CSV",
+      "resource": "http://publications.europa.eu/resource/authority/file-type/CSV"
+     },
+     "id": "755ed130-96f2-448d-90e2-494d2b34c345",
+     "issued": "2023-07-07T13:17:28+02:00",
+     "language": [
+      {
+       "id": "de",
+       "label": "German",
+       "resource": "http://publications.europa.eu/resource/authority/language/DEU"
+      }
+     ],
+     "license": {
+      "id": "http://dcat-ap.de/def/licenses/cc-by/4.0",
+      "label": "http://dcat-ap.de/def/licenses/cc-by/4.0",
+      "resource": "http://dcat-ap.de/def/licenses/cc-by/4.0"
+     },
+     "modified": "2023-07-07T13:17:28+02:00",
+     "page": [
+      {
+       "resource": "https://open-data.bielefeld.de/dataset/93e35f11-eaf5-4b66-a9eb-7f87c923a906/resource/b07bb8cb-786a-41c2-8caf-32b2bf26dc75"
+      }
+     ],
+     "title": {
+      "de": "Gewässergüte-Messpunkte - CSV"
+     }
+    },
+    {
+     "access_url": [
+      "https://open-data.bielefeld.de/dataset/93e35f11-eaf5-4b66-a9eb-7f87c923a906/resource/c0892f98-db0b-4e0e-981a-29376d0b7df5"
+     ],
+     "format": {
+      "format_types": [
+       {
+        "id": "structured",
+        "label": {
+         "en": "Structured"
+        }
+       },
+       {
+        "id": "textual",
+        "label": {
+         "en": "Textual"
+        }
+       }
+      ],
+      "id": "HTML",
+      "label": "HTML",
+      "resource": "http://publications.europa.eu/resource/authority/file-type/HTML"
+     },
+     "id": "803ae84e-d076-47ff-8d53-58b2703a50c5",
+     "issued": "2023-07-07T13:18:43+02:00",
+     "language": [
+      {
+       "id": "de",
+       "label": "German",
+       "resource": "http://publications.europa.eu/resource/authority/language/DEU"
+      }
+     ],
+     "license": {
+      "id": "http://dcat-ap.de/def/licenses/cc-by/4.0",
+      "label": "http://dcat-ap.de/def/licenses/cc-by/4.0",
+      "resource": "http://dcat-ap.de/def/licenses/cc-by/4.0"
+     },
+     "modified": "2023-07-07T13:18:43+02:00",
+     "page": [
+      {
+       "resource": "https://open-data.bielefeld.de/dataset/93e35f11-eaf5-4b66-a9eb-7f87c923a906/resource/c0892f98-db0b-4e0e-981a-29376d0b7df5"
+      }
+     ],
+     "title": {
+      "de": "Gewässergüte-Messpunkte - onlineKARTE"
+     }
+    },
+    {
+     "access_url": [
+      "https://open-data.bielefeld.de/dataset/93e35f11-eaf5-4b66-a9eb-7f87c923a906/resource/ce2f2bca-edd9-4665-ab8b-058b190e1c0a"
+     ],
+     "description": {
+      "de": "<div>\n<div>Darstellung der Messpunkte des Bielefelder Gewässergüteuntersuchungsprogramms an den Bielefelder Fließgewässern.</div>\n</div>\n\n<div> </div>\n"
+     },
+     "format": {
+      "format_types": [
+       {
+        "id": "structured",
+        "label": {
+         "en": "Structured"
+        }
+       },
+       {
+        "id": "textual",
+        "label": {
+         "en": "Textual"
+        }
+       }
+      ],
+      "id": "HTML",
+      "label": "HTML",
+      "resource": "http://publications.europa.eu/resource/authority/file-type/HTML"
+     },
+     "id": "472c6f22-9da1-4c97-add8-8e4a3830e0fe",
+     "issued": "2023-07-07T13:11:27+02:00",
+     "language": [
+      {
+       "id": "de",
+       "label": "German",
+       "resource": "http://publications.europa.eu/resource/authority/language/DEU"
+      }
+     ],
+     "license": {
+      "id": "http://dcat-ap.de/def/licenses/cc-by/4.0",
+      "label": "http://dcat-ap.de/def/licenses/cc-by/4.0",
+      "resource": "http://dcat-ap.de/def/licenses/cc-by/4.0"
+     },
+     "modified": "2023-07-07T13:15:24+02:00",
+     "page": [
+      {
+       "resource": "https://open-data.bielefeld.de/dataset/93e35f11-eaf5-4b66-a9eb-7f87c923a906/resource/ce2f2bca-edd9-4665-ab8b-058b190e1c0a"
+      }
+     ],
+     "title": {
+      "de": "Gewässergüte-Messpunkte - Metadaten"
+     }
+    }
+   ],
+   "id": "93e35f11-eaf5-4b66-a9eb-7f87c923a906",
+   "identifier": [
+    "93e35f11-eaf5-4b66-a9eb-7f87c923a906"
+   ],
+   "index": "dataset",
+   "is_hvd": false,
+   "issued": "2023-07-07T13:10:36+02:00",
+   "keywords": [
+    {
+     "id": "umwelt-und-klima",
+     "label": "umwelt-und-klima",
+     "language": "de"
+    },
+    {
+     "id": "geo",
+     "label": "geo",
+     "language": "de"
+    }
+   ],
+   "landing_page": [
+    {
+     "resource": "https://www.bielefeld.de/umwelt"
+    }
+   ],
+   "language": [
+    {
+     "id": "de",
+     "label": "German",
+     "resource": "http://publications.europa.eu/resource/authority/language/DEU"
+    }
+   ],
+   "modified": "2023-07-07T13:20:18+02:00",
+   "page": [
+    {
+     "resource": "https://open-data.bielefeld.de/dataset/gew%C3%A4sserg%C3%BCte"
+    }
+   ],
+   "publisher": {
+    "homepage": "https://www.bielefeld.de/umwelt",
+    "name": "Stadt Bielefeld - Umweltamt",
+    "type": "Agent"
+   },
+   "quality_meas": {
+    "scoring": 425
+   },
+   "resource": "http://data.europa.eu/88u/dataset/93e35f11-eaf5-4b66-a9eb-7f87c923a906",
+   "spatial_resource": [],
+   "title": {
+    "de": "Gewässergüte",
+    "en": "Water quality",
+    "fr": "Qualité des eaux",
+    "pt": "Qualidade da água"
+   }
+  }
+ ]
+}

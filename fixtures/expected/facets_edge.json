@@ -1,0 +1,29 @@
+{
+ "rows": [
+  {
+   "id": "B",
+   "label": "Bee",
+   "count": 10
+  },
+  {
+   "id": "D",
+   "label": "Dee",
+   "count": 7
+  },
+  {
+   "id": "A",
+   "label": "Aaa",
+   "count": 5
+  },
+  {
+   "id": "C",
+   "label": "C",
+   "count": 5
+  },
+  {
+   "id": "E",
+   "label": "E",
+   "count": 0
+  }
+ ]
+}

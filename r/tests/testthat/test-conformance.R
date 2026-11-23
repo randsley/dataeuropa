@@ -1,0 +1,52 @@
+# Shared conformance cases (fixtures/cases.json): the same inputs must give the same tables in
+# Python, Julia and R. Expected outputs come from the Python reference (fixtures/make_expected.py).
+# The fixtures live outside the package, so these tests run from a source checkout only.
+
+fixtures <- normalizePath(file.path("..", "..", "..", "fixtures"), mustWork = FALSE)
+read_fixture <- function(path) jsonlite::fromJSON(file.path(fixtures, path), simplifyVector = FALSE)
+
+# Bring an R value and an expected JSON value to comparable plain values.
+norm_value <- function(x, col = "") {
+  if (is.null(x) || (length(x) == 1 && is.atomic(x) && is.na(x))) return(NULL)
+  if (col == "formats" && is.character(x)) return(if (nzchar(x)) as.list(strsplit(x, ",")[[1]]) else list())
+  if (is.list(x)) return(lapply(x, norm_value))
+  if (is.numeric(x)) return(as.numeric(x))
+  x
+}
+
+run_case <- function(case) {
+  data <- read_fixture(case$input)
+  if (!is.null(case$select)) data <- data[[case$select]]
+  args <- case$args
+  switch(case$kind,
+    summarise = list(rows = dataeuropa:::bind_rows_base(lapply(data, dataeuropa:::de_summarise, lang = args$lang))),
+    distributions = list(rows = dataeuropa:::de_distribution_table(data, args$lang)),
+    keywords = list(values = as.list(dataeuropa:::de_keywords(data, args$lang))),
+    facets = list(rows = dataeuropa:::de_facet_table(data, args$facet, args$top)),
+    sparql = {
+      res <- dataeuropa:::de_sparql_table(data)
+      if (is.logical(res)) list(boolean = res) else list(rows = res)
+    },
+    stop("unknown kind ", case$kind))
+}
+
+test_that("conformance cases match the Python reference", {
+  skip_if_not(dir.exists(fixtures), "fixtures folder not available")
+  for (case in read_fixture("cases.json")$cases) {
+    expected <- read_fixture(file.path("expected", paste0(case$name, ".json")))
+    got <- run_case(case)
+    if (!is.null(expected$rows)) {
+      df <- got$rows
+      expect_equal(nrow(df), length(expected$rows), label = paste(case$name, "row count"))
+      for (i in seq_along(expected$rows)) for (col in names(expected$rows[[i]])) {
+        gv <- if (col %in% names(df)) norm_value(df[[col]][[i]], col) else NULL
+        ev <- norm_value(expected$rows[[i]][[col]], col)
+        expect_equal(gv, ev, label = sprintf("%s row %d column %s", case$name, i, col))
+      }
+    } else if (!is.null(expected$values)) {
+      expect_equal(norm_value(got$values), norm_value(expected$values), label = paste(case$name, "values"))
+    } else {
+      expect_identical(got$boolean, expected$boolean, label = case$name)
+    }
+  }
+})

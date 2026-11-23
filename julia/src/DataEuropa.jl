@@ -238,9 +238,12 @@ Full metadata for one dataset. With `raw=true` returns the untouched JSON object
 function get_dataset(id::AbstractString; raw::Bool=false, lang::AbstractString="en")
     d = JSON3.read(_request("GET", "$SEARCH_URL/datasets/$id").body).result
     raw && return d
-    kws = String[string(k.label) for k in _get(d, :keywords, []) if _get(k, :language) in (lang, nothing)]
-    return merge(summarise_dataset(d, lang), (keywords=kws, raw=d))
+    return merge(summarise_dataset(d, lang), (keywords=_keywords(d, lang), raw=d))
 end
+
+# Keyword labels in `lang`, plus those with no language tag.
+_keywords(d, lang::AbstractString="en") =
+    String[string(k.label) for k in something(_get(d, :keywords), []) if _get(k, :language) in (lang, nothing)]
 
 """
     distributions(id; lang="en") -> DataFrame
@@ -248,10 +251,12 @@ end
 Distributions (files / services) of a dataset. The `url` column is the download URL if
 present, otherwise the access URL.
 """
-function distributions(id::AbstractString; lang::AbstractString="en")
-    d = get_dataset(id; raw=true)
+distributions(id::AbstractString; lang::AbstractString="en") = _distribution_table(get_dataset(id; raw=true), lang)
+
+# One row per distribution of a raw dataset record; `url` is the download URL, else the access URL.
+function _distribution_table(d, lang::AbstractString="en")
     first_or_missing(v) = (v === nothing || isempty(v)) ? missing : String(v[1])
-    rows = map(_get(d, :distributions, [])) do x
+    rows = map(something(_get(d, :distributions), [])) do x
         dl = first_or_missing(_get(x, :download_url)); ac = first_or_missing(_get(x, :access_url))
         (id = something(_get(x, :id), missing), title = pick_lang(_get(x, :title), lang),
          format = something(_get(_get(x, :format), :id), missing),
@@ -288,19 +293,31 @@ function facet_values(facet::AbstractString, q::Union{Nothing,AbstractString}=no
     fid = get(FACET_ALIASES, Symbol(facet), facet)
     extra = Dict{String,Any}("aggregationAllFields" => false, "aggregationFields" => fid)
     res = search(q; filters=filters, limit=0, aggregation=true, extra=extra, kwargs...)
-    for f in res.facets
-        if f.id == fid
-            rows = map(f.items) do i
-                (id = String(i.id), label = coalesce(pick_lang(_get(i, :title)), string(_get(i, :label, i.id))),
-                 count = Int(something(_get(i, :count), 0)))
+    df = _facet_table(res, fid, top)
+    df === nothing && error("unknown facet $(repr(facet))")
+    return df
+end
+
+# Rows (id, label, count) of facet `fid` in a search result, most frequent first; `nothing` if
+# absent. `label` is the item's title, else its label, else its id; a missing count is 0.
+# Ties keep the API's order.
+function _facet_table(res, fid::AbstractString, top=nothing)
+    for f in something(_get(res, :facets), [])
+        if _get(f, :id) == fid
+            rows = map(something(_get(f, :items), [])) do i
+                id = String(i.id)
+                label = coalesce(pick_lang(_get(i, :title)), _nonempty(_get(i, :label)), id)
+                (id = id, label = label, count = Int(something(_get(i, :count), 0)))
             end
-            df = DataFrame(rows)
-            sort!(df, :count; rev=true)
+            df = isempty(rows) ? DataFrame(id=String[], label=String[], count=Int[]) : DataFrame(rows)
+            sort!(df, :count; rev=true, alg=MergeSort)
             return top === nothing ? df : first(df, top)
         end
     end
-    error("unknown facet $(repr(facet))")
+    return nothing
 end
+
+_nonempty(x) = (x === nothing || isempty(string(x))) ? missing : string(x)
 
 """
     count_datasets(q=nothing; kwargs...) -> Int
@@ -335,7 +352,11 @@ function sparql(query::AbstractString)
     resp = _request("POST", SPARQL_URL; body=HTTP.escapeuri(Dict("query" => query)),
                     headers=["Content-Type" => "application/x-www-form-urlencoded",
                              "Accept" => "application/sparql-results+json"])
-    j = JSON3.read(resp.body)
+    return _sparql_result(JSON3.read(resp.body))
+end
+
+# ASK result as a Bool, or SELECT bindings as a DataFrame of plain strings (missing when unbound).
+function _sparql_result(j)
     haskey(j, :boolean) && return Bool(j.boolean)
     cols = String.(j.head.vars)
     rows = [Dict(c => (haskey(b, Symbol(c)) ? String(b[Symbol(c)].value) : missing) for c in cols)

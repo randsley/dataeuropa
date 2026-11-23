@@ -1,0 +1,54 @@
+{
+ "rows": [
+  {
+   "id": "WMS_SRVC",
+   "label": "WMS",
+   "count": 5608
+  },
+  {
+   "id": "ZIP",
+   "label": "ZIP",
+   "count": 4893
+  },
+  {
+   "id": "WFS_SRVC",
+   "label": "WFS",
+   "count": 2793
+  },
+  {
+   "id": "INSPIRE DOWNLOAD SERVICE",
+   "label": "INSPIRE DOWNLOAD SERVICE",
+   "count": 1771
+  },
+  {
+   "id": "CSV",
+   "label": "CSV",
+   "count": 1264
+  },
+  {
+   "id": "JSON",
+   "label": "JSON",
+   "count": 1112
+  },
+  {
+   "id": "esri shapefile (shp)",
+   "label": "esri shapefile (shp)",
+   "count": 1054
+  },
+  {
+   "id": "HTML",
+   "label": "HTML",
+   "count": 658
+  },
+  {
+   "id": "SHP",
+   "label": "Esri Shape",
+   "count": 552
+  },
+  {
+   "id": "PDF",
+   "label": "PDF",
+   "count": 467
+  }
+ ]
+}

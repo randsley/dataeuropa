@@ -239,14 +239,21 @@ def get_dataset(dataset_id: str, *, raw: bool = False, lang: str = "en") -> dict
     r = _get_session().get(f"{SEARCH_URL}/datasets/{dataset_id}", timeout=_timeout())
     _raise(r)
     d = r.json()["result"]
-    return d if raw else {**summarise_dataset(d, lang), "keywords": [k.get("label") for k in d.get("keywords", [])
-                                                                         if k.get("language") in (lang, None)],
-                          "raw": d}
+    return d if raw else {**summarise_dataset(d, lang), "keywords": _keywords(d, lang), "raw": d}
+
+
+def _keywords(d: dict, lang: str = "en") -> list:
+    """Keyword labels in ``lang``, plus those with no language tag."""
+    return [k.get("label") for k in d.get("keywords") or [] if k.get("language") in (lang, None)]
 
 
 def distributions(dataset_id: str, *, lang: str = "en", as_dataframe: bool = True):
     """Distributions (files / services) of a dataset as a table."""
-    d = get_dataset(dataset_id, raw=True)
+    return _tabulate(_distribution_rows(get_dataset(dataset_id, raw=True), lang), as_dataframe)
+
+
+def _distribution_rows(d: dict, lang: str = "en") -> list[dict]:
+    """One row per distribution of a raw dataset record; ``url`` is the download URL, else the access URL."""
     rows = []
     for x in d.get("distributions") or []:
         acc = x.get("access_url") or []
@@ -263,7 +270,7 @@ def distributions(dataset_id: str, *, lang: str = "en", as_dataframe: bool = Tru
             "access_url": acc[0] if acc else None,
             "url": (dl[0] if dl else (acc[0] if acc else None)),
         })
-    return _tabulate(rows, as_dataframe)
+    return rows
 
 
 def download(url_or_row: str | dict, dest: str | os.PathLike | None = None, *, chunk: int = 1 << 20) -> str:
@@ -301,13 +308,26 @@ def facet_values(facet: str, q: str | None = None, *, top: int | None = 50, filt
     fid = _FACET_ALIASES.get(facet, facet)
     res = search(q, filters=filters, limit=0, aggregation=True,
                  extra={"aggregationAllFields": "false", "aggregationFields": fid}, **kw)
-    for f in res.get("facets", []):
-        if f["id"] == fid:
-            rows = [{"id": i.get("id"), "label": pick_lang(i.get("title")) or i.get("label"),
-                     "count": i.get("count")} for i in f["items"]]
-            rows.sort(key=lambda x: -(x["count"] or 0))
-            return _tabulate(rows[:top] if top else rows, True)
-    raise KeyError(f"unknown facet {facet!r}")
+    rows = _facet_rows(res, fid, top)
+    if rows is None:
+        raise KeyError(f"unknown facet {facet!r}")
+    return _tabulate(rows, True)
+
+
+def _facet_rows(res: dict, fid: str, top: int | None = None) -> list[dict] | None:
+    """Rows (id, label, count) of facet ``fid`` in a search result, most frequent first; None if absent.
+
+    ``label`` is the item's title, else its label, else its id; a missing ``count`` is 0.
+    Ties keep the API's order.
+    """
+    for f in res.get("facets") or []:
+        if f.get("id") == fid:
+            rows = [{"id": i.get("id"),
+                     "label": pick_lang(i.get("title")) or i.get("label") or i.get("id"),
+                     "count": int(i.get("count") or 0)} for i in f.get("items") or []]
+            rows.sort(key=lambda x: -x["count"])
+            return rows[:top] if top else rows
+    return None
 
 
 def count(q: str | None = None, **kw) -> int:
@@ -336,9 +356,13 @@ def sparql(query: str, *, as_dataframe: bool = True):
     r = _get_session().post(SPARQL_URL, data={"query": query},
                             headers={"Accept": "application/sparql-results+json"}, timeout=_timeout())
     _raise(r)
-    j = r.json()
+    res = _sparql_rows(r.json())
+    return res if isinstance(res, bool) else _tabulate(res, as_dataframe)
+
+
+def _sparql_rows(j: dict) -> bool | list[dict]:
+    """ASK result as a bool, or SELECT bindings as rows of plain string values (None when unbound)."""
     if "boolean" in j:
-        return j["boolean"]
+        return bool(j["boolean"])
     cols = j["head"]["vars"]
-    rows = [{c: (b[c]["value"] if c in b else None) for c in cols} for b in j["results"]["bindings"]]
-    return _tabulate(rows, as_dataframe)
+    return [{c: (b[c]["value"] if c in b else None) for c in cols} for b in j["results"]["bindings"]]

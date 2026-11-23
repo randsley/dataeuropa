@@ -21,6 +21,8 @@ const LIVE = get(ENV, "DATAEUROPA_OFFLINE", "0") != "1"
     end
 end
 
+include("conformance.jl")
+
 LIVE && @testset "live API" begin
     df = search_datasets("water"; country="pt", format="CSV", limit=3)
     @test 0 < nrow(df) <= 3

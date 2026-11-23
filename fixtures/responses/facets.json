@@ -1,0 +1,923 @@
+{
+ "count": 29561,
+ "facets": [
+  {
+   "id": "format",
+   "items": [
+    {
+     "count": 5608,
+     "id": "WMS_SRVC",
+     "title": "WMS"
+    },
+    {
+     "count": 4893,
+     "id": "ZIP",
+     "title": "ZIP"
+    },
+    {
+     "count": 2793,
+     "id": "WFS_SRVC",
+     "title": "WFS"
+    },
+    {
+     "count": 1771,
+     "id": "INSPIRE DOWNLOAD SERVICE",
+     "title": "INSPIRE DOWNLOAD SERVICE"
+    },
+    {
+     "count": 1264,
+     "id": "CSV",
+     "title": "CSV"
+    },
+    {
+     "count": 1112,
+     "id": "JSON",
+     "title": "JSON"
+    },
+    {
+     "count": 1054,
+     "id": "esri shapefile (shp)",
+     "title": "esri shapefile (shp)"
+    },
+    {
+     "count": 658,
+     "id": "HTML",
+     "title": "HTML"
+    },
+    {
+     "count": 552,
+     "id": "SHP",
+     "title": "Esri Shape"
+    },
+    {
+     "count": 467,
+     "id": "PDF",
+     "title": "PDF"
+    },
+    {
+     "count": 431,
+     "id": "mapinfo tab",
+     "title": "mapinfo tab"
+    },
+    {
+     "count": 425,
+     "id": "GML",
+     "title": "GML"
+    },
+    {
+     "count": 234,
+     "id": "PNG",
+     "title": "PNG"
+    },
+    {
+     "count": 193,
+     "id": "GEOJSON",
+     "title": "GeoJSON"
+    },
+    {
+     "count": 183,
+     "id": "XML",
+     "title": "XML"
+    },
+    {
+     "count": 176,
+     "id": "ogc:wms",
+     "title": "ogc:wms"
+    },
+    {
+     "count": 154,
+     "id": "ATOM",
+     "title": "Atom Feed"
+    },
+    {
+     "count": 135,
+     "id": "KML",
+     "title": "KML"
+    },
+    {
+     "count": 129,
+     "id": "GPKG",
+     "title": "GeoPackage"
+    },
+    {
+     "count": 110,
+     "id": "OGCFEAT",
+     "title": "OGCFeat"
+    },
+    {
+     "count": 101,
+     "id": "JPEG",
+     "title": "JPEG"
+    },
+    {
+     "count": 92,
+     "id": "MAP_SRVC",
+     "title": "ArcGIS Map Service"
+    },
+    {
+     "count": 88,
+     "id": "TIFF",
+     "title": "TIFF"
+    },
+    {
+     "count": 72,
+     "id": "GDB",
+     "title": "Esri File Geodatabase"
+    },
+    {
+     "count": 70,
+     "id": "www:link-1.0-http--link",
+     "title": "www:link-1.0-http--link"
+    },
+    {
+     "count": 67,
+     "id": "DOC",
+     "title": "Word DOC"
+    },
+    {
+     "count": 67,
+     "id": "OP_DATPRO",
+     "title": "Provisional data"
+    },
+    {
+     "count": 46,
+     "id": "XLSX",
+     "title": "Excel XLSX"
+    },
+    {
+     "count": 44,
+     "id": "REST",
+     "title": "Esri REST"
+    },
+    {
+     "count": 41,
+     "id": "WCS_SRVC",
+     "title": "WCS"
+    },
+    {
+     "count": 40,
+     "id": "WMTS_SRVC",
+     "title": "WMTS"
+    },
+    {
+     "count": 38,
+     "id": "WMS",
+     "title": "WMS"
+    },
+    {
+     "count": 33,
+     "id": "TXT",
+     "title": "Plain text"
+    },
+    {
+     "count": 33,
+     "id": "shapefile",
+     "title": "shapefile"
+    },
+    {
+     "count": 31,
+     "id": "OTHER",
+     "title": "OTHER"
+    },
+    {
+     "count": 30,
+     "id": "esri shapefile",
+     "title": "esri shapefile"
+    },
+    {
+     "count": 28,
+     "id": "BIN",
+     "title": "Binary Data"
+    },
+    {
+     "count": 26,
+     "id": "RDF_XML",
+     "title": "RDF XML"
+    },
+    {
+     "count": 21,
+     "id": "NETCDF",
+     "title": "NetCDF"
+    },
+    {
+     "count": 20,
+     "id": "GMZ",
+     "title": "Zipped GML"
+    },
+    {
+     "count": 20,
+     "id": "ogc:wfs",
+     "title": "ogc:wfs"
+    },
+    {
+     "count": 19,
+     "id": "DXF",
+     "title": "DXF"
+    },
+    {
+     "count": 18,
+     "id": "ARCGIS GEOSERVICES REST API",
+     "title": "ARCGIS GEOSERVICES REST API"
+    },
+    {
+     "count": 18,
+     "id": "XLS",
+     "title": "Excel XLS"
+    },
+    {
+     "count": 16,
+     "id": "GEOTIFF",
+     "title": "GeoTIFF"
+    },
+    {
+     "count": 16,
+     "id": "GRID",
+     "title": "Esri binary grid"
+    },
+    {
+     "count": 15,
+     "id": "Esri Shape",
+     "title": "Esri Shape"
+    },
+    {
+     "count": 15,
+     "id": "OCTET",
+     "title": "Octet Stream"
+    },
+    {
+     "count": 12,
+     "id": "Download",
+     "title": "Download"
+    },
+    {
+     "count": 12,
+     "id": "ODS",
+     "title": "ODS"
+    },
+    {
+     "count": 12,
+     "id": "image tiff (tif)",
+     "title": "image tiff (tif)"
+    },
+    {
+     "count": 10,
+     "id": "ASCII",
+     "title": "ASCII"
+    },
+    {
+     "count": 10,
+     "id": "www:link",
+     "title": "www:link"
+    },
+    {
+     "count": 9,
+     "id": "csw",
+     "title": "csw"
+    },
+    {
+     "count": 9,
+     "id": "inconnu",
+     "title": "inconnu"
+    },
+    {
+     "count": 9,
+     "id": "onLine",
+     "title": "onLine"
+    },
+    {
+     "count": 8,
+     "id": "PARQUET",
+     "title": "Parquet"
+    },
+    {
+     "count": 8,
+     "id": "XSD",
+     "title": "XSD"
+    },
+    {
+     "count": 7,
+     "id": "ESRI REST",
+     "title": "ESRI REST"
+    },
+    {
+     "count": 7,
+     "id": "OAF",
+     "title": "OAF"
+    },
+    {
+     "count": 7,
+     "id": "ogc api features",
+     "title": "ogc api features"
+    },
+    {
+     "count": 7,
+     "id": "url",
+     "title": "url"
+    },
+    {
+     "count": 6,
+     "id": "DOCX",
+     "title": "Word DOCX"
+    },
+    {
+     "count": 6,
+     "id": "DWCA",
+     "title": "DwC-A"
+    },
+    {
+     "count": 6,
+     "id": "RDF",
+     "title": "RDF"
+    },
+    {
+     "count": 6,
+     "id": "http://inspire.ec.europa.eu/media-types/application/xshapefile",
+     "title": "http://inspire.ec.europa.eu/media-types/application/xshapefile"
+    },
+    {
+     "count": 6,
+     "id": "site internet",
+     "title": "site internet"
+    },
+    {
+     "count": 5,
+     "id": "Geography Markup Language (GML)",
+     "title": "Geography Markup Language (GML)"
+    },
+    {
+     "count": 4,
+     "id": "GIF",
+     "title": "GIF"
+    },
+    {
+     "count": 4,
+     "id": "JSON-STAT",
+     "title": "JSON-STAT"
+    },
+    {
+     "count": 4,
+     "id": "KMZ",
+     "title": "KMZ"
+    },
+    {
+     "count": 4,
+     "id": "N3",
+     "title": "N3"
+    },
+    {
+     "count": 4,
+     "id": "PX",
+     "title": "PX"
+    },
+    {
+     "count": 4,
+     "id": "QGS",
+     "title": "QGS"
+    },
+    {
+     "count": 4,
+     "id": "WFS",
+     "title": "WFS"
+    },
+    {
+     "count": 4,
+     "id": "XPlanGML",
+     "title": "XPlanGML"
+    },
+    {
+     "count": 4,
+     "id": "shape",
+     "title": "shape"
+    },
+    {
+     "count": 4,
+     "id": "tiff (gezippt)",
+     "title": "tiff (gezippt)"
+    },
+    {
+     "count": 3,
+     "id": "AGIS_MAPPING",
+     "title": "AGIS_MAPPING"
+    },
+    {
+     "count": 3,
+     "id": "ESRI REST SERVICE",
+     "title": "ESRI REST SERVICE"
+    },
+    {
+     "count": 3,
+     "id": "GEOPACKAGE",
+     "title": "GEOPACKAGE"
+    },
+    {
+     "count": 3,
+     "id": "JSON_LD",
+     "title": "JSON-LD"
+    },
+    {
+     "count": 3,
+     "id": "MARKDOWN",
+     "title": "Markdown"
+    },
+    {
+     "count": 3,
+     "id": "MXD",
+     "title": "MXD"
+    },
+    {
+     "count": 3,
+     "id": "ODT",
+     "title": "ODT"
+    },
+    {
+     "count": 3,
+     "id": "RDF_TURTLE",
+     "title": "RDF Turtle"
+    },
+    {
+     "count": 3,
+     "id": "Shapefiles",
+     "title": "Shapefiles"
+    },
+    {
+     "count": 3,
+     "id": "XLSM",
+     "title": "XLSM"
+    },
+    {
+     "count": 3,
+     "id": "download",
+     "title": "download"
+    },
+    {
+     "count": 3,
+     "id": "ogcapi-features",
+     "title": "ogcapi-features"
+    },
+    {
+     "count": 3,
+     "id": "qml",
+     "title": "qml"
+    },
+    {
+     "count": 3,
+     "id": "remote",
+     "title": "remote"
+    },
+    {
+     "count": 3,
+     "id": "utf8",
+     "title": "utf8"
+    },
+    {
+     "count": 3,
+     "id": "view",
+     "title": "view"
+    },
+    {
+     "count": 2,
+     "id": "7Z",
+     "title": "7z"
+    },
+    {
+     "count": 2,
+     "id": "ADF",
+     "title": "ADF"
+    },
+    {
+     "count": 2,
+     "id": "SHAPEFILES",
+     "title": "SHAPEFILES"
+    },
+    {
+     "count": 2,
+     "id": "SHAPFILE",
+     "title": "SHAPFILE"
+    },
+    {
+     "count": 2,
+     "id": "TSV",
+     "title": "TSV"
+    },
+    {
+     "count": 2,
+     "id": "adobe portable document format (pdf)",
+     "title": "adobe portable document format (pdf)"
+    },
+    {
+     "count": 2,
+     "id": "arcgis geoservices rest api",
+     "title": "arcgis geoservices rest api"
+    },
+    {
+     "count": 2,
+     "id": "jpg",
+     "title": "jpg"
+    },
+    {
+     "count": 2,
+     "id": "other",
+     "title": "other"
+    },
+    {
+     "count": 2,
+     "id": "tab-delimited text",
+     "title": "tab-delimited text"
+    },
+    {
+     "count": 2,
+     "id": "web",
+     "title": "web"
+    },
+    {
+     "count": 2,
+     "id": "web page",
+     "title": "web page"
+    },
+    {
+     "count": 2,
+     "id": "www:download-1.0-http--download",
+     "title": "www:download-1.0-http--download"
+    },
+    {
+     "count": 2,
+     "id": "zip, shp",
+     "title": "zip, shp"
+    },
+    {
+     "count": 1,
+     "id": ".SHP",
+     "title": ".SHP"
+    },
+    {
+     "count": 1,
+     "id": ".pdf",
+     "title": ".pdf"
+    },
+    {
+     "count": 1,
+     "id": "AGIS_GEODATA",
+     "title": "AGIS_GEODATA"
+    },
+    {
+     "count": 1,
+     "id": "API",
+     "title": "API"
+    },
+    {
+     "count": 1,
+     "id": "APP",
+     "title": "APP"
+    },
+    {
+     "count": 1,
+     "id": "ARCGIS ONLINE FEATURE SERVICE",
+     "title": "ARCGIS ONLINE FEATURE SERVICE"
+    },
+    {
+     "count": 1,
+     "id": "ARCSDE CONNECTION",
+     "title": "ARCSDE CONNECTION"
+    },
+    {
+     "count": 1,
+     "id": "Atom Feed",
+     "title": "Atom Feed"
+    },
+    {
+     "count": 1,
+     "id": "DISCOVERY",
+     "title": "DISCOVERY"
+    },
+    {
+     "count": 1,
+     "id": "DWG",
+     "title": "DWG"
+    },
+    {
+     "count": 1,
+     "id": "ESRI File-Geodatabase",
+     "title": "ESRI File-Geodatabase"
+    },
+    {
+     "count": 1,
+     "id": "Esri REST",
+     "title": "Esri REST"
+    },
+    {
+     "count": 1,
+     "id": "GPX",
+     "title": "GPX"
+    },
+    {
+     "count": 1,
+     "id": "GRIB",
+     "title": "GRIB"
+    },
+    {
+     "count": 1,
+     "id": "GeoPackage",
+     "title": "GeoPackage"
+    },
+    {
+     "count": 1,
+     "id": "Geographic Markup Language (GML)",
+     "title": "Geographic Markup Language (GML)"
+    },
+    {
+     "count": 1,
+     "id": "JPEG2000",
+     "title": "JPEG 2000"
+    },
+    {
+     "count": 1,
+     "id": "JSON, PNG",
+     "title": "JSON, PNG"
+    },
+    {
+     "count": 1,
+     "id": "MAP \n              \n                MAP",
+     "title": "MAP \n              \n                MAP"
+    },
+    {
+     "count": 1,
+     "id": "MIF_MID",
+     "title": "MIF/MID"
+    },
+    {
+     "count": 1,
+     "id": "REST, WMS \n              \n                REST, WMS\n              \n              \n                REST, WMS\n              \n              \n                REST, WMS",
+     "title": "REST, WMS \n              \n                REST, WMS\n              \n              \n                REST, WMS\n              \n              \n                REST, WMS"
+    },
+    {
+     "count": 1,
+     "id": "SHP / ZIP",
+     "title": "SHP / ZIP"
+    },
+    {
+     "count": 1,
+     "id": "SVG",
+     "title": "SVG"
+    },
+    {
+     "count": 1,
+     "id": "URL",
+     "title": "URL"
+    },
+    {
+     "count": 1,
+     "id": "Webside",
+     "title": "Webside"
+    },
+    {
+     "count": 1,
+     "id": "application/vnd.ogc.wms_xml",
+     "title": "application/vnd.ogc.wms_xml"
+    },
+    {
+     "count": 1,
+     "id": "asc",
+     "title": "asc"
+    },
+    {
+     "count": 1,
+     "id": "ascii",
+     "title": "ascii"
+    },
+    {
+     "count": 1,
+     "id": "comma separated value (csv)",
+     "title": "comma separated value (csv)"
+    },
+    {
+     "count": 1,
+     "id": "cpg",
+     "title": "cpg"
+    },
+    {
+     "count": 1,
+     "id": "csv.tar.gz",
+     "title": "csv.tar.gz"
+    },
+    {
+     "count": 1,
+     "id": "csv/utf8",
+     "title": "csv/utf8"
+    },
+    {
+     "count": 1,
+     "id": "dbase database file (dbf)",
+     "title": "dbase database file (dbf)"
+    },
+    {
+     "count": 1,
+     "id": "dcat-ap",
+     "title": "dcat-ap"
+    },
+    {
+     "count": 1,
+     "id": "esri shape",
+     "title": "esri shape"
+    },
+    {
+     "count": 1,
+     "id": "esri shape - utf8",
+     "title": "esri shape - utf8"
+    },
+    {
+     "count": 1,
+     "id": "excel non structuré",
+     "title": "excel non structuré"
+    },
+    {
+     "count": 1,
+     "id": "file:///srv/udata/ftype/csv",
+     "title": "file:///srv/udata/ftype/csv"
+    },
+    {
+     "count": 1,
+     "id": "file:///srv/udata/ftype/geojson",
+     "title": "file:///srv/udata/ftype/geojson"
+    },
+    {
+     "count": 1,
+     "id": "file:///srv/udata/ftype/html",
+     "title": "file:///srv/udata/ftype/html"
+    },
+    {
+     "count": 1,
+     "id": "file:///srv/udata/ftype/json",
+     "title": "file:///srv/udata/ftype/json"
+    },
+    {
+     "count": 1,
+     "id": "file:///srv/udata/ftype/kml",
+     "title": "file:///srv/udata/ftype/kml"
+    },
+    {
+     "count": 1,
+     "id": "file:///srv/udata/ftype/zip",
+     "title": "file:///srv/udata/ftype/zip"
+    },
+    {
+     "count": 1,
+     "id": "geopackage",
+     "title": "geopackage"
+    },
+    {
+     "count": 1,
+     "id": "gpkg.tar.gz",
+     "title": "gpkg.tar.gz"
+    },
+    {
+     "count": 1,
+     "id": "https",
+     "title": "https"
+    },
+    {
+     "count": 1,
+     "id": "mzXML",
+     "title": "mzXML"
+    },
+    {
+     "count": 1,
+     "id": "n0cdce6053809418eadb5083d6ef3bd31",
+     "title": "n0cdce6053809418eadb5083d6ef3bd31"
+    },
+    {
+     "count": 1,
+     "id": "n0faad72ba54c48f0be4332e5ecda9a45",
+     "title": "n0faad72ba54c48f0be4332e5ecda9a45"
+    },
+    {
+     "count": 1,
+     "id": "n240c6609a6154f12b9900d939ea37938",
+     "title": "n240c6609a6154f12b9900d939ea37938"
+    },
+    {
+     "count": 1,
+     "id": "n298fe2a426ac4fa0bd21428357dc228e",
+     "title": "n298fe2a426ac4fa0bd21428357dc228e"
+    },
+    {
+     "count": 1,
+     "id": "n3834151c1cce4b4c95c593e109c9b315",
+     "title": "n3834151c1cce4b4c95c593e109c9b315"
+    },
+    {
+     "count": 1,
+     "id": "n599ba6ea53b943d9bfd61903fd014688",
+     "title": "n599ba6ea53b943d9bfd61903fd014688"
+    },
+    {
+     "count": 1,
+     "id": "n5a740c863aad4fb7b1ad1035071b6416",
+     "title": "n5a740c863aad4fb7b1ad1035071b6416"
+    },
+    {
+     "count": 1,
+     "id": "nb373115fac484f69a089ab915f9edce3",
+     "title": "nb373115fac484f69a089ab915f9edce3"
+    },
+    {
+     "count": 1,
+     "id": "nbe3bb31f12b64eedb496dbfab60688a4",
+     "title": "nbe3bb31f12b64eedb496dbfab60688a4"
+    },
+    {
+     "count": 1,
+     "id": "nc36eafdedd6e4b9691ce092eab5f446a",
+     "title": "nc36eafdedd6e4b9691ce092eab5f446a"
+    },
+    {
+     "count": 1,
+     "id": "nc791c483d88d4c6ca32fc15488eff205",
+     "title": "nc791c483d88d4c6ca32fc15488eff205"
+    },
+    {
+     "count": 1,
+     "id": "nc7ece3c37573491f899d8fc3efaa6466",
+     "title": "nc7ece3c37573491f899d8fc3efaa6466"
+    },
+    {
+     "count": 1,
+     "id": "ncd4ab09a08a741de8fa306d60f1922f9",
+     "title": "ncd4ab09a08a741de8fa306d60f1922f9"
+    },
+    {
+     "count": 1,
+     "id": "neb9b1cae1fee47f69fcbd13548b51ca7",
+     "title": "neb9b1cae1fee47f69fcbd13548b51ca7"
+    },
+    {
+     "count": 1,
+     "id": "open-api",
+     "title": "open-api"
+    },
+    {
+     "count": 1,
+     "id": "page web",
+     "title": "page web"
+    },
+    {
+     "count": 1,
+     "id": "pgdump.tar.gz",
+     "title": "pgdump.tar.gz"
+    },
+    {
+     "count": 1,
+     "id": "prj",
+     "title": "prj"
+    },
+    {
+     "count": 1,
+     "id": "shapefile (zip)",
+     "title": "shapefile (zip)"
+    },
+    {
+     "count": 1,
+     "id": "shapefile zip",
+     "title": "shapefile zip"
+    },
+    {
+     "count": 1,
+     "id": "shp, zip",
+     "title": "shp, zip"
+    },
+    {
+     "count": 1,
+     "id": "shp,zip",
+     "title": "shp,zip"
+    },
+    {
+     "count": 1,
+     "id": "shx",
+     "title": "shx"
+    },
+    {
+     "count": 1,
+     "id": "sld",
+     "title": "sld"
+    },
+    {
+     "count": 1,
+     "id": "text/html",
+     "title": "text/html"
+    },
+    {
+     "count": 1,
+     "id": "vnd.oasis.opendocument.text",
+     "title": "vnd.oasis.opendocument.text"
+    },
+    {
+     "count": 1,
+     "id": "wsdl",
+     "title": "wsdl"
+    }
+   ],
+   "title": "Formats"
+  }
+ ],
+ "index": "dataset",
+ "results": []
+}

@@ -1,0 +1,52 @@
+{
+ "rows": [
+  {
+   "id": "access-only",
+   "title": "Nur Zugang",
+   "format": "WMS",
+   "media_type": null,
+   "byte_size": null,
+   "license": null,
+   "modified": null,
+   "download_url": null,
+   "access_url": "http://service.example/wms",
+   "url": "http://service.example/wms"
+  },
+  {
+   "id": "both",
+   "title": null,
+   "format": "CSV",
+   "media_type": "text/csv",
+   "byte_size": 1234,
+   "license": "CC-BY-4.0",
+   "modified": "2022-01-01",
+   "download_url": "http://files.example/a.csv",
+   "access_url": "http://files.example/",
+   "url": "http://files.example/a.csv"
+  },
+  {
+   "id": "empty-download",
+   "title": null,
+   "format": null,
+   "media_type": null,
+   "byte_size": null,
+   "license": null,
+   "modified": null,
+   "download_url": null,
+   "access_url": "http://files.example/page",
+   "url": "http://files.example/page"
+  },
+  {
+   "id": "no-urls",
+   "title": null,
+   "format": null,
+   "media_type": null,
+   "byte_size": null,
+   "license": null,
+   "modified": null,
+   "download_url": null,
+   "access_url": null,
+   "url": null
+  }
+ ]
+}

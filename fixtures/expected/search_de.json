@@ -1,0 +1,97 @@
+{
+ "rows": [
+  {
+   "id": "fb38ac32-1459-48d9-8390-f8dd2e43e0cc",
+   "title": "UNEP GEMS/Water Global Freshwater Quality Archive",
+   "description": "This dataset comprises data from the GEMStat database that are available under an open data license (CC BY 4.0 or equivalent). It is made available on the Zenodo repository. GEMStat provides access to",
+   "country": "de",
+   "catalog": "govdata",
+   "publisher": "Bundesanstalt für Gewässerkunde",
+   "issued": "2024-08-12",
+   "modified": "2026-07-14",
+   "formats": [
+    "CSV"
+   ],
+   "n_distributions": 1,
+   "is_hvd": false,
+   "quality_score": 575,
+   "landing_page": null,
+   "portal_url": "https://data.europa.eu/data/datasets/fb38ac32-1459-48d9-8390-f8dd2e43e0cc"
+  },
+  {
+   "id": "fb38ac32-1459-48d9-8390-f8dd2e43e0cc~~1",
+   "title": "UNEP GEMS/Water Global Freshwater Quality Archive",
+   "description": "This dataset comprises data from the GEMStat database that are available under an open data license (CC BY 4.0 or equivalent). It is made available on the Zenodo repository. GEMStat provides access to",
+   "country": "de",
+   "catalog": "gdi-de",
+   "publisher": null,
+   "issued": "2024-10-08",
+   "modified": "2026-02-02",
+   "formats": [
+    "CSV"
+   ],
+   "n_distributions": 1,
+   "is_hvd": false,
+   "quality_score": 280,
+   "landing_page": null,
+   "portal_url": "https://data.europa.eu/data/datasets/fb38ac32-1459-48d9-8390-f8dd2e43e0cc~~1"
+  },
+  {
+   "id": "741b5afb-5660-43f5-9d48-0fe219e22fe8",
+   "title": "Dataset of River Water Quality in the Spreewitz Glacial Channel, Saxony, Germany (2024–2026)",
+   "description": "The dataset contains 131 records of water quality analysis from streams in the Spreewitz Glacial Channel, located in the southern reclamation area of the Lusatian Mining District. Over recent decades,",
+   "country": "de",
+   "catalog": "govdata",
+   "publisher": "Bundesanstalt für Geowissenschaften und Rohstoffe (BGR)",
+   "issued": "2026-06-19",
+   "modified": "2026-06-23",
+   "formats": [
+    "CSV"
+   ],
+   "n_distributions": 1,
+   "is_hvd": false,
+   "quality_score": 625,
+   "landing_page": null,
+   "portal_url": "https://data.europa.eu/data/datasets/741b5afb-5660-43f5-9d48-0fe219e22fe8"
+  },
+  {
+   "id": "741b5afb-5660-43f5-9d48-0fe219e22fe8~~1",
+   "title": "Datensatz zur Wasserqualität in Fließgewässern der Spreewitzer Rinne, Sachsen, Deutschland (2024-2026)",
+   "description": "Der Datensatz enthält 131 Einträge zur Wasserqualität in den Fließgewässern der Spreewitzer Rinne, die sich im südlichen Teil des Sanierungsgebiets des Lausitzer Reviers befindet. In den letzten Jahrz",
+   "country": "de",
+   "catalog": "gdi-de",
+   "publisher": null,
+   "issued": "2026-06-19",
+   "modified": null,
+   "formats": [
+    "CSV"
+   ],
+   "n_distributions": 1,
+   "is_hvd": false,
+   "quality_score": 245,
+   "landing_page": null,
+   "portal_url": "https://data.europa.eu/data/datasets/741b5afb-5660-43f5-9d48-0fe219e22fe8~~1"
+  },
+  {
+   "id": "93e35f11-eaf5-4b66-a9eb-7f87c923a906",
+   "title": "Gewässergüte",
+   "description": "<div>\n<div>Darstellung der Messpunkte des Bielefelder Gewässergüteuntersuchungsprogramms an den Bielefelder Fließgewässern.</div>\n</div>\n\n<div> </div>\n",
+   "country": "de",
+   "catalog": "govdata",
+   "publisher": "Stadt Bielefeld - Umweltamt",
+   "issued": "2023-07-07T13:10:36+02:00",
+   "modified": "2023-07-07T13:20:18+02:00",
+   "formats": [
+    "CSV",
+    "HTML",
+    "WFS_SRVC",
+    "WMS_SRVC"
+   ],
+   "n_distributions": 5,
+   "is_hvd": false,
+   "quality_score": 425,
+   "landing_page": "https://www.bielefeld.de/umwelt",
+   "portal_url": "https://data.europa.eu/data/datasets/93e35f11-eaf5-4b66-a9eb-7f87c923a906"
+  }
+ ]
+}

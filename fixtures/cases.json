@@ -1,0 +1,22 @@
+{
+ "about": "Shared conformance cases. Each language reads this file, runs `kind` on `input` (optionally the top-level key `select` of it) with `args`, and compares with `expected`. See README.md.",
+ "cases": [
+  {"name": "search_en", "kind": "summarise", "input": "responses/search.json", "select": "results", "args": {"lang": "en"}},
+  {"name": "search_de", "kind": "summarise", "input": "responses/search.json", "select": "results", "args": {"lang": "de"}},
+  {"name": "search_edge", "kind": "summarise", "input": "responses/edge_cases.json", "select": "datasets", "args": {"lang": "en"}},
+  {"name": "distributions", "kind": "distributions", "input": "responses/dataset.json", "args": {"lang": "en"}},
+  {"name": "distributions_edge", "kind": "distributions", "input": "responses/edge_cases.json", "select": "dataset", "args": {"lang": "de"}},
+  {"name": "keywords_ga", "kind": "keywords", "input": "responses/dataset.json", "args": {"lang": "ga"}},
+  {"name": "keywords_en", "kind": "keywords", "input": "responses/dataset.json", "args": {"lang": "en"}},
+  {"name": "keywords_edge", "kind": "keywords", "input": "responses/edge_cases.json", "select": "dataset", "args": {"lang": "en"}},
+  {"name": "facets_top10", "kind": "facets", "input": "responses/facets.json", "args": {"facet": "format", "top": 10}},
+  {"name": "facets_all", "kind": "facets", "input": "responses/facets.json", "args": {"facet": "format", "top": null}},
+  {"name": "facets_edge", "kind": "facets", "input": "responses/edge_cases.json", "select": "facets", "args": {"facet": "format", "top": null}},
+  {"name": "facets_edge_top2", "kind": "facets", "input": "responses/edge_cases.json", "select": "facets", "args": {"facet": "format", "top": 2}},
+  {"name": "sparql_select", "kind": "sparql", "input": "responses/sparql_select.json"},
+  {"name": "sparql_ask", "kind": "sparql", "input": "responses/sparql_ask.json"},
+  {"name": "sparql_edge", "kind": "sparql", "input": "responses/edge_cases.json", "select": "sparql_select"},
+  {"name": "sparql_empty", "kind": "sparql", "input": "responses/edge_cases.json", "select": "sparql_empty"},
+  {"name": "sparql_ask_false", "kind": "sparql", "input": "responses/edge_cases.json", "select": "sparql_ask_false"}
+ ]
+}
