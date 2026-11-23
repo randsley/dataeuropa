@@ -1,5 +1,7 @@
 # dataeuropa: Python, Julia and R clients for data.europa.eu
 
+[![CI](https://github.com/randsley/dataeuropa/actions/workflows/ci.yml/badge.svg?branch=main&event=push)](https://github.com/randsley/dataeuropa/actions/workflows/ci.yml)
+
 Three small, equivalent clients for the European data portal (~1.9 M dataset records harvested
 from EU institutions and national/regional portals), built on:
 
