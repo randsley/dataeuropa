@@ -11,5 +11,10 @@ Search, retrieve and download open data from the European data portal \url{https
 \author{
 \strong{Maintainer}: Nigel Randsley \email{nigel@example.org}
 
+Authors:
+\itemize{
+  \item Nigel Randsley \email{nigel@example.org}
+}
+
 }
 \keyword{internal}

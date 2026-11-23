@@ -14,6 +14,11 @@ const LIVE = get(ENV, "DATAEUROPA_OFFLINE", "0") != "1"
         "distributions":[{"format":{"id":"CSV"}},{"format":{"id":"JSON"}},{}],"landing_page":[{"resource":"http://lp"}]}""")
     s = DE.summarise_dataset(d)
     @test s.formats == ["CSV", "JSON"] && s.n_distributions == 3 && s.landing_page == "http://lp"
+    b = DE._bbox_params((20, 59.7, 31.6, 70.1))
+    @test b["bboxMinLon"] == 20.0 && b["bboxMinLat"] == 59.7 && b["bboxMaxLon"] == 31.6 && b["bboxMaxLat"] == 70.1
+    for bad in [(1, 2, 3), (1, 2, 3, 4, 5), ("a", 1, 2, 3), (10, 0, 5, 1), (0, 10, 1, 5), (-200, 0, 0, 1), (0, 0, 1, 95)]
+        @test_throws ArgumentError DE._bbox_params(bad)
+    end
 end
 
 LIVE && @testset "live API" begin
@@ -34,4 +39,7 @@ LIVE && @testset "live API" begin
     @test parse(Int, t.n[1]) > 1_000_000
     @test sparql("ASK { ?s ?p ?o }") === true
     @test "pt" in catalogues() || length(catalogues()) > 100
+    total = count_datasets()
+    n = count_datasets(; bbox=(20, 59.7, 31.6, 70.1))
+    @test 0 < n < total
 end

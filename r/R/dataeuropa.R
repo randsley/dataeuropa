@@ -57,6 +57,20 @@ de_facets <- function(facets = NULL, ...) {
   if (length(out) == 0) NULL else out
 }
 
+# Check c(min_lon, min_lat, max_lon, max_lat) and return the Search API parameters. The API ignores
+# an incomplete box and rejects min > max with an unhelpful 400, so check here.
+de_bbox_params <- function(bbox) {
+  if (!is.numeric(bbox) || length(bbox) != 4 || anyNA(bbox))
+    stop("bbox must be 4 numbers: c(min_lon, min_lat, max_lon, max_lat)", call. = FALSE)
+  bbox <- as.numeric(bbox)
+  if (!(-180 <= bbox[1] && bbox[1] <= bbox[3] && bbox[3] <= 180))
+    stop("bbox longitudes must satisfy -180 <= min_lon <= max_lon <= 180", call. = FALSE)
+  if (!(-90 <= bbox[2] && bbox[2] <= bbox[4] && bbox[4] <= 90))
+    stop("bbox latitudes must satisfy -90 <= min_lat <= max_lat <= 90", call. = FALSE)
+  names(bbox) <- c("bboxMinLon", "bboxMinLat", "bboxMaxLon", "bboxMaxLat")
+  as.list(bbox)
+}
+
 #' Raw Search API call
 #'
 #' Returns the `result` object of the Search API as a nested list
@@ -71,7 +85,9 @@ de_facets <- function(facets = NULL, ...) {
 #' @param country,catalog,format,license,category,publisher,keywords,hvd Convenience facet filters.
 #'   `country` takes ISO-2 codes, `format` ids like "CSV", `category` DCAT-AP theme codes ("ENVI").
 #' @param min_date,max_date,date_type Date range; `date_type` one of issued, modified, temporal.
-#' @param bbox Numeric `c(minLon, minLat, maxLon, maxLat)`.
+#' @param bbox Numeric `c(min_lon, min_lat, max_lon, max_lat)` in WGS84 degrees. A dataset matches
+#'   when its spatial extent overlaps the box, so datasets covering all of Europe or the world match
+#'   any box. Datasets without a spatial extent (about half the portal) never match.
 #' @param aggregation Return facet counts?
 #' @param extra Named list of additional raw query parameters.
 #' @export
@@ -90,10 +106,7 @@ de_search <- function(q = NULL, filters = "dataset", facets = NULL, limit = 10, 
   if (!is.null(min_date)) p$minDate <- min_date
   if (!is.null(max_date)) p$maxDate <- max_date
   if (!is.null(date_type)) p$dateType <- date_type
-  if (!is.null(bbox)) {
-    names(bbox) <- c("bboxMinLon", "bboxMinLat", "bboxMaxLon", "bboxMaxLat")
-    p <- c(p, as.list(bbox))
-  }
+  if (!is.null(bbox)) p <- c(p, de_bbox_params(bbox))
   p <- c(p, extra)
   req <- do.call(httr2::req_url_query, c(list(de_req(paste0(SEARCH_URL, "/search"))), p))
   de_json(httr2::req_perform(req))$result

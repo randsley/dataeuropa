@@ -24,6 +24,14 @@ test_that("de_summarise flattens a record", {
   expect_equal(s$landing_page, "http://lp")
 })
 
+test_that("de_bbox_params checks the box", {
+  b <- dataeuropa:::de_bbox_params(c(20, 59.7, 31.6, 70.1))
+  expect_equal(b, list(bboxMinLon = 20, bboxMinLat = 59.7, bboxMaxLon = 31.6, bboxMaxLat = 70.1))
+  bad <- list(c(1, 2, 3), c(1, 2, 3, 4, 5), c("a", 1, 2, 3), c(10, 0, 5, 1), c(0, 10, 1, 5),
+              c(-200, 0, 0, 1), c(0, 0, 1, 95), c(1, NA, 2, 3))
+  for (x in bad) expect_error(dataeuropa:::de_bbox_params(x), "bbox")
+})
+
 skip_if(Sys.getenv("DATAEUROPA_OFFLINE") == "1", "offline")
 
 test_that("live search / dataset / distributions / rdf", {
@@ -50,4 +58,11 @@ test_that("live sparql", {
   t <- de_sparql("SELECT (COUNT(?s) AS ?n) WHERE { ?s a <http://www.w3.org/ns/dcat#Dataset> }")
   expect_gt(as.numeric(t$n[1]), 1e6)
   expect_true(de_sparql("ASK { ?s ?p ?o }"))
+})
+
+test_that("live bbox filters", {
+  total <- de_count()
+  n <- de_count(bbox = c(20, 59.7, 31.6, 70.1))
+  expect_gt(n, 0)
+  expect_lt(n, total)
 })

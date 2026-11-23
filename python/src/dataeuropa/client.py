@@ -85,6 +85,25 @@ def _build_facets(facets: dict | None, **named: Any) -> dict | None:
     return out or None
 
 
+def _bbox_params(bbox: Sequence[float]) -> dict:
+    """Check ``(min_lon, min_lat, max_lon, max_lat)`` and return the Search API parameters.
+
+    The API ignores an incomplete box and rejects min > max with an unhelpful 400, so check here.
+    """
+    try:
+        vals = [float(v) for v in bbox]
+    except (TypeError, ValueError):
+        raise ValueError("bbox must be 4 numbers: (min_lon, min_lat, max_lon, max_lat)") from None
+    if len(vals) != 4:
+        raise ValueError("bbox must be 4 numbers: (min_lon, min_lat, max_lon, max_lat)")
+    min_lon, min_lat, max_lon, max_lat = vals
+    if not (-180 <= min_lon <= max_lon <= 180):
+        raise ValueError("bbox longitudes must satisfy -180 <= min_lon <= max_lon <= 180")
+    if not (-90 <= min_lat <= max_lat <= 90):
+        raise ValueError("bbox latitudes must satisfy -90 <= min_lat <= max_lat <= 90")
+    return dict(zip(("bboxMinLon", "bboxMinLat", "bboxMaxLon", "bboxMaxLat"), vals))
+
+
 def search(q: str | None = None, *, filters: str | Sequence[str] = "dataset",
            facets: dict | None = None, limit: int = 10, page: int = 0,
            sort: str | Sequence[str] | None = None, country: str | Sequence[str] | None = None,
@@ -98,7 +117,11 @@ def search(q: str | None = None, *, filters: str | Sequence[str] = "dataset",
 
     ``country`` takes ISO-2 codes (``"pt"``); ``format`` takes ids such as ``"CSV"``;
     ``category`` takes DCAT-AP theme codes (``"ENVI"``). Use :func:`facet_values` to discover ids.
-    ``sort`` is e.g. ``"modified+desc"``. ``bbox`` is (minLon, minLat, maxLon, maxLat).
+    ``sort`` is e.g. ``"modified+desc"``.
+
+    ``bbox`` is ``(min_lon, min_lat, max_lon, max_lat)`` in WGS84 degrees. A dataset matches when
+    its spatial extent overlaps the box, so datasets covering all of Europe or the world match any
+    box. Datasets without a spatial extent (about half the portal) never match.
     """
     params: dict[str, Any] = {"limit": limit, "page": page, "aggregation": str(aggregation).lower()}
     if q:
@@ -117,8 +140,8 @@ def search(q: str | None = None, *, filters: str | Sequence[str] = "dataset",
         params["maxDate"] = max_date
     if date_type:
         params["dateType"] = date_type
-    if bbox:
-        params.update(zip(("bboxMinLon", "bboxMinLat", "bboxMaxLon", "bboxMaxLat"), bbox))
+    if bbox is not None:
+        params.update(_bbox_params(bbox))
     params.update(extra or {})
     r = _get_session().get(f"{SEARCH_URL}/search", params=params, timeout=_timeout())
     _raise(r)

@@ -10,7 +10,7 @@ Suggested order: phase 1, then `load_distribution` and caching from phase 2, the
 - [ ] Shared conformance suite: the same fixtures must produce the same table in Python, Julia and R.
 - [ ] API-drift check: compare the live API against the published OpenAPI spec (`https://data.europa.eu/api/hub/search/openapi.yaml`) on a schedule.
 - [x] Run Julia `Pkg.test()` on a normal machine (the registry error was a wrong `Test` UUID in `julia/test/Project.toml`; fixed).
-- [ ] Verify that `bbox` actually filters results.
+- [x] Verify that `bbox` actually filters results. It does (overlap match), but drops datasets without a spatial extent (~47%); now validated client-side and documented.
 
 ## 2. Close the "found it, now give me the data" gap
 - [ ] `load_distribution()`: download and read straight into a DataFrame (CSV, JSON, XLSX, Parquet).
@@ -26,8 +26,9 @@ Suggested order: phase 1, then `load_distribution` and caching from phase 2, the
 - [ ] Dump support: one-off converter from the full metadata dump to Parquet or DuckDB (see `metadata-dump.md`); keep it an optional helper, not a core dependency.
 
 ## 4. Make it adoptable
-- [ ] Docs sites (mkdocs, Documenter.jl, pkgdown) with the same worked examples in all three languages; notebooks as examples.
+- [ ] Docs sites (mkdocs, Documenter.jl, pkgdown) with the same worked examples in all three languages; notebooks as examples. Sites live at https://randsley.github.io/dataeuropa/ (home, getting started, reference); worked examples and notebooks still to do.
 - [ ] Releases: PyPI, Julia General registry, r-universe first, CRAN later.
+- [x] Full MIT licence text, recognised by GitHub, with a copy in each package folder.
 - [ ] CHANGELOG, `CITATION.cff`, Zenodo DOI.
 - [ ] Replace the placeholder email in `r/DESCRIPTION` before any CRAN submission.
 - [ ] Announce: Julia Discourse, rOpenSci, the portal's own community.

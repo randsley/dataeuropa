@@ -96,6 +96,21 @@ end
 
 # ---------------------------------------------------------------- search
 
+# Check (min_lon, min_lat, max_lon, max_lat) and return the Search API parameters. The API ignores
+# an incomplete box and rejects min > max with an unhelpful 400, so check here.
+function _bbox_params(bbox)
+    msg = "bbox must be 4 numbers: (min_lon, min_lat, max_lon, max_lat)"
+    (bbox isa Union{Tuple,AbstractVector} && length(bbox) == 4 && all(v -> v isa Real, bbox)) ||
+        throw(ArgumentError(msg))
+    min_lon, min_lat, max_lon, max_lat = Float64.(collect(bbox))
+    -180 <= min_lon <= max_lon <= 180 ||
+        throw(ArgumentError("bbox longitudes must satisfy -180 <= min_lon <= max_lon <= 180"))
+    -90 <= min_lat <= max_lat <= 90 ||
+        throw(ArgumentError("bbox latitudes must satisfy -90 <= min_lat <= max_lat <= 90"))
+    return Dict{String,Any}("bboxMinLon" => min_lon, "bboxMinLat" => min_lat,
+                            "bboxMaxLon" => max_lon, "bboxMaxLat" => max_lat)
+end
+
 """
     search(q=nothing; filters="dataset", facets=nothing, limit=10, page=0, sort=nothing,
            country, catalog, format, license, category, publisher, keywords, hvd,
@@ -104,7 +119,10 @@ end
 Raw Search API call; returns the `result` object (`count`, `results`, `facets`, ...).
 `country` takes ISO-2 codes ("pt"), `format` ids such as "CSV", `category` DCAT-AP theme codes
 ("ENVI"). Use [`facet_values`](@ref) to discover ids. `sort` e.g. "modified+desc".
-`bbox` is `(minLon, minLat, maxLon, maxLat)`.
+
+`bbox` is `(min_lon, min_lat, max_lon, max_lat)` in WGS84 degrees. A dataset matches when its
+spatial extent overlaps the box, so datasets covering all of Europe or the world match any box.
+Datasets without a spatial extent (about half the portal) never match.
 """
 function search(q::Union{Nothing,AbstractString}=nothing; filters="dataset", facets=nothing,
                 limit::Integer=10, page::Integer=0, sort=nothing, country=nothing, catalog=nothing,
@@ -121,11 +139,7 @@ function search(q::Union{Nothing,AbstractString}=nothing; filters="dataset", fac
     min_date !== nothing && (p["minDate"] = min_date)
     max_date !== nothing && (p["maxDate"] = max_date)
     date_type !== nothing && (p["dateType"] = date_type)
-    if bbox !== nothing
-        for (k, v) in zip(("bboxMinLon", "bboxMinLat", "bboxMaxLon", "bboxMaxLat"), bbox)
-            p[k] = v
-        end
-    end
+    bbox !== nothing && merge!(p, _bbox_params(bbox))
     for (k, v) in pairs(extra)
         p[string(k)] = v
     end

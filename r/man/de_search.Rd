@@ -45,7 +45,9 @@ de_search(
 
 \item{min_date, max_date, date_type}{Date range; `date_type` one of issued, modified, temporal.}
 
-\item{bbox}{Numeric `c(minLon, minLat, maxLon, maxLat)`.}
+\item{bbox}{Numeric `c(min_lon, min_lat, max_lon, max_lat)` in WGS84 degrees. A dataset matches
+when its spatial extent overlaps the box, so datasets covering all of Europe or the world match
+any box. Datasets without a spatial extent (about half the portal) never match.}
 
 \item{aggregation}{Return facet counts?}
 

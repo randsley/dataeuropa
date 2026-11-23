@@ -34,6 +34,8 @@ Convenience filters on all search functions: `country` (ISO-2, e.g. `"pt"`), `ca
 (`"CSV"`), `license`, `category` (DCAT-AP theme, e.g. `"ENVI"`), `publisher`, `keywords`, `hvd`
 (high-value datasets), plus `sort`, `min_date`/`max_date`/`date_type`, `bbox`.
 Values within one filter are OR-ed; different filters are AND-ed.
+`bbox` (min lon, min lat, max lon, max lat) matches datasets whose spatial extent overlaps the box;
+datasets with no extent (about half the portal) never match, so it suits geodata searches only.
 
 ## Quick start
 
@@ -85,3 +87,5 @@ General registry or GitHub; the three package names were free. Nearby tools, non
 - Licence ids are whatever the publisher supplied, so they are not normalised.
 - SPARQL text filters over the full graph can take 10 to 40 s; always use `LIMIT`.
 - The Search API caps `limit` at 1000 per request; use scroll for more.
+- `bbox` drops every dataset without a spatial extent (about 47% of records, and all of some
+  national catalogues, e.g. Portugal's), and Europe- or world-wide datasets match any box.

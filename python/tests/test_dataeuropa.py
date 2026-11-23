@@ -1,7 +1,7 @@
 import pytest
 
 import dataeuropa as de
-from dataeuropa.client import _build_facets, pick_lang, summarise_dataset
+from dataeuropa.client import _bbox_params, _build_facets, pick_lang, summarise_dataset
 
 
 def test_pick_lang():
@@ -24,6 +24,15 @@ def test_summarise_dataset():
     s = summarise_dataset(d)
     assert s["formats"] == ["CSV", "JSON"] and s["n_distributions"] == 3
     assert s["landing_page"] == "http://lp" and s["country"] == "pt"
+
+
+def test_bbox_params():
+    assert _bbox_params((20, 59.7, 31.6, 70.1)) == {
+        "bboxMinLon": 20.0, "bboxMinLat": 59.7, "bboxMaxLon": 31.6, "bboxMaxLat": 70.1}
+    for bad in [(1, 2, 3), (1, 2, 3, 4, 5), ("a", 1, 2, 3), (10, 0, 5, 1), (0, 10, 1, 5),
+                (-200, 0, 0, 1), (0, 0, 1, 95)]:
+        with pytest.raises(ValueError):
+            _bbox_params(bad)
 
 
 live = pytest.mark.live
@@ -55,3 +64,11 @@ def test_live_sparql():
     t = de.sparql("SELECT (COUNT(?s) AS ?n) WHERE { ?s a <http://www.w3.org/ns/dcat#Dataset> }")
     assert int(t["n"][0]) > 1_000_000
     assert de.sparql("ASK { ?s ?p ?o }") is True
+
+
+@live
+def test_live_bbox_filters():
+    # Overlap match: a box over Finland returns fewer records than no box, and more than none.
+    total = de.count()
+    n = de.count(bbox=(20, 59.7, 31.6, 70.1))
+    assert 0 < n < total

@@ -23,6 +23,18 @@ Values within one filter are OR-ed; different filters are AND-ed:
 de.search_datasets("budget", country=["pt", "es"], format="CSV")   # (PT or ES) and CSV
 ```
 
+## Searching by area
+
+```python
+de.search_datasets("rivers", bbox=(20, 59.7, 31.6, 70.1))   # min lon, min lat, max lon, max lat
+```
+
+!!! note "How `bbox` matches"
+    A dataset matches when its spatial extent overlaps the box, so datasets that cover all of
+    Europe or the world match any box. Datasets without a spatial extent never match: that is
+    about half the portal, including whole national catalogues (none of Portugal's 21,000 datasets
+    has one). Combine `bbox` with `country` with care.
+
 ## Counting and facets
 
 ```python
