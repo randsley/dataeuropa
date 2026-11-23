@@ -1,0 +1,14 @@
+Package: dataeuropa
+Title: Access the 'data.europa.eu' European Open Data Portal
+Version: 0.1.0
+Authors@R: person("Nigel", "Randsley", role = c("aut", "cre"), email = "nigel@example.org")
+Description: Search, retrieve and download open data from the European data
+    portal <https://data.europa.eu> through its Search API, Registry API and
+    SPARQL endpoint. Returns data frames of datasets, distributions and facets.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Depends: R (>= 4.1.0)
+Imports: httr2 (>= 1.0.0), jsonlite
+Suggests: testthat (>= 3.0.0)
+Config/testthat/edition: 3
+RoxygenNote: 7.3.2

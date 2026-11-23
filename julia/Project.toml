@@ -1,0 +1,16 @@
+name = "DataEuropa"
+uuid = "5a1c0d34-7b0e-4f6e-9a55-2d3c8e1f7b42"
+authors = ["Nigel Randsley"]
+version = "0.1.0"
+
+[deps]
+DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+Downloads = "f43a241f-c20a-4ad4-852c-f6b1247861c6"
+HTTP = "cd3eb016-35fb-5094-929b-558a96fad6f3"
+JSON3 = "0f8b85d8-7281-11e9-16c2-39a750bddbf1"
+
+[compat]
+DataFrames = "1"
+HTTP = "1"
+JSON3 = "1"
+julia = "1.9"
