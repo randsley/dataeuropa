@@ -1,0 +1,47 @@
+{
+ "type": "FeatureCollection",
+ "features": [
+  {
+   "type": "Feature",
+   "id": 1,
+   "properties": {
+    "id": 1,
+    "name": "A1"
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -9.1,
+      38.7
+     ],
+     [
+      -8.6,
+      41.1
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 2,
+   "properties": {
+    "id": 2,
+    "name": "A2"
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -9.1,
+      38.7
+     ],
+     [
+      -7.9,
+      37.0
+     ]
+    ]
+   }
+  }
+ ]
+}

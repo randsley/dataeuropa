@@ -35,6 +35,10 @@ run_case <- function(case) {
       f <- dataeuropa:::de_geo_format(r$format, r$media_type, r$url)
       if (is.na(f)) NULL else f
     })),
+    service_source = list(values = lapply(data, function(r) {
+      s <- dataeuropa:::de_service_source(r$format, r$url)
+      if (is.na(s)) NULL else s
+    })),
     geo_member = list(values = lapply(data, function(r) tryCatch({
       p <- dataeuropa:::de_geo_member(r$names, r$layer)
       list(p$member, p$layer)

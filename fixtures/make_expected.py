@@ -13,7 +13,7 @@ HERE = pathlib.Path(__file__).parent
 sys.path.insert(0, str(HERE.parent / "python" / "src"))
 
 from dataeuropa.client import (_distribution_kind, _distribution_rows, _facet_rows, _file_format, _file_hash, _geo_format, _geo_member,
-                               _geo_summary, _keywords, _read_geodata,
+                               _geo_summary, _keywords, _read_geodata, _service_source,
                                _range_validator, _resume_action,  # noqa: E402
                                _read_table, _sparql_rows, summarise_dataset)
 
@@ -61,6 +61,8 @@ def run(case: dict):
                            for r in data]}
     if kind == "geo_format":
         return {"values": [_geo_format(r.get("format"), r.get("media_type"), r.get("url")) for r in data]}
+    if kind == "service_source":
+        return {"values": [_service_source(r.get("format"), r.get("url")) for r in data]}
     if kind == "geo_member":
         def member(r):
             try:

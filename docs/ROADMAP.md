@@ -17,9 +17,9 @@ Suggested order: phase 1, then `load_distribution` and caching from phase 2, the
 - [x] Verify downloads against the API's checksum (MD5, SHA-1 or SHA-256; on about 3% of distributions). `byte_size` is not checked: in a sample, 20 of 37 sizes were wrong, mostly placeholders (0, 1, 1024).
 - [x] Resumable downloads (Range with If-Range, so a changed file restarts) and an opt-in on-disk cache with a time limit (dataset records, catalogues, `limit=0` searches).
 - [x] Skip service entries when a file is wanted: a `kind` column (file, service, page, none, unknown) and `files_only`. Recognises INSPIRE download services, OGC API Features, Esri REST, feeds, OGC queries in URLs, web pages, localhost placeholders, and Cyrillic look-alike letters in format ids (`сsv`).
-  - [ ] Future extension: read services instead of skipping them. WFS `GetFeature` and OGC API Features return features as GeoJSON, so they can share the geodata loaders below; WMS/WMTS are images and stay out of scope.
+  - [x] Extension: read feature services instead of skipping them (WFS and OGC API Features, through `load_geodata`; see below). WMS/WMTS are images and stay out of scope; INSPIRE Atom feeds (lists of files) are not read yet.
 - [x] Geodata loaders, step 1 (files): `load_geodata` into a GeoDataFrame, `sf` or a GeoDataFrames.jl table, through GDAL. Opens ZIP archives in place, picks layers, keeps or reprojects the CRS, refuses files over 200 MB unless asked. Plan and decisions: [`geodata-plan.md`](geodata-plan.md).
-  - [ ] Step 2: WFS `GetFeature` and OGC API Features (the services extension above).
+- [x] Geodata loaders, step 2 (services): `load_geodata` reads WFS and OGC API Features through GDAL, which pages through the results; feature types and collections are layers; at most 10,000 features by default (`max_features`). Offline tests use a small OGC API Features server in each language.
 
 ## 3. Use more of the portal
 - [ ] Metadata Quality Assurance (MQA) API: quality scores and link-check results (`https://data.europa.eu/api/mqa/cache/`).

@@ -13,6 +13,8 @@ inputs, the expected outputs, and the list of cases that all three test suites r
 | `files/geo/*` | Sample geodata: GeoJSON, zipped shapefiles (one, two, one without `.prj`), a two-layer GeoPackage, KML, KMZ, GML, and a ZIP with no geodata; written by `make_geo_files.py` (needs geopandas) |
 | `responses/geo_formats.json` | Format ids, media types and URLs to map to a geodata file type |
 | `responses/geo_members.json` | Archive listings to pick the geodata file from |
+| `responses/services.json` | Distributions to map to a GDAL feature-service source (`WFS:` or `OAPIF:`) |
+| `files/oapif/*.geojson` | The collections served by each language's OGC API Features test server (see below) |
 | `responses/edge_cases.json` | Hand-written records for cases the live data rarely shows (missing fields, language fallback, ties, unbound SPARQL variables) |
 | `cases.json` | The cases: which input to read, which conversion to run, with which arguments |
 | `expected/<case>.json` | Expected output for each case, generated from the Python client |
@@ -39,6 +41,7 @@ then guard against unintended changes, and the Julia and R tests check that they
 | `resume_action` | `_resume_action` | `_resume_action` | `de_resume_action` |
 | `geo_format` | `_geo_format` | `_geo_format` | `de_geo_format` |
 | `geo_member` | `_geo_member` | `_geo_member` | `de_geo_member` |
+| `service_source` | `_service_source` | `_service_source` | `de_service_source` |
 | `read_geo` | `_read_geodata` + `_geo_summary` | `_read_geodata` + `_geo_summary` (GeoDataFrames extension) | `de_read_geodata` + `de_geo_summary` |
 
 ## How results are compared
@@ -70,3 +73,19 @@ To add a case, add an entry to `cases.json` (and, if needed, data to `edge_cases
 
 To refresh the recorded responses: `python fixtures/record.py`, then `make_expected.py`. The portal's
 data changes over time, so expect the diff to be large.
+
+## The OGC API Features test server
+
+Reading feature services is tested offline against a small server, written once per language
+(`python/tests/oapif_server.py`, `julia/test/oapif_server.jl`, and in `r/tests/testthat/test-geodata.R`).
+It must run in its own process: GDAL blocks the calling thread while it reads. Under a base path:
+
+- the base path itself: a landing page linking to `/collections`;
+- `/collections`: one entry per `files/oapif/<name>.geojson`;
+- `/collections/<name>`: that collection;
+- `/collections/<name>/items?limit=&offset=`: at most 3 features (fewer if `limit` is smaller)
+  from `offset`, with a `next` link while more remain, and `numberMatched`;
+- anything else: 404 with a JSON body (GDAL also asks for `/api`).
+
+`places` holds 7 points (ids 1 to 7) so reading needs three pages, and a limit of 4 stops after two;
+`roads` holds 2 lines.

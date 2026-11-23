@@ -897,15 +897,46 @@ end
 const _GEOMETRY_TYPES = Dict(uppercase(t) => t for t in ("Point", "LineString", "Polygon", "MultiPoint",
                                                          "MultiLineString", "MultiPolygon", "GeometryCollection"))
 
-# Defined by the GeoDataFrames package extension: read a local geodata file (or a ZIP holding one)
-# into a DataFrame with a `geometry` column; and summarise one for the conformance tests.
+# Defined by the GeoDataFrames package extension: read a local geodata file (or a ZIP holding one),
+# or any GDAL data source, into a DataFrame with a `geometry` column; and summarise one for the
+# conformance tests.
 function _read_geodata end
+function _read_source end
 function _geo_summary end
 
-"""
-    load_geodata(url_or_row; layer=nothing, crs=nothing, max_mb=200) -> DataFrame
+# Format ids of the feature services load_geodata reads, after _format_key().
+const _WFS_FORMATS = ("wfs", "ogc:wfs", "wfs_srvc")
+const _OAPIF_FORMATS = ("ogcfeat", "ogc api features", "ogcapi-features")
 
-Download a geodata distribution and read it into a `DataFrame` with a `geometry` column, as
+# The GDAL data source for a feature service: "WFS:<url>" or "OAPIF:<url>", or `nothing` when the
+# distribution is not one (or is another service, such as WMS). A `service=` parameter in the URL
+# decides (service=WFS: WFS, anything else: nothing), because format ids are often wrong.
+# Otherwise an OGC API Features format id, or a URL ending in /collections/{id} or
+# /collections/{id}/items, means OGC API Features (the URL is cut to the collection, without
+# query); a WFS format id means WFS. Only http(s) URLs.
+function _service_source(fmt=nothing, url=nothing)
+    fmt, url = _str(fmt), _str(url)
+    (url === nothing || isempty(strip(url))) && return nothing
+    u = String(strip(url))
+    m = match(r"^([A-Za-z][A-Za-z0-9+.-]*)://([^/?#]+)([^?#]*)(\?[^#]*)?", u)
+    (m === nothing || !(lowercase(m[1]) in ("http", "https"))) && return nothing
+    query = m[4] === nothing ? "" : m[4][2:end]
+    path = rstrip(m[3], '/')
+    svc = match(r"(?:^|&)service=([^&]*)"i, query)
+    svc === nothing || return lowercase(svc[1]) == "wfs" ? "WFS:$u" : nothing
+    key = (fmt === nothing || isempty(strip(fmt))) ? "" : _format_key(fmt)
+    coll = match(r"/collections/[^/]+(/items)?$", path)
+    if key in _OAPIF_FORMATS || coll !== nothing
+        coll !== nothing && coll[1] !== nothing && (path = path[1:end-length("/items")])
+        return "OAPIF:$(lowercase(m[1]))://$(m[2])$path"
+    end
+    return key in _WFS_FORMATS ? "WFS:$u" : nothing
+end
+
+"""
+    load_geodata(url_or_row; layer=nothing, crs=nothing, max_mb=200, max_features=10_000) -> DataFrame
+
+Download a geodata distribution, or read a feature service, into a `DataFrame` with a `geometry` column, as
 GeoDataFrames.jl does. Needs `using GeoDataFrames` first. GDAL does the reading, so any vector
 format it knows works: GeoJSON, Shapefile, GeoPackage, KML/KMZ, GML, GPX, MapInfo TAB, FlatGeobuf,
 file geodatabase. The coordinate reference system is in the table's `"crs"` metadata.
@@ -922,19 +953,32 @@ The source coordinate reference system is kept. `crs` (e.g. `"EPSG:4326"`) repro
 without one (a shapefile without .prj) is read as stored, with a warning.
 
 Files over `max_mb` megabytes (default 200) are not downloaded; `max_mb=nothing` lifts the limit.
-Throws `ArgumentError` for services (WMS, WFS), web pages, HTML served instead of data, and files
-GDAL cannot read; and an error for checksum mismatches.
+
+Feature services are read too: WFS (`service=WFS` URLs, WFS format ids) and OGC API Features
+(collection or landing-page URLs, OGCFEAT format ids). GDAL pages through the results. Each
+collection or feature type is a layer. At most `max_features` features (default 10,000) are
+read, with a warning when there are more; `max_features=nothing` reads all.
+
+Throws `ArgumentError` for other services (WMS, ...), web pages, HTML served instead of data, and
+files or services GDAL cannot read; and an error for checksum mismatches.
 """
-function load_geodata(x; layer=nothing, crs=nothing, max_mb::Union{Nothing,Real}=200)
+function load_geodata(x; layer=nothing, crs=nothing, max_mb::Union{Nothing,Real}=200,
+                      max_features::Union{Nothing,Real}=10_000)
     isempty(methods(_read_geodata)) &&
         throw(ArgumentError("load_geodata needs the GeoDataFrames package: `using GeoDataFrames` first"))
     url = x isa AbstractString ? String(x) : _field(x, :url)
     (url === nothing || isempty(url)) && throw(ArgumentError("no URL available for this distribution"))
     fmt, media_type, dl = x isa AbstractString ? (nothing, nothing, nothing) :
                           (_field(x, :format), _field(x, :media_type), _field(x, :download_url))
+    source = _service_source(fmt, url)
+    if source !== nothing
+        limit = max_features === nothing || isinf(max_features) ? nothing : Int(max_features)
+        return _read_source(source, layer, crs; max_features=limit, what="the service")
+    end
     kind = _distribution_kind(fmt, media_type, url, dl)
     kind == "service" &&
-        throw(ArgumentError("$url is a service ($(something(fmt, ""))), not a file; reading services is not supported yet"))
+        throw(ArgumentError("$url is a service ($(something(fmt, ""))) that load_geodata cannot read; " *
+                            "it reads files, WFS and OGC API Features"))
     kind == "page" && throw(ArgumentError("$url is a web page, not a file"))
     ext = something(_geo_format(fmt, media_type, url), _url_extension(url), "")
     occursin(r"^[A-Za-z0-9]{1,8}$", ext) || (ext = "dat")

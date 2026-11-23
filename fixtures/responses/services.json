@@ -1,0 +1,62 @@
+[
+ {
+  "format": "WFS_SRVC",
+  "url": "https://gis.example.org/geoserver/wfs?service=WFS&version=2.0.0&request=GetFeature&typeName=ns:roads"
+ },
+ {
+  "format": "WFS",
+  "url": "https://example.org/wfs/abc?service=WFS&request=GetCapabilities"
+ },
+ {
+  "format": "ogc:wfs",
+  "url": "https://example.org/ows"
+ },
+ {
+  "format": "HTML",
+  "url": "https://example.org/ows?SERVICE=wfs&REQUEST=GetCapabilities"
+ },
+ {
+  "format": "WFS_SRVC",
+  "url": "https://example.org/wms?service=WMS&request=GetCapabilities"
+ },
+ {
+  "format": "WMS_SRVC",
+  "url": "https://example.org/wms"
+ },
+ {
+  "format": "OGCFEAT",
+  "url": "https://maps.example.org/ogc/features/v1/collections/parcels"
+ },
+ {
+  "format": "OGCFEAT",
+  "url": "https://maps.example.org/ogc/features/v1/"
+ },
+ {
+  "format": null,
+  "url": "https://maps.example.org/ogc/features/v1/collections/parcels/items?f=json&limit=100"
+ },
+ {
+  "format": "GEOJSON",
+  "url": "https://api.example.org/collections/roads/items"
+ },
+ {
+  "format": "OGC API Features",
+  "url": "https://api.example.org/v1?f=json#x"
+ },
+ {
+  "format": "CSV",
+  "url": "https://example.org/data/collections/2020/file.csv"
+ },
+ {
+  "format": "ATOM",
+  "url": "https://example.org/inspire/atom.xml"
+ },
+ {
+  "format": "WFS",
+  "url": "ftp://example.org/wfs"
+ },
+ {
+  "format": "WFS",
+  "url": ""
+ }
+]

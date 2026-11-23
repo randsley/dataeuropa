@@ -35,10 +35,75 @@ geo_url(name) = "http://127.0.0.1:$geo_port/$name"
     end
     @test nrow(load_geodata(geo_url("points.geojson"); max_mb=nothing)) == 3
 
-    @test_throws "is a service" load_geodata((url="https://example.org/wfs?service=WFS&request=GetCapabilities", format="WFS"))
+    @test_throws "cannot read; it reads files, WFS and OGC API Features" load_geodata(
+        (url="https://example.org/wms?service=WMS&request=GetCapabilities", format="WMS"))
     @test_throws "web page" load_geodata((url="https://example.org/map", format="HTML"))
 end
 close(geo_server)
+
+# The OGC API Features test server (oapif_server.jl), in its own process: a GDAL call blocks this
+# process's only thread, so a server task here could not answer.
+oapif_port = let (p, s) = HTTP.Sockets.listenany(HTTP.Sockets.IPv4("127.0.0.1"), 18280)
+    close(s)
+    Int(p)
+end
+oapif_proc = run(pipeline(`$(Base.julia_cmd()) --project=$(dirname(Base.active_project())) $(joinpath(@__DIR__, "oapif_server.jl")) $oapif_port`;
+                          stdout=devnull), wait=false)
+oapif = "http://127.0.0.1:$oapif_port/ogc"
+oapif_ready = false
+for _ in 1:240   # wait up to 2 minutes for Julia to start and load HTTP
+    try
+        HTTP.get(oapif; readtimeout=2, retry=false)
+        global oapif_ready = true
+        break
+    catch
+        process_running(oapif_proc) || break
+        sleep(0.5)
+    end
+end
+
+@testset "feature services" begin
+    @test oapif_ready
+    if oapif_ready
+        df = load_geodata((url="$oapif/collections/places", format="OGCFEAT"))
+        @test nrow(df) == 7 && df.name[1:2] == ["P1", "P2"] && DE._geo_summary(df)["crs"] == 4326
+        landing = @test_logs (:info, r"2 layers") match_mode=:any load_geodata((url=oapif, format="OGCFEAT"))
+        @test nrow(landing) == 7
+        roads = load_geodata("$oapif/collections/roads/items?f=json"; layer=1, crs="EPSG:3035")
+        @test nrow(roads) == 2 && DE._geo_summary(roads)["crs"] == 3035
+        @test nrow(load_geodata((url=oapif, format="OGCFEAT"); layer="roads")) == 2
+
+        limited = @test_logs (:warn, r"more than 4 features; read the first 4") match_mode=:any load_geodata(
+            "$oapif/collections/places"; max_features=4)
+        @test limited.id == 1:4 && "geometry" in names(limited) && DE._geo_summary(limited)["crs"] == 4326
+        @test nrow(@test_logs load_geodata("$oapif/collections/places"; max_features=7)) == 7
+        @test nrow(@test_logs load_geodata("$oapif/collections/places"; max_features=nothing)) == 7
+    end
+end
+kill(oapif_proc)
+
+LIVE && @testset "live feature services" begin
+    for fmt in ("WFS_SRVC", "OGCFEAT")
+        found = false
+        for id in search_datasets(; format=fmt, limit=20).id
+            for row in eachrow(distributions(id))
+                DE._service_source(row.format, row.url) === nothing && continue
+                df = try
+                    Base.CoreLogging.with_logger(Base.CoreLogging.NullLogger()) do
+                        load_geodata(row; max_features=20)
+                    end
+                catch
+                    continue   # unreachable hosts and broken services are common; try the next one
+                end
+                @test "geometry" in names(df) && 0 < nrow(df) <= 20
+                found = true
+                break
+            end
+            found && break
+        end
+        found || @info "no working $fmt service among the first results"
+    end
+end
 
 LIVE && @testset "live geodata" begin
     found = false

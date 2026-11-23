@@ -1,6 +1,6 @@
 # Plan: geodata loaders
 
-Status: step 1 (files) done; step 2 (services) not started. Decisions recorded at the end.
+Status: done. Step 1 (files) and step 2 (WFS and OGC API Features) are in all three clients. Decisions recorded at the end.
 
 ## Why
 

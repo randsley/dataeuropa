@@ -2,9 +2,15 @@
 % Please edit documentation in R/dataeuropa.R
 \name{de_load_geodata}
 \alias{de_load_geodata}
-\title{Download a geodata distribution into an sf data frame}
+\title{Download a geodata distribution, or read a feature service, into an sf data frame}
 \usage{
-de_load_geodata(x, layer = NULL, crs = NULL, max_mb = 200)
+de_load_geodata(
+  x,
+  layer = NULL,
+  crs = NULL,
+  max_mb = 200,
+  max_features = 10000
+)
 }
 \arguments{
 \item{x}{A URL, or a one-row data frame from [de_distributions()].}
@@ -15,6 +21,9 @@ geodatabase). Default: the first, with a message if there are more.}
 \item{crs}{Reproject to this coordinate reference system, e.g. `"EPSG:4326"`.}
 
 \item{max_mb}{Do not download files larger than this many megabytes; `Inf` lifts the limit.}
+
+\item{max_features}{Read at most this many features from a service, with a warning when there
+are more; `Inf` reads all.}
 }
 \value{
 An sf data frame.
@@ -33,6 +42,10 @@ error lists them. Archives inside archives are not opened.
 The source coordinate reference system is kept; a file without one (a shapefile without .prj)
 is read as stored, with a warning.
 
-Raises an error for services (WMS, WFS), web pages, HTML served instead of data, files GDAL
-cannot read, and checksum mismatches.
+Feature services are read too: WFS (`service=WFS` URLs, WFS format ids) and OGC API Features
+(collection or landing-page URLs, OGCFEAT format ids). GDAL pages through the results. Each
+collection or feature type is a layer.
+
+Raises an error for other services (WMS, ...), web pages, HTML served instead of data, files or
+services GDAL cannot read, and checksum mismatches.
 }

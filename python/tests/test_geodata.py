@@ -85,10 +85,73 @@ def test_size_limit(server, tmp_path):
 
 
 def test_refusals():
-    with pytest.raises(ValueError, match="is a service"):
-        de.load_geodata({"url": "https://example.org/wfs?service=WFS&request=GetCapabilities", "format": "WFS"})
+    with pytest.raises(ValueError, match="cannot read; it reads files, WFS and OGC API Features"):
+        de.load_geodata({"url": "https://example.org/wms?service=WMS&request=GetCapabilities", "format": "WMS"})
     with pytest.raises(ValueError, match="web page"):
         de.load_geodata({"url": "https://example.org/map", "format": "HTML"})
+
+
+@pytest.fixture(scope="module")
+def oapif():
+    """The OGC API Features test server (tests/oapif_server.py), in its own process."""
+    import socket
+    import subprocess
+    import sys
+    import time
+
+    import requests
+
+    with socket.socket() as s:
+        s.bind(("127.0.0.1", 0))
+        port = s.getsockname()[1]
+    proc = subprocess.Popen([sys.executable, str(pathlib.Path(__file__).with_name("oapif_server.py")), str(port)])
+    base = f"http://127.0.0.1:{port}/ogc"
+    for _ in range(100):
+        try:
+            requests.get(base, timeout=1)
+            break
+        except requests.ConnectionError:
+            time.sleep(0.1)
+    yield base
+    proc.kill()
+
+
+def test_ogc_api_features(oapif):
+    gdf = de.load_geodata({"url": f"{oapif}/collections/places", "format": "OGCFEAT"})
+    assert len(gdf) == 7 and list(gdf["name"])[:2] == ["P1", "P2"] and gdf.crs.to_epsg() == 4326
+    with pytest.warns(UserWarning, match="2 layers"):
+        assert len(de.load_geodata({"url": oapif, "format": "OGCFEAT"})) == 7      # landing page: first collection
+    roads = de.load_geodata(f"{oapif}/collections/roads/items?f=json", layer=0, crs="EPSG:3035")
+    assert len(roads) == 2 and roads.crs.to_epsg() == 3035
+    assert len(de.load_geodata({"url": oapif, "format": "OGCFEAT"}, layer="roads")) == 2
+
+
+def test_feature_limit(oapif):
+    with pytest.warns(UserWarning, match="more than 4 features; read the first 4"):
+        gdf = de.load_geodata(f"{oapif}/collections/places", max_features=4)
+    assert list(gdf["id"]) == [1, 2, 3, 4]
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        assert len(de.load_geodata(f"{oapif}/collections/places", max_features=7)) == 7
+        assert len(de.load_geodata(f"{oapif}/collections/places", max_features=None)) == 7
+
+
+@pytest.mark.live
+@pytest.mark.parametrize("fmt", ["WFS_SRVC", "OGCFEAT"])
+def test_live_service(fmt):
+    for dataset_id in de.search_datasets(facets={"format": [fmt]}, limit=20)["id"]:
+        for row in de.distributions(dataset_id).to_dict("records"):
+            if not de.client._service_source(row["format"], row["url"]):
+                continue
+            try:
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")
+                    gdf = de.load_geodata(row, max_features=20)
+            except ValueError:
+                continue  # unreachable hosts and broken services are common; try the next one
+            assert isinstance(gdf, geopandas.GeoDataFrame) and 0 < len(gdf) <= 20
+            return
+    pytest.skip(f"no working {fmt} service among the first results")
 
 
 @pytest.mark.live

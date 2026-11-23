@@ -40,17 +40,72 @@ function DataEuropa._read_geodata(path, layer, crs)
     elseif length(head) >= 2 && head[1:2] == UInt8[0x1f, 0x8b]
         src = "/vsigzip/$src"
     end
+    return DataEuropa._read_source(src, layer, crs)
+end
+
+# GeoDataFrames warns "Ignoring key-value metadata string" for metadata it cannot parse, such as
+# the JSON description of every OGC API collection. Pass every other log record on.
+const CL = Base.CoreLogging
+struct _QuietMetadata{L<:CL.AbstractLogger} <: CL.AbstractLogger
+    parent::L
+end
+CL.min_enabled_level(l::_QuietMetadata) = CL.min_enabled_level(l.parent)
+CL.shouldlog(l::_QuietMetadata, args...) = CL.shouldlog(l.parent, args...)
+CL.catch_exceptions(l::_QuietMetadata) = CL.catch_exceptions(l.parent)
+function CL.handle_message(l::_QuietMetadata, level, msg, args...; kwargs...)
+    msg isa AbstractString && startswith(msg, "Ignoring key-value metadata") && return nothing
+    return CL.handle_message(l.parent, level, msg, args...; kwargs...)
+end
+
+# Run an OGR SQL query on a data source into a DataFrame shaped as GeoDataFrames.read makes them
+# (geometry column `geometry`, "crs" and "geometrycolumns" metadata). Used for feature limits.
+function _read_sql(src, sql)
+    df, crs = AG.read(src) do ds
+        AG.executesql(ds, sql) do t
+            sr = AG.getspatialref(t)
+            DataFrame(t), (sr.ptr == C_NULL ? nothing : GFT.WellKnownText(GFT.CRS(), AG.toWKT(sr)))
+        end
+    end
+    g = findfirst(n -> nonmissingtype(eltype(df[!, n])) <: AG.AbstractGeometry, names(df))
+    g === nothing && return df
+    g == "geometry" || rename!(df, g => "geometry")
+    for (key, value) in ("crs" => crs, "geometrycolumns" => (:geometry,),
+                         "GEOINTERFACE:crs" => crs, "GEOINTERFACE:geometrycolumns" => (:geometry,))
+        metadata!(df, key, value; style=:note)
+    end
+    return df
+end
+
+# Read a GDAL data source (a local path, /vsizip/ path, or WFS:/OAPIF: service) into a DataFrame.
+# `max_features`: read at most that many (with OGR SQL LIMIT), with a warning if there are more.
+function DataEuropa._read_source(src, layer=nothing, crs=nothing; max_features=nothing, what="the file")
     layers = try
         _layers(src)
     catch e
-        throw(ArgumentError("cannot read the file as geodata: $(sprint(showerror, e))"))
+        throw(ArgumentError("cannot read $what as geodata: $(sprint(showerror, e))"))
     end
     name = DataEuropa._pick_layer(first.(layers), layer)
     fid = last(layers[findfirst(l -> first(l) == name, layers)])
-    df = GeoDataFrames.read(GeoDataFrames.ArchGDALDriver(), src; layer=name)
-    gcols = GeoDataFrames.getgeometrycolumns(df)
+    df = try
+        if max_features === nothing
+            CL.with_logger(_QuietMetadata(CL.current_logger())) do
+                GeoDataFrames.read(GeoDataFrames.ArchGDALDriver(), src; layer=name)
+            end
+        else
+            _read_sql(src, "SELECT * FROM \"$(replace(name, "\"" => "\"\""))\" LIMIT $(max_features + 1)")
+        end
+    catch e
+        what == "the file" && rethrow()
+        throw(ArgumentError("cannot read $what: $(sprint(showerror, e))"))
+    end
+    if max_features !== nothing && nrow(df) > max_features
+        n = DataEuropa._thousands(max_features)
+        @warn "$what has more than $n features; read the first $n (pass max_features=nothing for all)"
+        deleteat!(df, max_features+1:nrow(df))
+    end
+    gcols = metadata(df, "geometrycolumns", ())
     (isempty(gcols) || !(String(first(gcols)) in names(df))) &&
-        throw(ArgumentError("the file has no geometries (a plain table?); use load_distribution"))
+        throw(ArgumentError("$what has no geometries (a plain table?); use load_distribution"))
     # Like Python and R: the FID column is not an attribute, and the geometry column is `geometry`.
     !isempty(fid) && fid in names(df) && select!(df, Not(fid))
     if first(gcols) != :geometry

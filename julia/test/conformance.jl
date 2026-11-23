@@ -50,6 +50,8 @@ function _run(case)
     kind == "geo_format" &&
         return Dict("values" => [DE._geo_format(get(r, :format, nothing), get(r, :media_type, nothing),
                                                 get(r, :url, nothing)) for r in data])
+    kind == "service_source" &&
+        return Dict("values" => [DE._service_source(get(r, :format, nothing), get(r, :url, nothing)) for r in data])
     if kind == "geo_member"
         return Dict("values" => map(data) do r
             try

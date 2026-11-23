@@ -121,7 +121,18 @@ system is in its `"crs"` metadata.
 - **Size**: files over `max_mb` megabytes (default 200) are not downloaded.
   `download_distribution` takes the same limit as `max_bytes`.
 
-Services (WMS, WFS) and web pages are refused; reading WFS and OGC API Features is planned.
+### Feature services (WFS, OGC API Features)
+
+```julia
+df = load_geodata(row)                                    # a WFS or OGC API Features distribution
+df = load_geodata(row; layer="parcels")                   # a feature type or collection
+df = load_geodata(row; max_features=nothing)              # all features (default: the first 10,000)
+```
+
+`load_geodata` also reads WFS (URLs with `service=WFS`, WFS format ids) and OGC API Features
+(collection or landing-page URLs, `OGCFEAT`). GDAL pages through the results; each feature type
+or collection is a layer. It reads at most `max_features` features, with a warning when there
+are more. Other services (WMS, WMTS: images; INSPIRE Atom feeds) and web pages are refused.
 
 ## Metadata as RDF, and SPARQL
 

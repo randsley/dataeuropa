@@ -117,7 +117,18 @@ vector format it knows works. The result is a GeoDataFrame whose geometry column
 - **Size**: files over `max_mb` megabytes (default 200) are not downloaded. `download` takes the
   same limit as `max_bytes`.
 
-Services (WMS, WFS) and web pages are refused; reading WFS and OGC API Features is planned.
+### Feature services (WFS, OGC API Features)
+
+```python
+gdf = de.load_geodata(row)                               # a WFS or OGC API Features distribution
+gdf = de.load_geodata(row, layer="parcels")              # a feature type or collection
+gdf = de.load_geodata(row, max_features=None)            # all features (default: the first 10,000)
+```
+
+`load_geodata` also reads WFS (URLs with `service=WFS`, WFS format ids) and OGC API Features
+(collection or landing-page URLs, `OGCFEAT`). GDAL pages through the results; each feature type
+or collection is a layer. It reads at most `max_features` features, with a warning when there
+are more. Other services (WMS, WMTS: images; INSPIRE Atom feeds) and web pages are refused.
 
 ## Metadata as RDF, and SPARQL
 

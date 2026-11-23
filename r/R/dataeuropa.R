@@ -824,6 +824,35 @@ de_geo_member <- function(names, layer = NULL) {
        "); pick one with layer =", call. = FALSE)
 }
 
+# Format ids of the feature services de_load_geodata() reads, after de_format_key().
+.wfs_formats <- c("wfs", "ogc:wfs", "wfs_srvc")
+.oapif_formats <- c("ogcfeat", "ogc api features", "ogcapi-features")
+
+# The GDAL data source for a feature service: "WFS:<url>" or "OAPIF:<url>", or NA when the
+# distribution is not one (or is another service, such as WMS). A `service=` parameter in the URL
+# decides (service=WFS: WFS, anything else: NA), because format ids are often wrong. Otherwise an
+# OGC API Features format id, or a URL ending in /collections/{id} or /collections/{id}/items,
+# means OGC API Features (the URL is cut to the collection, without query); a WFS format id
+# means WFS. Only http(s) URLs.
+de_service_source <- function(fmt = NULL, url = NULL) {
+  fmt <- str1(fmt); url <- str1(url)
+  if (!has_text(url)) return(NA_character_)
+  u <- trimws(url)
+  m <- regmatches(u, regexec("^([A-Za-z][A-Za-z0-9+.-]*)://([^/?#]+)([^?#]*)(\\?[^#]*)?", u))[[1]]
+  if (length(m) == 0 || !(tolower(m[2]) %in% c("http", "https"))) return(NA_character_)
+  query <- sub("^\\?", "", m[5])
+  path <- sub("/+$", "", m[4])
+  svc <- regmatches(query, regexec("(?:^|&)service=([^&]*)", query, ignore.case = TRUE, perl = TRUE))[[1]]
+  if (length(svc)) return(if (tolower(svc[2]) == "wfs") paste0("WFS:", u) else NA_character_)
+  key <- if (has_text(fmt)) de_format_key(fmt) else ""
+  coll <- regmatches(path, regexec("/collections/[^/]+(/items)?$", path))[[1]]
+  if (key %in% .oapif_formats || length(coll)) {
+    if (length(coll) && nzchar(coll[2])) path <- sub("/items$", "", path)
+    return(paste0("OAPIF:", tolower(m[2]), "://", m[3], path))
+  }
+  if (key %in% .wfs_formats) paste0("WFS:", u) else NA_character_
+}
+
 # The layer to read: `layer` by name (exact, else ignoring case) or 1-based position; by default
 # the first, with a message if there are more.
 de_pick_layer <- function(layers, layer = NULL) {
@@ -859,12 +888,31 @@ de_read_geodata <- function(path, layer = NULL, crs = NULL) {
   } else if (length(head) >= 2 && identical(head[1:2], as.raw(c(0x1f, 0x8b)))) {
     src <- paste0("/vsigzip/", src)
   }
+  de_read_source(src, layer, crs)
+}
+
+# Read a GDAL data source (a local path, /vsizip/ path, or WFS:/OAPIF: service) into an sf data
+# frame. `max_features`: read at most that many (with OGR SQL LIMIT), with a warning if there are more.
+de_read_source <- function(src, layer = NULL, crs = NULL, max_features = NULL, what = "the file") {
   layers <- tryCatch(suppressWarnings(sf::st_layers(src)$name),
-                     error = function(e) stop("cannot read the file as geodata: ", conditionMessage(e), call. = FALSE))
-  df <- withCallingHandlers(
-    sf::st_read(src, layer = de_pick_layer(layers, layer), quiet = TRUE, stringsAsFactors = FALSE),
+                     error = function(e) stop("cannot read ", what, " as geodata: ", conditionMessage(e), call. = FALSE))
+  name <- de_pick_layer(layers, layer)
+  quiet_read <- function(...) withCallingHandlers(
+    sf::st_read(src, ..., quiet = TRUE, stringsAsFactors = FALSE),
     warning = function(w) if (grepl("no simple feature geometries", conditionMessage(w))) invokeRestart("muffleWarning"))
-  if (!inherits(df, "sf")) stop("the file has no geometries (a plain table?); use de_load_distribution()", call. = FALSE)
+  df <- tryCatch(
+    if (is.null(max_features)) quiet_read(layer = name)
+    else quiet_read(query = sprintf('SELECT * FROM "%s" LIMIT %s', gsub('"', '""', name),
+                                    format(max_features + 1, scientific = FALSE))),
+    error = function(e) if (what == "the file") stop(e) else
+      stop("cannot read ", what, ": ", conditionMessage(e), call. = FALSE))
+  if (!is.null(max_features) && nrow(df) > max_features) {
+    n <- format(max_features, big.mark = ",", scientific = FALSE)
+    warning(what, " has more than ", n, " features; read the first ", n, " (pass max_features = Inf for all)",
+            call. = FALSE)
+    df <- df[seq_len(max_features), ]
+  }
+  if (!inherits(df, "sf")) stop(what, " has no geometries (a plain table?); use de_load_distribution()", call. = FALSE)
   if (attr(df, "sf_column") != "geometry") sf::st_geometry(df) <- "geometry"
   if (is.na(sf::st_crs(df))) {
     if (!is.null(crs))
@@ -901,7 +949,7 @@ de_geo_summary <- function(df, columns = NULL) {
   out
 }
 
-#' Download a geodata distribution into an sf data frame
+#' Download a geodata distribution, or read a feature service, into an sf data frame
 #'
 #' Needs the sf package. GDAL does the reading, so any vector format it knows works: GeoJSON,
 #' Shapefile, GeoPackage, KML/KMZ, GML, GPX, MapInfo TAB, FlatGeobuf, file geodatabase. The
@@ -915,23 +963,36 @@ de_geo_summary <- function(df, columns = NULL) {
 #' The source coordinate reference system is kept; a file without one (a shapefile without .prj)
 #' is read as stored, with a warning.
 #'
-#' Raises an error for services (WMS, WFS), web pages, HTML served instead of data, files GDAL
-#' cannot read, and checksum mismatches.
+#' Feature services are read too: WFS (`service=WFS` URLs, WFS format ids) and OGC API Features
+#' (collection or landing-page URLs, OGCFEAT format ids). GDAL pages through the results. Each
+#' collection or feature type is a layer.
+#'
+#' Raises an error for other services (WMS, ...), web pages, HTML served instead of data, files or
+#' services GDAL cannot read, and checksum mismatches.
 #' @param x A URL, or a one-row data frame from [de_distributions()].
 #' @param layer A layer by name or 1-based position, in files with several (GeoPackage, file
 #'   geodatabase). Default: the first, with a message if there are more.
 #' @param crs Reproject to this coordinate reference system, e.g. `"EPSG:4326"`.
 #' @param max_mb Do not download files larger than this many megabytes; `Inf` lifts the limit.
+#' @param max_features Read at most this many features from a service, with a warning when there
+#'   are more; `Inf` reads all.
 #' @return An sf data frame.
 #' @export
-de_load_geodata <- function(x, layer = NULL, crs = NULL, max_mb = 200) {
+de_load_geodata <- function(x, layer = NULL, crs = NULL, max_mb = 200, max_features = 10000) {
+  if (!requireNamespace("sf", quietly = TRUE))
+    stop("de_load_geodata() needs the sf package: install.packages(\"sf\")", call. = FALSE)
   row <- if (is.character(x)) list(url = x) else x
   url <- str1(row$url)
   if (is.null(url) || !nzchar(url)) stop("no URL available for this distribution", call. = FALSE)
+  source <- de_service_source(row$format, url)
+  if (!is.na(source)) {
+    limit <- if (is.null(max_features) || is.infinite(max_features)) NULL else max_features
+    return(de_read_source(source, layer, crs, max_features = limit, what = "the service"))
+  }
   kind <- de_distribution_kind(row$format, row$media_type, url, row$download_url)
   if (kind == "service")
-    stop(url, " is a service (", str1(row$format) %||% "", "), not a file; reading services is not supported yet",
-         call. = FALSE)
+    stop(url, " is a service (", str1(row$format) %||% "", ") that de_load_geodata() cannot read; ",
+         "it reads files, WFS and OGC API Features", call. = FALSE)
   if (kind == "page") stop(url, " is a web page, not a file", call. = FALSE)
   ext <- de_geo_format(row$format, row$media_type, url)
   if (is.na(ext)) ext <- de_url_extension(url) %||% ""

@@ -881,6 +881,42 @@ def _geo_member(names: list[str], layer: str | int | None = None) -> tuple[str, 
     raise ValueError(f"the archive holds {len(cands)} geodata files ({', '.join(cands)}); pick one with layer=")
 
 
+# Format ids of the feature services load_geodata reads, after _format_key().
+_WFS_FORMATS = {"wfs", "ogc:wfs", "wfs_srvc"}
+_OAPIF_FORMATS = {"ogcfeat", "ogc api features", "ogcapi-features"}
+
+
+def _service_source(fmt: str | None = None, url: str | None = None) -> str | None:
+    """The GDAL data source for a feature service: ``"WFS:<url>"`` or ``"OAPIF:<url>"``, or None
+    when the distribution is not one (or is another service, such as WMS).
+
+    A ``service=`` parameter in the URL decides (``service=WFS``: WFS, anything else: None),
+    because format ids are often wrong. Otherwise an OGC API Features format id, or a URL ending
+    in ``/collections/{id}`` or ``/collections/{id}/items``, means OGC API Features (the URL is
+    cut to the collection, without query); a WFS format id means WFS. Only http(s) URLs.
+    """
+    import re
+    from urllib.parse import urlparse
+
+    if not isinstance(url, str) or not url.strip():
+        return None
+    u = url.strip()
+    parts = urlparse(u)
+    if parts.scheme.lower() not in ("http", "https") or not parts.netloc:
+        return None
+    m = re.search(r"(?:^|&)service=([^&]*)", parts.query, re.IGNORECASE)
+    if m:
+        return f"WFS:{u}" if m.group(1).lower() == "wfs" else None
+    key = _format_key(fmt) if isinstance(fmt, str) and fmt.strip() else ""
+    path = parts.path.rstrip("/")
+    collection = re.search(r"/collections/[^/]+(/items)?$", path)
+    if key in _OAPIF_FORMATS or collection:
+        if collection and collection.group(1):
+            path = path[: -len("/items")]
+        return f"OAPIF:{parts.scheme}://{parts.netloc}{path}"
+    return f"WFS:{u}" if key in _WFS_FORMATS else None
+
+
 def _pick_layer(layers: list[str], layer: str | int | None = None) -> str:
     """The layer to read: ``layer`` by name (exact, else ignoring case) or 0-based position;
     by default the first, with a warning if there are more."""
@@ -927,15 +963,38 @@ def _read_geodata(path: str | os.PathLike, layer: str | int | None = None, crs: 
         src = f"/vsizip/{src}/{member}"
     elif head.startswith(b"\x1f\x8b"):
         src = f"/vsigzip/{src}"
+    return _read_source(src, layer, crs)
+
+
+def _read_source(src: str, layer: str | int | None = None, crs: Any = None, max_features: int | None = None,
+                 what: str = "the file"):
+    """Read a GDAL data source (a local path, /vsizip/ path, or WFS:/OAPIF: service) into a
+    GeoDataFrame. ``max_features``: read at most that many, with a warning if there are more."""
+    import warnings
+
+    import geopandas
+    import pyogrio
+
     try:
         layers = [str(entry[0]) for entry in pyogrio.list_layers(src)]
     except Exception as e:  # pyogrio raises its own DataSourceError
-        raise ValueError(f"cannot read the file as geodata: {e}") from None
-    with warnings.catch_warnings():
-        warnings.filterwarnings("ignore", message=".*has GPKG application_id.*")
-        gdf = geopandas.read_file(src, layer=_pick_layer(layers, layer), engine="pyogrio")
+        raise ValueError(f"cannot read {what} as geodata: {e}") from None
+    name = _pick_layer(layers, layer)
+    extra = {} if max_features is None else {"max_features": max_features + 1}
+    try:
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", message=".*has GPKG application_id.*")
+            gdf = geopandas.read_file(src, layer=name, engine="pyogrio", **extra)
+    except Exception as e:
+        if what == "the file":
+            raise
+        raise ValueError(f"cannot read {what}: {e}") from None
+    if max_features is not None and len(gdf) > max_features:
+        warnings.warn(f"{what} has more than {max_features:,} features; read the first {max_features:,} "
+                      f"(pass max_features=None for all)", stacklevel=3)
+        gdf = gdf.iloc[:max_features]
     if not isinstance(gdf, geopandas.GeoDataFrame) or getattr(gdf, "_geometry_column_name", None) not in gdf.columns:
-        raise ValueError("the file has no geometries (a plain table?); use load_distribution()")
+        raise ValueError(f"{what} has no geometries (a plain table?); use load_distribution()")
     if gdf.crs is None:
         if crs is not None:
             raise ValueError("the data has no coordinate reference system (no .prj file?), so it cannot be "
@@ -973,8 +1032,8 @@ def _geo_summary(gdf, columns: list[str] | None = None) -> dict:
 
 
 def load_geodata(url_or_row: str | dict, *, layer: str | int | None = None, crs: Any = None,
-                 max_mb: float | None = 200):
-    """Download a geodata distribution and read it into a geopandas GeoDataFrame.
+                 max_mb: float | None = 200, max_features: int | None = 10_000):
+    """Download a geodata distribution, or read a feature service, into a geopandas GeoDataFrame.
 
     Accepts a URL, or a row/dict from :func:`distributions`. Needs geopandas and pyogrio
     (``pip install 'dataeuropa[geo]'``); GDAL does the reading, so any vector format it knows
@@ -993,8 +1052,15 @@ def load_geodata(url_or_row: str | dict, *, layer: str | int | None = None, crs:
     file without one (a shapefile without .prj) is read as stored, with a warning.
 
     Files over ``max_mb`` megabytes (default 200) are not downloaded; ``max_mb=None`` lifts the
-    limit. Raises ``ValueError`` for services (WMS, WFS), web pages, HTML served instead of data,
-    files GDAL cannot read, and checksum mismatches.
+    limit.
+
+    Feature services are read too: WFS (``service=WFS`` URLs, WFS format ids) and OGC API
+    Features (collection or landing-page URLs, OGCFEAT format ids). GDAL pages through the
+    results. Each collection or feature type is a layer. At most ``max_features`` features
+    (default 10,000) are read, with a warning when there are more; ``max_features=None`` reads all.
+
+    Raises ``ValueError`` for other services (WMS, ...), web pages, HTML served instead of data,
+    files or services GDAL cannot read, and checksum mismatches.
     """
     import re
     import tempfile
@@ -1003,9 +1069,18 @@ def load_geodata(url_or_row: str | dict, *, layer: str | int | None = None, crs:
     url = row.get("url")
     if not url:
         raise ValueError("no URL available for this distribution")
+    try:
+        import geopandas  # noqa: F401
+        import pyogrio  # noqa: F401
+    except ImportError:
+        raise ImportError("load_geodata needs geopandas and pyogrio: pip install 'dataeuropa[geo]'") from None
+    source = _service_source(row.get("format"), url)
+    if source is not None:
+        return _read_source(source, layer, crs, max_features=max_features, what="the service")
     kind = _distribution_kind(row.get("format"), row.get("media_type"), url, row.get("download_url"))
     if kind == "service":
-        raise ValueError(f"{url} is a service ({row.get('format')}), not a file; reading services is not supported yet")
+        raise ValueError(f"{url} is a service ({row.get('format')}) that load_geodata cannot read; "
+                         f"it reads files, WFS and OGC API Features")
     if kind == "page":
         raise ValueError(f"{url} is a web page, not a file")
     ext = _geo_format(row.get("format"), row.get("media_type"), url) or _url_extension(url) or ""

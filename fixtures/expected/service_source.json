@@ -1,0 +1,19 @@
+{
+ "values": [
+  "WFS:https://gis.example.org/geoserver/wfs?service=WFS&version=2.0.0&request=GetFeature&typeName=ns:roads",
+  "WFS:https://example.org/wfs/abc?service=WFS&request=GetCapabilities",
+  "WFS:https://example.org/ows",
+  "WFS:https://example.org/ows?SERVICE=wfs&REQUEST=GetCapabilities",
+  null,
+  null,
+  "OAPIF:https://maps.example.org/ogc/features/v1/collections/parcels",
+  "OAPIF:https://maps.example.org/ogc/features/v1",
+  "OAPIF:https://maps.example.org/ogc/features/v1/collections/parcels",
+  "OAPIF:https://api.example.org/collections/roads",
+  "OAPIF:https://api.example.org/v1",
+  null,
+  null,
+  null,
+  null
+ ]
+}

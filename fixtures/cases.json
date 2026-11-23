@@ -47,6 +47,7 @@
   {"name": "geo_reproject", "kind": "read_geo", "input": "files/geo/points.geojson", "args": {"crs": "EPSG:3035"}},
   {"name": "geo_no_prj", "kind": "read_geo", "input": "files/geo/no_prj.zip", "args": {}},
   {"name": "geo_no_prj_reproject", "kind": "read_geo", "input": "files/geo/no_prj.zip", "args": {"crs": "EPSG:4326"}},
-  {"name": "geo_plain_table", "kind": "read_geo", "input": "files/comma.csv", "args": {}}
+  {"name": "geo_plain_table", "kind": "read_geo", "input": "files/comma.csv", "args": {}},
+  {"name": "service_source", "kind": "service_source", "input": "responses/services.json"}
  ]
 }
