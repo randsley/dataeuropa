@@ -30,7 +30,7 @@ Suggested order: phase 1, then `load_distribution` and caching from phase 2, the
 - [ ] Releases: PyPI, Julia General registry, r-universe first, CRAN later.
 - [x] Full MIT licence text, recognised by GitHub, with a copy in each package folder.
 - [ ] CHANGELOG, `CITATION.cff`, Zenodo DOI.
-- [ ] Replace the placeholder email in `r/DESCRIPTION` before any CRAN submission.
+- [x] Replace the placeholder email in `r/DESCRIPTION` before any CRAN submission.
 - [ ] Announce: Julia Discourse, rOpenSci, the portal's own community.
 
 ## 5. Agent layer

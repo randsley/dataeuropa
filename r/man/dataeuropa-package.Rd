@@ -9,11 +9,11 @@
 Search, retrieve and download open data from the European data portal \url{https://data.europa.eu} through its Search API, Registry API and SPARQL endpoint. Returns data frames of datasets, distributions and facets.
 }
 \author{
-\strong{Maintainer}: Nigel Randsley \email{nigel@example.org}
+\strong{Maintainer}: Nigel Randsley \email{nigel.randsley@protonmail.com}
 
 Authors:
 \itemize{
-  \item Nigel Randsley \email{nigel@example.org}
+  \item Nigel Randsley \email{nigel.randsley@protonmail.com}
 }
 
 }
