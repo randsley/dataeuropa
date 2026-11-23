@@ -9,7 +9,7 @@ Suggested order: phase 1, then `load_distribution` and caching from phase 2, the
 - [ ] Recorded fixtures (real API responses saved as JSON) for the offline tests; today they only cover small helpers.
 - [ ] Shared conformance suite: the same fixtures must produce the same table in Python, Julia and R.
 - [ ] API-drift check: compare the live API against the published OpenAPI spec (`https://data.europa.eu/api/hub/search/openapi.yaml`) on a schedule.
-- [ ] Run Julia `Pkg.test()` on a normal machine (it failed in the author's sandbox with a registry error on the `Test` stdlib).
+- [x] Run Julia `Pkg.test()` on a normal machine (the registry error was a wrong `Test` UUID in `julia/test/Project.toml`; fixed).
 - [ ] Verify that `bbox` actually filters results.
 
 ## 2. Close the "found it, now give me the data" gap
