@@ -4,16 +4,21 @@
 \alias{de_download}
 \title{Download a distribution to disk}
 \usage{
-de_download(x, dest = ".")
+de_download(x, dest = ".", verify = TRUE)
 }
 \arguments{
 \item{x}{A URL, or a one-row data frame from [de_distributions()].}
 
 \item{dest}{File path or directory (default: current directory).}
+
+\item{verify}{Check the file against the row's checksum, if it has one.}
 }
 \value{
 The local path, invisibly.
 }
 \description{
-Download a distribution to disk
+If the row has a checksum (`checksum` and `checksum_algorithm`; MD5, SHA-1 or SHA-256), the
+file is checked against it. On a mismatch the file is deleted and an error is raised;
+`verify = FALSE` skips the check. `byte_size` is not checked: on the portal it is often a
+placeholder (0, 1, 1024).
 }

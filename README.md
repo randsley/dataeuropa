@@ -65,8 +65,8 @@ table <- de_load_distribution(dist[1, ])
 
 ```
 pip install ./python[pandas]                       # Python  (needs requests; pandas optional)
-julia -e 'using Pkg; Pkg.develop(path="julia")'    # Julia   (HTTP, JSON3, DataFrames, CSV)
-R CMD INSTALL r                                    # R       (httr2, jsonlite)
+julia -e 'using Pkg; Pkg.develop(path="julia")'    # Julia   (HTTP, JSON3, DataFrames, CSV, SHA, MD5)
+R CMD INSTALL r                                    # R       (httr2, jsonlite, openssl)
 ```
 
 Reading XLSX and Parquet with `load_distribution` needs an optional package: Python

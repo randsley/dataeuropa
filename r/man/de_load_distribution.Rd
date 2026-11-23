@@ -27,5 +27,6 @@ a Latin-1 fallback, only empty cells count as missing, and dates stay text. JSON
 objects, or an object holding exactly one such array; keys become columns.
 
 Stops with an error for services (WMS, WFS, APIs), compressed archives, HTML pages served
-instead of data, and formats it cannot tell or read.
+instead of data, formats it cannot tell or read, and files that fail their checksum (see
+[de_download()]).
 }

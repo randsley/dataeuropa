@@ -19,6 +19,8 @@
   {"name": "sparql_empty", "kind": "sparql", "input": "responses/edge_cases.json", "select": "sparql_empty"},
   {"name": "sparql_ask_false", "kind": "sparql", "input": "responses/edge_cases.json", "select": "sparql_ask_false"},
   {"name": "file_format", "kind": "file_format", "input": "responses/formats.json"},
+  {"name": "hash_comma_csv", "kind": "file_hash", "input": "files/comma.csv", "args": {"algorithms": ["md5", "sha1", "sha256"]}},
+  {"name": "hash_parquet", "kind": "file_hash", "input": "files/table.parquet", "args": {"algorithms": ["md5", "sha1", "sha256"]}},
   {"name": "read_comma_csv", "kind": "read_file", "input": "files/comma.csv", "args": {"format": "csv", "sheet": null}},
   {"name": "read_semicolon_csv", "kind": "read_file", "input": "files/semicolon.csv", "args": {"format": "csv", "sheet": null}},
   {"name": "read_records_json", "kind": "read_file", "input": "files/records.json", "args": {"format": "json", "sheet": null}},

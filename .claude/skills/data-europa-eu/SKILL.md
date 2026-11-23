@@ -25,12 +25,12 @@ Python `dataeuropa`, Julia `DataEuropa`, R `dataeuropa` (same verbs: search_data
 - To discover valid facet ids: `limit=0&aggregation=true&aggregationAllFields=false&aggregationFields=format`.
 
 ## Record shape (hit or /datasets/{id})
-`id`, `title`/`description` as `{lang: text}` (pick user's language, fall back to `en`), `country.id`, `catalog.id`, `publisher.name`, `issued`, `modified`, `landing_page[0].resource`, `quality_meas.scoring`, `is_hvd`, and `distributions[]` each with `id`, `title`, `format.id`, `media_type`, `byte_size`, `license.id`, `download_url[]`, `access_url[]`. Prefer `download_url`, fall back to `access_url`.
+`id`, `title`/`description` as `{lang: text}` (pick user's language, fall back to `en`), `country.id`, `catalog.id`, `publisher.name`, `issued`, `modified`, `landing_page[0].resource`, `quality_meas.scoring`, `is_hvd`, and `distributions[]` each with `id`, `title`, `format.id`, `media_type`, `byte_size`, `checksum` (`algorithm`, `checksum_value`; rare), `license.id`, `download_url[]`, `access_url[]`. Prefer `download_url`, fall back to `access_url`.
 
 ## Workflow
 1. Search narrowly (facets) and count first (`limit=0`); show the user the top hits (id, title, publisher, country, formats, modified).
 2. Fetch the chosen dataset, list distributions, state format/size/licence before downloading.
-3. Download to a new directory (confirm with the user for large files); verify `byte_size` matches when given.
+3. Download to a new directory (confirm with the user for large files); verify the `checksum` when given (MD5, SHA-1 or SHA-256; infer from length if `algorithm` is missing). Do not trust `byte_size`: it is often a placeholder (0, 1, 1024).
 4. Report licence and portal URL `https://data.europa.eu/data/datasets/{id}` so the user can cite it.
 
 ## SPARQL

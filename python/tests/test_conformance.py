@@ -6,7 +6,7 @@ import pathlib
 
 import pytest
 
-from dataeuropa.client import (_distribution_rows, _facet_rows, _file_format, _keywords, _read_table,
+from dataeuropa.client import (_distribution_rows, _facet_rows, _file_format, _file_hash, _keywords, _read_table,
                                _sparql_rows, summarise_dataset)
 
 FIXTURES = pathlib.Path(__file__).resolve().parents[2] / "fixtures"
@@ -30,6 +30,8 @@ def run(case):
         df = _read_table(FIXTURES / case["input"], args["format"], args.get("sheet"))
         return {"columns": [str(c) for c in df.columns],
                 "rows": [{str(c): plain(v) for c, v in zip(df.columns, r)} for r in df.itertuples(index=False)]}
+    if kind == "file_hash":
+        return {"values": [_file_hash(FIXTURES / case["input"], a) for a in args["algorithms"]]}
     data = json.loads((FIXTURES / case["input"]).read_text(encoding="utf-8"))
     if case.get("select"):
         data = data[case["select"]]

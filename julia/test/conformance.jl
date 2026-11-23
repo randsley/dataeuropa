@@ -24,6 +24,9 @@ function _run(case)
         df = DE._read_table(joinpath(FIXTURES, case.input), args.format; sheet=sheet === nothing ? nothing : String(sheet))
         return Dict("columns" => names(df), "rows" => df)
     end
+    if kind == "file_hash"
+        return Dict("values" => [DE._file_hash(joinpath(FIXTURES, case.input), String(a)) for a in args.algorithms])
+    end
     data = _readjson(case.input)
     sel = get(case, :select, nothing)
     sel === nothing || (data = data[Symbol(sel)])

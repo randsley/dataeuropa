@@ -28,6 +28,7 @@ then guard against unintended changes, and the Julia and R tests check that they
 | `sparql` | `_sparql_rows` | `_sparql_result` | `de_sparql_table` |
 | `file_format` | `_file_format` | `_file_format` | `de_file_format` |
 | `read_file` | `_read_table` | `_read_table` | `de_read_table` |
+| `file_hash` | `_file_hash` | `_file_hash` | `de_file_hash` |
 
 ## How results are compared
 

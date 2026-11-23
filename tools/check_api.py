@@ -198,6 +198,16 @@ def check_responses() -> None:
         except ValueError:
             error("registry .jsonld: not valid JSON")
 
+    # Few distributions carry a checksum (about 3%); dados.gov.pt publishes them for most files.
+    page = get(f"{SEARCH}/search", filters="dataset", limit=100, facets='{"catalog":["dados-gov-pt"]}').json()["result"]
+    sums = [x["checksum"] for r in page.get("results") or [] for x in r.get("distributions") or []
+            if isinstance(x.get("checksum"), dict)]
+    if sums:
+        check_fields("distribution checksums", {"checksums": sums},
+                     {"checksums.[].checksum_value": "str", "checksums.[].algorithm": "str"})
+    else:
+        warn("distribution checksums: none among 100 dados-gov-pt records; cannot check the checksum fields")
+
     agg = get(f"{SEARCH}/search", filters="dataset", limit=0, aggregation="true",
               aggregationAllFields="false", aggregationFields="format").json()["result"]
     check_fields("GET /search facets", agg, {"facets": "list", "facets.[].id": "str", "facets.[].items": "list",

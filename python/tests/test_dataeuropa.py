@@ -85,7 +85,8 @@ def fake_download(monkeypatch, tmp_path):
     import shutil
     import dataeuropa.client as client
 
-    def fake(url, dest=None, **kw):
+    def fake(url_or_row, dest=None, **kw):
+        url = url_or_row if isinstance(url_or_row, str) else url_or_row["url"]
         name = url.rsplit("/", 1)[-1].split("?", 1)[0]
         src = FILES / name if (FILES / name).exists() else tmp_path / name
         shutil.copy(src, dest)
@@ -134,3 +135,66 @@ def test_live_load_distribution():
     dist = de.distributions("5be153fa8b4c417561300530")
     df = de.load_distribution(dist[dist.format == "CSV"].iloc[0])
     assert len(df) > 0 and "Dépenses" in df.columns
+
+
+# ---------------------------------------------------------------- checksums
+
+def test_checksum_normalised():
+    from dataeuropa.client import _checksum
+    assert _checksum({"algorithm": "SHA-256", "checksum_value": " AB12 "}) == ("sha256", "ab12")
+    assert _checksum({"algorithm": "http://spdx.org/rdf/terms#checksumAlgorithm_sha1",
+                      "checksum_value": "x"}) == ("sha1", "x")
+    assert _checksum({"checksum_value": "0" * 40}) == ("sha1", "0" * 40)
+    assert _checksum({"checksum_value": "not-a-hash"}) == (None, "not-a-hash")
+    assert _checksum({"checksum_value": ""}) == (None, None)
+    assert _checksum(None) == (None, None)
+
+
+class _FakeResponse:
+    def __init__(self, url, body):
+        self.url, self.body, self.status_code, self.headers = url, body, 200, {}
+
+    def iter_content(self, chunk):
+        yield self.body
+
+
+@pytest.fixture
+def fake_http(monkeypatch):
+    """Make download() fetch the bytes of fixtures/files/<last part of the URL>."""
+    import dataeuropa.client as client
+
+    class Session:
+        def get(self, url, **kw):
+            return _FakeResponse(url, (FILES / url.rsplit("/", 1)[-1]).read_bytes())
+    monkeypatch.setattr(client, "_get_session", lambda: Session())
+
+
+def test_download_verifies_checksum(fake_http, tmp_path):
+    from dataeuropa.client import _file_hash
+    good = _file_hash(FILES / "comma.csv", "sha1")
+    row = {"url": "https://x.example/comma.csv", "checksum": good, "checksum_algorithm": "sha1"}
+    assert de.download(row, tmp_path).endswith("comma.csv")
+
+    bad = dict(row, checksum="0" * 40)
+    with pytest.raises(ValueError, match="checksum mismatch"):
+        de.download(bad, tmp_path / "bad.csv")
+    assert not (tmp_path / "bad.csv").exists()                      # deleted
+    assert de.download(bad, tmp_path / "kept.csv", verify=False)     # kept when asked
+    # Nothing to check with: no checksum, or an algorithm it cannot compute.
+    assert de.download(dict(row, checksum=None, checksum_algorithm=None), tmp_path / "a.csv")
+    assert de.download(dict(row, checksum="1a2b", checksum_algorithm="crc"), tmp_path / "b.csv")
+
+
+def test_load_distribution_verifies_checksum(fake_http):
+    row = {"url": "https://x.example/semicolon.csv", "format": "CSV",
+           "checksum": "0" * 32, "checksum_algorithm": "md5"}
+    with pytest.raises(ValueError, match="checksum mismatch"):
+        de.load_distribution(row)
+
+
+@live
+def test_live_download_checksum(tmp_path):
+    # A 2 MB CSV on dados.gov.pt whose distribution carries a SHA-1 checksum.
+    dist = de.distributions("68c2be5c43136b247fe74d41")
+    row = dist[dist.checksum_algorithm == "sha1"].iloc[0]
+    assert de.download(row, tmp_path)

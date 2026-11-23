@@ -258,12 +258,15 @@ def _distribution_rows(d: dict, lang: str = "en") -> list[dict]:
     for x in d.get("distributions") or []:
         acc = x.get("access_url") or []
         dl = x.get("download_url") or []
+        cs_algo, cs_value = _checksum(x.get("checksum"))
         rows.append({
             "id": x.get("id"),
             "title": pick_lang(x.get("title"), lang),
             "format": (x.get("format") or {}).get("id"),
             "media_type": x.get("media_type"),
             "byte_size": x.get("byte_size"),
+            "checksum": cs_value,
+            "checksum_algorithm": cs_algo,
             "license": (x.get("license") or {}).get("id"),
             "modified": x.get("modified"),
             "download_url": dl[0] if dl else None,
@@ -273,10 +276,67 @@ def _distribution_rows(d: dict, lang: str = "en") -> list[dict]:
     return rows
 
 
-def download(url_or_row: str | dict, dest: str | os.PathLike | None = None, *, chunk: int = 1 << 20) -> str:
+# Hash algorithms that downloads can be checked with. The portal also has a few others (e.g. CRC).
+_HASHES = ("md5", "sha1", "sha256")
+# Hash lengths in hex digits, for checksums that do not name their algorithm.
+_HASH_BY_LENGTH = {32: "md5", 40: "sha1", 64: "sha256"}
+
+
+def _checksum(cs: Any) -> tuple[str | None, str | None]:
+    """``(algorithm, value)`` of a distribution's ``checksum`` field, both lowercase, or ``(None, None)``.
+
+    The algorithm is normalised (``"SHA-256"`` and SPDX's ``"...checksumAlgorithm_sha256"`` become
+    ``"sha256"``). When it is not given, a hex value of 32, 40 or 64 digits counts as MD5, SHA-1 or
+    SHA-256; otherwise the algorithm is None.
+    """
+    if not isinstance(cs, dict) or not isinstance(cs.get("checksum_value"), str) or not cs["checksum_value"].strip():
+        return None, None
+    value = cs["checksum_value"].strip().lower()
+    algo = cs.get("algorithm")
+    if isinstance(algo, str) and algo.strip():
+        algo = algo.strip().lower().rsplit("checksumalgorithm_", 1)[-1].replace("-", "").replace("_", "")
+    elif all(c in "0123456789abcdef" for c in value):
+        algo = _HASH_BY_LENGTH.get(len(value))
+    else:
+        algo = None
+    return algo, value
+
+
+def _file_hash(path: str | os.PathLike, algorithm: str) -> str:
+    """Lowercase hex digest of a file with ``algorithm`` (``"md5"``, ``"sha1"`` or ``"sha256"``)."""
+    import hashlib
+
+    h = hashlib.new(algorithm)
+    with open(path, "rb") as fh:
+        for part in iter(lambda: fh.read(1 << 20), b""):
+            h.update(part)
+    return h.hexdigest()
+
+
+def _verify_checksum(path: str | os.PathLike, algorithm: str | None, value: str | None) -> bool:
+    """Check a downloaded file against its checksum. Returns True if checked, False if there was
+    nothing to check with (no checksum, or an algorithm other than MD5, SHA-1, SHA-256). On a
+    mismatch, deletes the file and raises ``ValueError``."""
+    if not isinstance(algorithm, str) or algorithm not in _HASHES or not isinstance(value, str) or not value:
+        return False
+    got = _file_hash(path, algorithm)
+    if got != value.lower():
+        os.remove(path)
+        raise ValueError(f"checksum mismatch: expected {algorithm} {value.lower()}, got {got}; "
+                         f"the file was deleted (pass verify=False to keep it)")
+    return True
+
+
+def download(url_or_row: str | dict, dest: str | os.PathLike | None = None, *, chunk: int = 1 << 20,
+             verify: bool = True) -> str:
     """Download a distribution to ``dest`` (file or directory). Returns the local path.
 
     Accepts a URL, or a row/dict from :func:`distributions` (uses its ``url``). Streams to disk.
+
+    If the row has a checksum (``checksum`` and ``checksum_algorithm``; MD5, SHA-1 or SHA-256), the
+    file is checked against it. On a mismatch the file is deleted and ``ValueError`` is raised;
+    ``verify=False`` skips the check. ``byte_size`` is not checked: on the portal it is often a
+    placeholder (0, 1, 1024).
     """
     from urllib.parse import urlparse, unquote
 
@@ -299,6 +359,8 @@ def download(url_or_row: str | dict, dest: str | os.PathLike | None = None, *, c
     with open(path, "wb") as fh:
         for part in r.iter_content(chunk):
             fh.write(part)
+    if verify and not isinstance(url_or_row, str):
+        _verify_checksum(path, url_or_row.get("checksum_algorithm"), url_or_row.get("checksum"))
     return path
 
 
@@ -439,7 +501,8 @@ def load_distribution(url_or_row: str | dict, *, format: str | None = None, shee
     objects, or an object holding exactly one such array; keys become columns.
 
     Raises ``ValueError`` for services (WMS, WFS, APIs), compressed archives, HTML pages served
-    instead of data, and formats it cannot tell or read.
+    instead of data, formats it cannot tell or read, and files that fail their checksum (see
+    :func:`download`).
     """
     import tempfile
 
@@ -460,7 +523,7 @@ def load_distribution(url_or_row: str | dict, *, format: str | None = None, shee
     if fmt is None:
         raise ValueError(f"cannot tell the file format of {url}; pass format='csv', 'json', 'xlsx' or 'parquet'")
     with tempfile.TemporaryDirectory() as tmp:
-        path = download(url, os.path.join(tmp, f"distribution.{fmt}"))
+        path = download(url_or_row, os.path.join(tmp, f"distribution.{fmt}"))
         if fmt in ("csv", "json"):  # XLSX and Parquet are binary; their readers report bad files themselves
             _check_payload(path)
         return _read_table(path, fmt, sheet)

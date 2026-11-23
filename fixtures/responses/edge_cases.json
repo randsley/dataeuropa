@@ -1,65 +1,291 @@
 {
  "datasets": [
-  {"id": "all-missing"},
+  {
+   "id": "all-missing"
+  },
   {
    "id": "language-fallback",
-   "title": {"fr": "Titre", "de": ""},
-   "description": {"en": "", "pt": "Descrição"},
-   "country": {"id": "pt"},
-   "distributions": [{}, {"format": {"id": "CSV"}}, {"format": {"id": "CSV"}}, {"format": {}}, {"format": {"id": "JSON"}}],
+   "title": {
+    "fr": "Titre",
+    "de": ""
+   },
+   "description": {
+    "en": "",
+    "pt": "Descrição"
+   },
+   "country": {
+    "id": "pt"
+   },
+   "distributions": [
+    {},
+    {
+     "format": {
+      "id": "CSV"
+     }
+    },
+    {
+     "format": {
+      "id": "CSV"
+     }
+    },
+    {
+     "format": {}
+    },
+    {
+     "format": {
+      "id": "JSON"
+     }
+    }
+   ],
    "landing_page": [],
    "is_hvd": true,
-   "quality_meas": {"scoring": 0}
+   "quality_meas": {
+    "scoring": 0
+   }
   },
   {
    "id": "plain-strings",
    "title": "Plain title",
-   "description": ["List description"],
-   "publisher": {"name": "Publisher"},
-   "catalog": {"id": "cat"},
+   "description": [
+    "List description"
+   ],
+   "publisher": {
+    "name": "Publisher"
+   },
+   "catalog": {
+    "id": "cat"
+   },
    "issued": "2020-01-01",
    "modified": "2021-02-03T04:05:06",
-   "landing_page": [{"resource": "http://landing.example/"}],
+   "landing_page": [
+    {
+     "resource": "http://landing.example/"
+    }
+   ],
    "is_hvd": false,
-   "quality_meas": {"scoring": 12.5}
+   "quality_meas": {
+    "scoring": 12.5
+   }
   }
  ],
  "dataset": {
   "id": "edge-dataset",
   "keywords": [
-   {"label": "english", "language": "en"},
-   {"label": "no language"},
-   {"label": "french", "language": "fr"}
+   {
+    "label": "english",
+    "language": "en"
+   },
+   {
+    "label": "no language"
+   },
+   {
+    "label": "french",
+    "language": "fr"
+   }
   ],
   "distributions": [
-   {"id": "access-only", "title": {"de": "Nur Zugang"}, "format": {"id": "WMS"}, "access_url": ["http://service.example/wms"]},
-   {"id": "both", "format": {"id": "CSV"}, "download_url": ["http://files.example/a.csv", "http://files.example/b.csv"], "access_url": ["http://files.example/"], "byte_size": 1234, "media_type": "text/csv", "license": {"id": "CC-BY-4.0"}, "modified": "2022-01-01"},
-   {"id": "empty-download", "download_url": [], "access_url": ["http://files.example/page"]},
-   {"id": "no-urls"}
+   {
+    "id": "access-only",
+    "title": {
+     "de": "Nur Zugang"
+    },
+    "format": {
+     "id": "WMS"
+    },
+    "access_url": [
+     "http://service.example/wms"
+    ]
+   },
+   {
+    "id": "both",
+    "format": {
+     "id": "CSV"
+    },
+    "download_url": [
+     "http://files.example/a.csv",
+     "http://files.example/b.csv"
+    ],
+    "access_url": [
+     "http://files.example/"
+    ],
+    "byte_size": 1234,
+    "media_type": "text/csv",
+    "license": {
+     "id": "CC-BY-4.0"
+    },
+    "modified": "2022-01-01",
+    "checksum": {
+     "algorithm": "SHA-256",
+     "checksum_value": "A3F1C2D4E5B6A7980123456789ABCDEF0123456789ABCDEF0123456789ABCDEF"
+    }
+   },
+   {
+    "id": "empty-download",
+    "download_url": [],
+    "access_url": [
+     "http://files.example/page"
+    ]
+   },
+   {
+    "id": "no-urls"
+   },
+   {
+    "id": "checksum-no-algorithm",
+    "format": {
+     "id": "CSV"
+    },
+    "download_url": [
+     "http://files.example/c.csv"
+    ],
+    "checksum": {
+     "checksum_value": "990148b9701ecccb8fcbbd822dd07cf0"
+    }
+   },
+   {
+    "id": "checksum-spdx",
+    "format": {
+     "id": "CSV"
+    },
+    "download_url": [
+     "http://files.example/d.csv"
+    ],
+    "checksum": {
+     "algorithm": "http://spdx.org/rdf/terms#checksumAlgorithm_sha1",
+     "checksum_value": "2cecaae8e15c3cfdbb3b79664b601408f15c0cad"
+    }
+   },
+   {
+    "id": "checksum-crc",
+    "format": {
+     "id": "CSV"
+    },
+    "download_url": [
+     "http://files.example/e.csv"
+    ],
+    "checksum": {
+     "algorithm": "crc",
+     "checksum_value": "1a2b3c4d"
+    }
+   },
+   {
+    "id": "checksum-unknown",
+    "format": {
+     "id": "CSV"
+    },
+    "download_url": [
+     "http://files.example/f.csv"
+    ],
+    "checksum": {
+     "checksum_value": "not-a-hash"
+    }
+   },
+   {
+    "id": "checksum-empty",
+    "format": {
+     "id": "CSV"
+    },
+    "download_url": [
+     "http://files.example/g.csv"
+    ],
+    "checksum": {
+     "algorithm": "sha1",
+     "checksum_value": ""
+    }
+   }
   ]
  },
  "facets": {
   "count": 0,
   "facets": [
-   {"id": "other", "items": [{"id": "x", "count": 99}]},
-   {"id": "format", "items": [
-    {"id": "A", "count": 5, "title": "Aaa"},
-    {"id": "B", "count": 10, "label": "Bee"},
-    {"id": "C", "count": 5},
-    {"id": "D", "count": 7, "title": {"de": "Dee"}},
-    {"id": "E"}
-   ]}
+   {
+    "id": "other",
+    "items": [
+     {
+      "id": "x",
+      "count": 99
+     }
+    ]
+   },
+   {
+    "id": "format",
+    "items": [
+     {
+      "id": "A",
+      "count": 5,
+      "title": "Aaa"
+     },
+     {
+      "id": "B",
+      "count": 10,
+      "label": "Bee"
+     },
+     {
+      "id": "C",
+      "count": 5
+     },
+     {
+      "id": "D",
+      "count": 7,
+      "title": {
+       "de": "Dee"
+      }
+     },
+     {
+      "id": "E"
+     }
+    ]
+   }
   ]
  },
  "sparql_select": {
-  "head": {"vars": ["a", "b"]},
-  "results": {"bindings": [
-   {"a": {"type": "literal", "value": "1"}},
-   {"b": {"type": "uri", "value": "http://example.org/b"}},
-   {},
-   {"a": {"type": "literal", "value": "x", "xml:lang": "en"}, "b": {"type": "literal", "value": "y"}}
-  ]}
+  "head": {
+   "vars": [
+    "a",
+    "b"
+   ]
+  },
+  "results": {
+   "bindings": [
+    {
+     "a": {
+      "type": "literal",
+      "value": "1"
+     }
+    },
+    {
+     "b": {
+      "type": "uri",
+      "value": "http://example.org/b"
+     }
+    },
+    {},
+    {
+     "a": {
+      "type": "literal",
+      "value": "x",
+      "xml:lang": "en"
+     },
+     "b": {
+      "type": "literal",
+      "value": "y"
+     }
+    }
+   ]
+  }
  },
- "sparql_empty": {"head": {"vars": ["a", "b"]}, "results": {"bindings": []}},
- "sparql_ask_false": {"head": {}, "boolean": false}
+ "sparql_empty": {
+  "head": {
+   "vars": [
+    "a",
+    "b"
+   ]
+  },
+  "results": {
+   "bindings": []
+  }
+ },
+ "sparql_ask_false": {
+  "head": {},
+  "boolean": false
+ }
 }

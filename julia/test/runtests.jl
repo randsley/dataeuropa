@@ -50,4 +50,9 @@ LIVE && @testset "live API" begin
     dist = distributions("5be153fa8b4c417561300530")
     budget = load_distribution(first(eachrow(filter(r -> r.format == "CSV", dist))))
     @test nrow(budget) > 0 && "Dépenses" in names(budget)
+    # A 2 MB CSV on dados.gov.pt whose distribution carries a SHA-1 checksum.
+    pt = distributions("68c2be5c43136b247fe74d41")
+    mktempdir() do tmp
+        @test isfile(download_distribution(first(eachrow(filter(r -> isequal(r.checksum_algorithm, "sha1"), pt))), tmp))
+    end
 end

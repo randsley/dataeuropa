@@ -9,7 +9,7 @@ Exports: `search`, `search_datasets`, `iter_datasets`, `fetch_datasets`, `get_da
 """
 module DataEuropa
 
-using HTTP, JSON3, DataFrames, Downloads, CSV, Dates
+using HTTP, JSON3, DataFrames, Downloads, CSV, Dates, SHA, MD5
 
 export search, search_datasets, iter_datasets, fetch_datasets, get_dataset, distributions,
        download_distribution, load_distribution, facet_values, count_datasets, catalogues, get_rdf,
@@ -259,10 +259,12 @@ function _distribution_table(d, lang::AbstractString="en")
     first_or_missing(v) = (v === nothing || isempty(v)) ? missing : String(v[1])
     rows = map(something(_get(d, :distributions), [])) do x
         dl = first_or_missing(_get(x, :download_url)); ac = first_or_missing(_get(x, :access_url))
+        cs_algo, cs_value = _checksum(_get(x, :checksum))
         (id = something(_get(x, :id), missing), title = pick_lang(_get(x, :title), lang),
          format = something(_get(_get(x, :format), :id), missing),
          media_type = something(_get(x, :media_type), missing),
          byte_size = something(_get(x, :byte_size), missing),
+         checksum = something(cs_value, missing), checksum_algorithm = something(cs_algo, missing),
          license = something(_get(_get(x, :license), :id), missing),
          modified = something(_get(x, :modified), missing),
          download_url = dl, access_url = ac, url = ismissing(dl) ? ac : dl)
@@ -270,17 +272,69 @@ function _distribution_table(d, lang::AbstractString="en")
     return isempty(rows) ? DataFrame(id=String[], url=String[]) : DataFrame(rows)
 end
 
+# Hash algorithms that downloads can be checked with. The portal also has a few others (e.g. CRC).
+const _HASHES = Dict("md5" => MD5.md5, "sha1" => SHA.sha1, "sha256" => SHA.sha256)
+# Hash lengths in hex digits, for checksums that do not name their algorithm.
+const _HASH_BY_LENGTH = Dict(32 => "md5", 40 => "sha1", 64 => "sha256")
+
+# (algorithm, value) of a distribution's `checksum` field, both lowercase, or (nothing, nothing).
+# The algorithm is normalised ("SHA-256" and SPDX's "...checksumAlgorithm_sha256" become "sha256").
+# When it is not given, a hex value of 32, 40 or 64 digits counts as MD5, SHA-1 or SHA-256;
+# otherwise the algorithm is nothing.
+function _checksum(cs)
+    v = _get(cs, :checksum_value)
+    (v isa AbstractString && !isempty(strip(v))) || return (nothing, nothing)
+    value = lowercase(strip(String(v)))
+    a = _get(cs, :algorithm)
+    algo = if a isa AbstractString && !isempty(strip(a))
+        key = lowercase(strip(String(a)))
+        key = last(split(key, "checksumalgorithm_"))
+        replace(key, "-" => "", "_" => "")
+    elseif all(c -> c in "0123456789abcdef", value)
+        get(_HASH_BY_LENGTH, length(value), nothing)
+    else
+        nothing
+    end
+    return (algo, value)
+end
+
+# Lowercase hex digest of a file with `algorithm` ("md5", "sha1" or "sha256").
+_file_hash(path::AbstractString, algorithm::AbstractString) = open(io -> bytes2hex(_HASHES[algorithm](io)), path)
+
+# Check a downloaded file against its checksum. Returns true if checked, false if there was nothing
+# to check with (no checksum, or an algorithm other than MD5, SHA-1, SHA-256). On a mismatch,
+# deletes the file and throws an error.
+function _verify_checksum(path, algorithm, value)
+    (algorithm isa AbstractString && haskey(_HASHES, algorithm) && value isa AbstractString && !isempty(value)) ||
+        return false
+    got = _file_hash(path, algorithm)
+    if got != lowercase(value)
+        rm(path; force=true)
+        error("checksum mismatch: expected $algorithm $(lowercase(value)), got $got; " *
+              "the file was deleted (pass verify=false to keep it)")
+    end
+    return true
+end
+
 """
-    download_distribution(url_or_row, dest=".") -> String
+    download_distribution(url_or_row, dest="."; verify=true) -> String
 
 Download a distribution (URL string, or a row of [`distributions`](@ref)) to `dest`
 (file path or directory). Returns the local path.
+
+If the row has a checksum (`checksum` and `checksum_algorithm`; MD5, SHA-1 or SHA-256), the file
+is checked against it. On a mismatch the file is deleted and an error is thrown; `verify=false`
+skips the check. `byte_size` is not checked: on the portal it is often a placeholder (0, 1, 1024).
 """
-function download_distribution(x, dest::AbstractString=".")
-    url = x isa AbstractString ? String(x) : String(x.url)
+function download_distribution(x, dest::AbstractString="."; verify::Bool=true)
+    url = x isa AbstractString ? String(x) : _field(x, :url)
+    (url === nothing || isempty(url)) && throw(ArgumentError("no URL available for this distribution"))
     name = let n = basename(HTTP.URI(url).path); isempty(n) ? "download" : HTTP.URIs.unescapeuri(n) end
     path = isdir(dest) ? joinpath(dest, name) : dest
     Downloads.download(url, path; headers=["User-Agent" => UA], timeout=600)
+    if verify && !(x isa AbstractString)
+        _verify_checksum(path, _field(x, :checksum_algorithm), _field(x, :checksum))
+    end
     return path
 end
 
@@ -423,7 +477,8 @@ Latin-1 fallback, only empty cells count as missing, and dates stay text. JSON: 
 objects, or an object holding exactly one such array; keys become columns.
 
 Throws `ArgumentError` for services (WMS, WFS, APIs), compressed archives, HTML pages served
-instead of data, and formats it cannot tell or read.
+instead of data, and formats it cannot tell or read; and an error for files that fail their
+checksum (see [`download_distribution`](@ref)).
 """
 function load_distribution(x; format=nothing, sheet=nothing)
     url = x isa AbstractString ? String(x) : _field(x, :url)
@@ -440,7 +495,7 @@ function load_distribution(x; format=nothing, sheet=nothing)
     fmt == "archive" && throw(ArgumentError("$url is a compressed archive; use download_distribution and unpack it"))
     fmt === nothing && throw(ArgumentError("cannot tell the file format of $url; pass format=\"csv\", \"json\", \"xlsx\" or \"parquet\""))
     return mktempdir() do tmp
-        path = download_distribution(url, joinpath(tmp, "distribution.$fmt"))
+        path = download_distribution(x, joinpath(tmp, "distribution.$fmt"))
         fmt in ("csv", "json") && _check_payload(path)
         _read_table(path, fmt; sheet=sheet)
     end

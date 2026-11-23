@@ -207,9 +207,11 @@ de_distributions <- function(id, lang = "en") de_distribution_table(de_get_datas
 de_distribution_table <- function(d, lang = "en") {
   rows <- lapply(d$distributions %||% list(), function(x) {
     dl <- chr(x$download_url); ac <- chr(x$access_url)
+    cs <- de_checksum(x$checksum)
     data.frame(id = chr(x$id), title = de_pick_lang(x$title, lang), format = chr(x$format$id),
                media_type = chr(x$media_type),
                byte_size = suppressWarnings(as.numeric(chr(x$byte_size))),
+               checksum = cs$value, checksum_algorithm = cs$algorithm,
                license = chr(x$license$id), modified = chr(x$modified),
                download_url = dl, access_url = ac, url = if (is.na(dl)) ac else dl,
                stringsAsFactors = FALSE)
@@ -217,18 +219,70 @@ de_distribution_table <- function(d, lang = "en") {
   bind_rows_base(rows)
 }
 
+# Hash functions that downloads can be checked with. The portal also has a few others (e.g. CRC).
+.hashes <- list(md5 = function(con) openssl::md5(con), sha1 = function(con) openssl::sha1(con),
+                sha256 = function(con) openssl::sha256(con))
+# Hash lengths in hex digits, for checksums that do not name their algorithm.
+.hash_by_length <- c("32" = "md5", "40" = "sha1", "64" = "sha256")
+
+# list(algorithm, value) of a distribution's `checksum` field, both lowercase, NA when absent.
+# The algorithm is normalised ("SHA-256" and SPDX's "...checksumAlgorithm_sha256" become "sha256").
+# When it is not given, a hex value of 32, 40 or 64 digits counts as MD5, SHA-1 or SHA-256;
+# otherwise the algorithm is NA.
+de_checksum <- function(cs) {
+  none <- list(algorithm = NA_character_, value = NA_character_)
+  v <- if (is.list(cs)) str1(cs$checksum_value) else NULL
+  if (is.null(v) || !nzchar(trimws(v))) return(none)
+  value <- tolower(trimws(v))
+  a <- str1(cs$algorithm)
+  algorithm <- if (!is.null(a) && nzchar(trimws(a))) {
+    key <- sub("^.*checksumalgorithm_", "", tolower(trimws(a)))
+    gsub("[-_]", "", key)
+  } else if (grepl("^[0-9a-f]+$", value)) {
+    unname(.hash_by_length[as.character(nchar(value))])
+  } else NA_character_
+  list(algorithm = algorithm, value = value)
+}
+
+# Lowercase hex digest of a file with `algorithm` ("md5", "sha1" or "sha256").
+de_file_hash <- function(path, algorithm) paste0(as.character(.hashes[[algorithm]](file(path))))   # paste0 drops the "hash" class
+
+# Check a downloaded file against its checksum. Returns TRUE if checked, FALSE if there was nothing
+# to check with (no checksum, or an algorithm other than MD5, SHA-1, SHA-256). On a mismatch,
+# deletes the file and stops with an error.
+de_verify_checksum <- function(path, algorithm, value) {
+  algorithm <- str1(algorithm); value <- str1(value)
+  if (is.null(algorithm) || !(algorithm %in% names(.hashes)) || is.null(value) || !nzchar(value))
+    return(FALSE)
+  got <- de_file_hash(path, algorithm)
+  if (got != tolower(value)) {
+    unlink(path)
+    stop("checksum mismatch: expected ", algorithm, " ", tolower(value), ", got ", got,
+         "; the file was deleted (pass verify = FALSE to keep it)", call. = FALSE)
+  }
+  TRUE
+}
+
 #' Download a distribution to disk
+#'
+#' If the row has a checksum (`checksum` and `checksum_algorithm`; MD5, SHA-1 or SHA-256), the
+#' file is checked against it. On a mismatch the file is deleted and an error is raised;
+#' `verify = FALSE` skips the check. `byte_size` is not checked: on the portal it is often a
+#' placeholder (0, 1, 1024).
 #'
 #' @param x A URL, or a one-row data frame from [de_distributions()].
 #' @param dest File path or directory (default: current directory).
+#' @param verify Check the file against the row's checksum, if it has one.
 #' @return The local path, invisibly.
 #' @export
-de_download <- function(x, dest = ".") {
-  url <- if (is.character(x)) x else x$url[[1]]
+de_download <- function(x, dest = ".", verify = TRUE) {
+  url <- if (is.character(x)) x else str1(x$url)
+  if (is.null(url) || !nzchar(url)) stop("no URL available for this distribution", call. = FALSE)
   name <- utils::URLdecode(basename(sub("[?#].*$", "", url)))
   if (!nzchar(name)) name <- "download"
   path <- if (dir.exists(dest)) file.path(dest, name) else dest
   httr2::req_perform(de_req(url), path = path)
+  if (verify && !is.character(x)) de_verify_checksum(path, x$checksum_algorithm, x$checksum)
   invisible(path)
 }
 
@@ -376,7 +430,8 @@ de_read_table <- function(path, fmt, sheet = NULL) {
 #' objects, or an object holding exactly one such array; keys become columns.
 #'
 #' Stops with an error for services (WMS, WFS, APIs), compressed archives, HTML pages served
-#' instead of data, and formats it cannot tell or read.
+#' instead of data, formats it cannot tell or read, and files that fail their checksum (see
+#' [de_download()]).
 #'
 #' @param x A URL, or a one-row data frame from [de_distributions()].
 #' @param format Override the detected format: "csv", "json", "xlsx" or "parquet".
@@ -404,7 +459,7 @@ de_load_distribution <- function(x, format = NULL, sheet = NULL) {
   tmp <- tempfile("dataeuropa")
   dir.create(tmp)
   on.exit(unlink(tmp, recursive = TRUE), add = TRUE)
-  path <- de_download(url, file.path(tmp, paste0("distribution.", fmt)))
+  path <- de_download(x, file.path(tmp, paste0("distribution.", fmt)))
   if (fmt %in% c("csv", "json")) de_check_payload(path)
   de_read_table(path, fmt, sheet)
 }

@@ -20,6 +20,9 @@ run_case <- function(case) {
     df <- dataeuropa:::de_read_table(file.path(fixtures, case$input), args$format, args$sheet)
     return(list(columns = as.list(names(df)), rows = df))
   }
+  if (case$kind == "file_hash")
+    return(list(values = lapply(args$algorithms, function(a)
+      dataeuropa:::de_file_hash(file.path(fixtures, case$input), a))))
   data <- read_fixture(case$input)
   if (!is.null(case$select)) data <- data[[case$select]]
   switch(case$kind,

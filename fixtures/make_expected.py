@@ -12,7 +12,7 @@ import sys
 HERE = pathlib.Path(__file__).parent
 sys.path.insert(0, str(HERE.parent / "python" / "src"))
 
-from dataeuropa.client import (_distribution_rows, _facet_rows, _file_format, _keywords,  # noqa: E402
+from dataeuropa.client import (_distribution_rows, _facet_rows, _file_format, _file_hash, _keywords,  # noqa: E402
                                _read_table, _sparql_rows, summarise_dataset)
 
 
@@ -38,6 +38,8 @@ def run(case: dict):
     kind = case["kind"]
     if kind == "read_file":
         return table(_read_table(HERE / case["input"], args["format"], args.get("sheet")))
+    if kind == "file_hash":
+        return {"values": [_file_hash(HERE / case["input"], a) for a in args["algorithms"]]}
     data = json.loads((HERE / case["input"]).read_text(encoding="utf-8"))
     if case.get("select"):
         data = data[case["select"]]

@@ -27,3 +27,30 @@ if isdir(FILES)
         end
     end
 end
+
+@testset "checksums" begin
+    @test DataEuropa._checksum(Dict(:algorithm => "SHA-256", :checksum_value => " AB12 ")) == ("sha256", "ab12")
+    @test DataEuropa._checksum(Dict(:algorithm => "http://spdx.org/rdf/terms#checksumAlgorithm_sha1",
+                                    :checksum_value => "x")) == ("sha1", "x")
+    @test DataEuropa._checksum(Dict(:checksum_value => "0"^40)) == ("sha1", "0"^40)
+    @test DataEuropa._checksum(Dict(:checksum_value => "not-a-hash")) == (nothing, "not-a-hash")
+    @test DataEuropa._checksum(Dict(:checksum_value => "")) == (nothing, nothing)
+    @test DataEuropa._checksum(nothing) == (nothing, nothing)
+
+    if isdir(FILES)
+        src = joinpath(FILES, "comma.csv")
+        good = DataEuropa._file_hash(src, "sha1")
+        row = (url=fileurl(src), checksum=good, checksum_algorithm="sha1")
+        mktempdir() do tmp
+            @test endswith(download_distribution(row, tmp), "comma.csv")
+            bad = merge(row, (checksum="0"^40,))
+            @test_throws "checksum mismatch" download_distribution(bad, joinpath(tmp, "bad.csv"))
+            @test !isfile(joinpath(tmp, "bad.csv"))                                  # deleted
+            @test isfile(download_distribution(bad, joinpath(tmp, "kept.csv"); verify=false))
+            @test isfile(download_distribution(merge(row, (checksum=missing, checksum_algorithm=missing)), joinpath(tmp, "a.csv")))
+            @test isfile(download_distribution(merge(row, (checksum="1a2b", checksum_algorithm="crc")), joinpath(tmp, "b.csv")))
+        end
+        @test_throws "checksum mismatch" load_distribution((url=fileurl(joinpath(FILES, "semicolon.csv")), format="CSV",
+                                                           checksum="0"^32, checksum_algorithm="md5"))
+    end
+end
