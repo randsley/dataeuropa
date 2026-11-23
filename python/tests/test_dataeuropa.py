@@ -157,6 +157,9 @@ class _FakeResponse:
     def iter_content(self, chunk):
         yield self.body
 
+    def close(self):
+        pass
+
 
 @pytest.fixture
 def fake_http(monkeypatch):

@@ -15,7 +15,7 @@ Suggested order: phase 1, then `load_distribution` and caching from phase 2, the
 ## 2. Close the "found it, now give me the data" gap
 - [x] `load_distribution()`: download and read straight into a DataFrame (CSV, JSON, XLSX, Parquet). Refuses services, archives and HTML pages; 9 shared cases in `fixtures/`.
 - [x] Verify downloads against the API's checksum (MD5, SHA-1 or SHA-256; on about 3% of distributions). `byte_size` is not checked: in a sample, 20 of 37 sizes were wrong, mostly placeholders (0, 1, 1024).
-- [ ] Resumable downloads and an on-disk cache with a time limit (facets, catalogues, dataset records).
+- [x] Resumable downloads (Range with If-Range, so a changed file restarts) and an opt-in on-disk cache with a time limit (dataset records, catalogues, `limit=0` searches).
 - [ ] Skip service entries (WMS, WFS, INSPIRE DOWNLOAD SERVICE) when a file is wanted; geodata loaders (GeoDataFrame, `sf`, GeoDataFrames.jl).
 
 ## 3. Use more of the portal

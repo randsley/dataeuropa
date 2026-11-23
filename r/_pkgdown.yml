@@ -31,6 +31,7 @@ reference:
       - de_distributions
       - de_download
       - de_load_distribution
+      - de_cache_on
       - de_catalogues
   - title: Linked data
     contents:

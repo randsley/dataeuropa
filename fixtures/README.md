@@ -6,6 +6,7 @@ inputs, the expected outputs, and the list of cases that all three test suites r
 | Path | What it is |
 |---|---|
 | `responses/*.json` | Real API responses recorded by `record.py`, trimmed to stay small |
+| `responses/resume.json` | Validators and replies to Range requests, for resuming downloads |
 | `responses/formats.json` | Format ids, media types and URLs for format detection |
 | `files/*` | Sample CSV, JSON, XLSX and Parquet files, written by `make_files.py` (kept byte for byte: see `.gitattributes`) |
 | `responses/edge_cases.json` | Hand-written records for cases the live data rarely shows (missing fields, language fallback, ties, unbound SPARQL variables) |
@@ -29,6 +30,8 @@ then guard against unintended changes, and the Julia and R tests check that they
 | `file_format` | `_file_format` | `_file_format` | `de_file_format` |
 | `read_file` | `_read_table` | `_read_table` | `de_read_table` |
 | `file_hash` | `_file_hash` | `_file_hash` | `de_file_hash` |
+| `range_validator` | `_range_validator` | `_range_validator` | `de_range_validator` |
+| `resume_action` | `_resume_action` | `_resume_action` | `de_resume_action` |
 
 ## How results are compared
 

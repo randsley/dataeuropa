@@ -4,7 +4,7 @@
 \alias{de_download}
 \title{Download a distribution to disk}
 \usage{
-de_download(x, dest = ".", verify = TRUE)
+de_download(x, dest = ".", verify = TRUE, resume = TRUE)
 }
 \arguments{
 \item{x}{A URL, or a one-row data frame from [de_distributions()].}
@@ -12,6 +12,8 @@ de_download(x, dest = ".", verify = TRUE)
 \item{dest}{File path or directory (default: current directory).}
 
 \item{verify}{Check the file against the row's checksum, if it has one.}
+
+\item{resume}{Continue an interrupted download of the same URL to the same place.}
 }
 \value{
 The local path, invisibly.
@@ -21,4 +23,10 @@ If the row has a checksum (`checksum` and `checksum_algorithm`; MD5, SHA-1 or SH
 file is checked against it. On a mismatch the file is deleted and an error is raised;
 `verify = FALSE` skips the check. `byte_size` is not checked: on the portal it is often a
 placeholder (0, 1, 1024).
+}
+\details{
+The file is written as `<file>.part` and renamed when complete. If a download is interrupted,
+calling `de_download()` again for the same URL and destination continues where it stopped, when
+the server supports ranges and identifies the file (ETag or Last-Modified); a file that changed
+meanwhile is downloaded again from the start. `resume = FALSE` always starts from the start.
 }

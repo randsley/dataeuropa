@@ -28,6 +28,107 @@ de_json <- function(resp) {
   jsonlite::fromJSON(httr2::resp_body_string(resp), simplifyVector = FALSE)
 }
 
+# ---------------------------------------------------------------- response cache
+
+# Set by de_cache_on() / de_cache_off(); NULL means "use the environment variable".
+.de_cache <- new.env(parent = emptyenv())
+.de_cache_ttl_default <- 86400  # one day, in seconds
+
+de_cache_enabled <- function() {
+  if (!is.null(.de_cache$on)) return(.de_cache$on)
+  tolower(trimws(Sys.getenv("DATAEUROPA_CACHE"))) %in% c("1", "true", "yes")
+}
+
+de_cache_dir <- function() {
+  if (!is.null(.de_cache$dir)) return(.de_cache$dir)
+  d <- Sys.getenv("DATAEUROPA_CACHE_DIR")
+  if (nzchar(d)) d else tools::R_user_dir("dataeuropa", "cache")
+}
+
+de_cache_ttl <- function() {
+  if (!is.null(.de_cache$ttl)) return(as.numeric(.de_cache$ttl))
+  t <- Sys.getenv("DATAEUROPA_CACHE_TTL")
+  if (nzchar(t)) as.numeric(t) else .de_cache_ttl_default
+}
+
+#' Turn the on-disk response cache on or off, or empty it
+#'
+#' Cached: dataset records ([de_get_dataset()], [de_distributions()]), the catalogue list
+#' ([de_catalogues()]), and searches with `limit = 0` ([de_facet_values()], [de_count()]). Other
+#' searches, SPARQL and file downloads are never cached.
+#'
+#' The cache is off unless `de_cache_on()` is called or the environment variable
+#' `DATAEUROPA_CACHE=1` is set. `de_cache_off()` turns it off for the session; cached files stay
+#' until `de_clear_cache()`.
+#'
+#' @param dir Cache folder. Defaults to `DATAEUROPA_CACHE_DIR`, else
+#'   `tools::R_user_dir("dataeuropa", "cache")`.
+#' @param ttl How long a response stays valid, in seconds. Defaults to `DATAEUROPA_CACHE_TTL`,
+#'   else one day.
+#' @return `de_cache_on()`: the cache folder, invisibly. `de_clear_cache()`: the number of
+#'   responses deleted.
+#' @export
+de_cache_on <- function(dir = NULL, ttl = NULL) {
+  .de_cache$on <- TRUE
+  .de_cache$dir <- dir
+  .de_cache$ttl <- ttl
+  path <- de_cache_dir()
+  dir.create(path, recursive = TRUE, showWarnings = FALSE)
+  invisible(path)
+}
+
+#' @rdname de_cache_on
+#' @export
+de_cache_off <- function() {
+  .de_cache$on <- FALSE
+  invisible(NULL)
+}
+
+#' @rdname de_cache_on
+#' @export
+de_clear_cache <- function() {
+  path <- de_cache_dir()
+  if (!dir.exists(path)) return(0L)
+  files <- list.files(path, pattern = "^[0-9a-f]{64}\\.json$", full.names = TRUE)
+  unlink(files)
+  length(files)
+}
+
+# File name of a cached response: SHA-256 of the URL and its sorted query parameters.
+de_cache_key <- function(url, query = list()) {
+  q <- if (length(query)) {
+    keys <- sort(names(query))
+    paste0(keys, "=", vapply(keys, function(k) paste(as.character(query[[k]]), collapse = ","), ""),
+           collapse = "&")
+  } else ""
+  paste0(paste0(as.character(openssl::sha256(paste0(url, "?", q)))), ".json")
+}
+
+# GET a response body as text (a stand-in for tests replaces this).
+de_http_get <- function(url, query = list()) {
+  req <- do.call(httr2::req_url_query, c(list(de_req(url)), query))
+  httr2::resp_body_string(httr2::req_perform(req))
+}
+
+# GET a JSON response, from the cache when it is on, `cacheable` and fresh.
+de_get_json <- function(url, query = list(), cacheable = FALSE) {
+  path <- if (cacheable && de_cache_enabled()) file.path(de_cache_dir(), de_cache_key(url, query)) else NULL
+  if (!is.null(path) && file.exists(path) &&
+      difftime(Sys.time(), file.mtime(path), units = "secs") < de_cache_ttl()) {
+    body <- readChar(path, file.info(path)$size, useBytes = TRUE)
+    Encoding(body) <- "UTF-8"
+  } else {
+    body <- de_http_get(url, query)
+    if (!is.null(path)) {
+      dir.create(dirname(path), recursive = TRUE, showWarnings = FALSE)
+      tmp <- paste0(path, ".", Sys.getpid(), ".tmp")   # write, then rename, so readers never see half a file
+      writeBin(charToRaw(enc2utf8(body)), tmp)
+      file.rename(tmp, path)
+    }
+  }
+  jsonlite::fromJSON(body, simplifyVector = FALSE)
+}
+
 #' Collapse a multilingual `{lang: text}` list to one string
 #'
 #' @param x A named list of translations (or a string).
@@ -90,6 +191,7 @@ de_bbox_params <- function(bbox) {
 #'   any box. Datasets without a spatial extent (about half the portal) never match.
 #' @param aggregation Return facet counts?
 #' @param extra Named list of additional raw query parameters.
+#' @details With `limit = 0` the result can come from the response cache (see [de_cache_on()]).
 #' @export
 de_search <- function(q = NULL, filters = "dataset", facets = NULL, limit = 10, page = 0,
                       sort = NULL, country = NULL, catalog = NULL, format = NULL, license = NULL,
@@ -108,8 +210,8 @@ de_search <- function(q = NULL, filters = "dataset", facets = NULL, limit = 10, 
   if (!is.null(date_type)) p$dateType <- date_type
   if (!is.null(bbox)) p <- c(p, de_bbox_params(bbox))
   p <- c(p, extra)
-  req <- do.call(httr2::req_url_query, c(list(de_req(paste0(SEARCH_URL, "/search"))), p))
-  de_json(httr2::req_perform(req))$result
+  # limit = 0 (facet counts, hit counts) carries no records, so it may come from the cache.
+  de_get_json(paste0(SEARCH_URL, "/search"), p, cacheable = identical(as.numeric(limit), 0))$result
 }
 
 chr <- function(x) if (is.null(x) || length(x) == 0) NA_character_ else as.character(x[[1]])
@@ -185,7 +287,7 @@ de_count <- function(q = NULL, ...) as.integer(de_search(q, limit = 0, ...)$coun
 #' @param lang Preferred language.
 #' @export
 de_get_dataset <- function(id, raw = FALSE, lang = "en") {
-  d <- de_json(httr2::req_perform(de_req(paste0(SEARCH_URL, "/datasets/", id))))$result
+  d <- de_get_json(paste0(SEARCH_URL, "/datasets/", id), cacheable = TRUE)$result
   if (raw) return(d)
   list(summary = de_summarise(d, lang), keywords = de_keywords(d, lang), raw = d)
 }
@@ -263,6 +365,71 @@ de_verify_checksum <- function(path, algorithm, value) {
   TRUE
 }
 
+# The value to send as If-Range when resuming: a strong ETag, else Last-Modified, else NULL.
+# Weak ETags (W/"...") are not allowed in If-Range.
+de_range_validator <- function(etag, last_modified) {
+  etag <- str1(etag); last_modified <- str1(last_modified)
+  if (!is.null(etag) && nzchar(trimws(etag)) && !startsWith(trimws(etag), "W/")) return(trimws(etag))
+  if (!is.null(last_modified) && nzchar(trimws(last_modified))) return(trimws(last_modified))
+  NULL
+}
+
+# What to do with the reply to a request for bytes `offset`- of a partial download: "append" (206
+# from `offset`), "replace" (200: the whole file, because the server ignores ranges or the file
+# changed), "restart" (416, or a 206 for other bytes: start again without a range) or "error".
+de_resume_action <- function(status, content_range, offset) {
+  if (status == 206) {
+    cr <- str1(content_range)
+    m <- if (is.null(cr)) NULL else regmatches(cr, regexec("^\\s*bytes\\s+([0-9]+)-", cr, ignore.case = TRUE))[[1]]
+    return(if (length(m) == 2 && as.numeric(m[2]) == offset) "append" else "restart")
+  }
+  if (status == 200) return("replace")
+  if (status == 416) return("restart")
+  "error"
+}
+
+# Stream `url` into the partial file `part`, continuing an earlier partial download when possible.
+de_fetch_to <- function(url, part, resume = TRUE) {
+  meta <- paste0(part, ".json")
+  if (!grepl("^https?://", url, ignore.case = TRUE)) {   # file:// and the like: no ranges
+    unlink(meta)
+    httr2::req_perform(de_req(url), path = part)
+    return(invisible(part))
+  }
+  offset <- 0
+  req <- httr2::req_headers(de_req(url), `Accept-Encoding` = "identity")   # offsets must refer to the file itself
+  if (resume && file.exists(part) && file.exists(meta)) {
+    m <- tryCatch(jsonlite::fromJSON(meta), error = function(e) list())
+    if (identical(m$url, url) && is.character(m$validator) && file.size(part) > 0) {
+      offset <- file.size(part)
+      req <- httr2::req_headers(req, Range = paste0("bytes=", format(offset, scientific = FALSE), "-"),
+                                `If-Range` = m$validator)
+    }
+  }
+  if (offset == 0) unlink(c(part, meta))
+  resp <- httr2::req_perform_connection(httr2::req_error(req, is_error = function(r) FALSE))
+  on.exit(close(resp), add = TRUE)
+  status <- httr2::resp_status(resp)
+  action <- if (offset > 0) de_resume_action(status, httr2::resp_header(resp, "content-range"), offset) else "replace"
+  if (action == "restart") {
+    unlink(c(part, meta))
+    return(de_fetch_to(url, part, resume = FALSE))
+  }
+  if (action == "error" || status >= 400)
+    stop("HTTP ", status, " from ", url, call. = FALSE)
+  if (action == "replace") {
+    v <- de_range_validator(httr2::resp_header(resp, "etag"), httr2::resp_header(resp, "last-modified"))
+    if (is.null(v)) unlink(meta) else writeLines(jsonlite::toJSON(list(url = url, validator = v), auto_unbox = TRUE), meta)
+  }
+  con <- file(part, if (action == "append") "ab" else "wb")
+  on.exit(close(con), add = TRUE)
+  while (!httr2::resp_stream_is_complete(resp)) writeBin(httr2::resp_stream_raw(resp, kb = 1024), con)
+  close(con)
+  on.exit(close(resp))
+  unlink(meta)
+  invisible(part)
+}
+
 #' Download a distribution to disk
 #'
 #' If the row has a checksum (`checksum` and `checksum_algorithm`; MD5, SHA-1 or SHA-256), the
@@ -270,18 +437,25 @@ de_verify_checksum <- function(path, algorithm, value) {
 #' `verify = FALSE` skips the check. `byte_size` is not checked: on the portal it is often a
 #' placeholder (0, 1, 1024).
 #'
+#' The file is written as `<file>.part` and renamed when complete. If a download is interrupted,
+#' calling `de_download()` again for the same URL and destination continues where it stopped, when
+#' the server supports ranges and identifies the file (ETag or Last-Modified); a file that changed
+#' meanwhile is downloaded again from the start. `resume = FALSE` always starts from the start.
+#'
 #' @param x A URL, or a one-row data frame from [de_distributions()].
 #' @param dest File path or directory (default: current directory).
 #' @param verify Check the file against the row's checksum, if it has one.
+#' @param resume Continue an interrupted download of the same URL to the same place.
 #' @return The local path, invisibly.
 #' @export
-de_download <- function(x, dest = ".", verify = TRUE) {
+de_download <- function(x, dest = ".", verify = TRUE, resume = TRUE) {
   url <- if (is.character(x)) x else str1(x$url)
   if (is.null(url) || !nzchar(url)) stop("no URL available for this distribution", call. = FALSE)
   name <- utils::URLdecode(basename(sub("[?#].*$", "", url)))
   if (!nzchar(name)) name <- "download"
   path <- if (dir.exists(dest)) file.path(dest, name) else dest
-  httr2::req_perform(de_req(url), path = path)
+  de_fetch_to(url, paste0(path, ".part"), resume = resume)
+  file.rename(paste0(path, ".part"), path)
   if (verify && !is.character(x)) de_verify_checksum(path, x$checksum_algorithm, x$checksum)
   invisible(path)
 }
@@ -501,7 +675,7 @@ de_facet_table <- function(res, fid, top = NULL) {
 
 #' Ids of all harvested catalogues
 #' @export
-de_catalogues <- function() unlist(de_json(httr2::req_perform(de_req(paste0(SEARCH_URL, "/catalogues")))))
+de_catalogues <- function() unlist(de_get_json(paste0(SEARCH_URL, "/catalogues"), cacheable = TRUE))
 
 #' Dataset metadata as RDF text
 #' @param id Dataset id.

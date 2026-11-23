@@ -6,7 +6,8 @@ import pathlib
 
 import pytest
 
-from dataeuropa.client import (_distribution_rows, _facet_rows, _file_format, _file_hash, _keywords, _read_table,
+from dataeuropa.client import (_distribution_rows, _facet_rows, _file_format, _file_hash, _keywords,
+                               _range_validator, _resume_action, _read_table,
                                _sparql_rows, summarise_dataset)
 
 FIXTURES = pathlib.Path(__file__).resolve().parents[2] / "fixtures"
@@ -37,6 +38,10 @@ def run(case):
         data = data[case["select"]]
     if kind == "file_format":
         return {"values": [_file_format(r.get("format"), r.get("media_type"), r.get("url")) for r in data]}
+    if kind == "range_validator":
+        return {"values": [_range_validator(r["etag"], r["last_modified"]) for r in data]}
+    if kind == "resume_action":
+        return {"values": [_resume_action(r["status"], r["content_range"], r["offset"]) for r in data]}
     if kind == "summarise":
         return {"rows": [summarise_dataset(d, args["lang"]) for d in data]}
     if kind == "distributions":

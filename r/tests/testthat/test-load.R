@@ -67,10 +67,10 @@ test_that("checksums are normalised", {
 test_that("de_download checks the checksum", {
   skip_if_not(dir.exists(files), "fixtures folder not available")
   # Stand in for the HTTP request: write the bytes of fixtures/files/<last part of the URL>.
-  local_mocked_bindings(req_perform = function(req, path = NULL, ...) {
-    file.copy(file.path(files, sub("^.*/", "", req$url)), path, overwrite = TRUE)
-    invisible(NULL)
-  }, .package = "httr2")
+  local_mocked_bindings(de_fetch_to = function(url, part, resume = TRUE) {
+    file.copy(file.path(files, sub("^.*/", "", url)), part, overwrite = TRUE)
+    invisible(part)
+  }, .package = "dataeuropa")
   good <- dataeuropa:::de_file_hash(file.path(files, "comma.csv"), "sha1")
   row <- data.frame(url = "https://x.example/comma.csv", checksum = good, checksum_algorithm = "sha1")
   expect_match(de_download(row, scratch), "comma.csv$")

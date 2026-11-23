@@ -1,0 +1,22 @@
+{
+ "about": "Hand-written inputs for resuming downloads: response validators, and replies to a Range request.",
+ "validators": [
+  {"etag": "\"abc123\"", "last_modified": "Thu, 11 Sep 2025 12:19:52 GMT"},
+  {"etag": "W/\"weak\"", "last_modified": "Thu, 11 Sep 2025 12:19:52 GMT"},
+  {"etag": "W/\"weak\"", "last_modified": null},
+  {"etag": null, "last_modified": "Thu, 11 Sep 2025 12:19:52 GMT"},
+  {"etag": "  \"padded\"  ", "last_modified": null},
+  {"etag": "", "last_modified": ""},
+  {"etag": null, "last_modified": null}
+ ],
+ "replies": [
+  {"status": 206, "content_range": "bytes 100-199/200", "offset": 100},
+  {"status": 206, "content_range": "bytes 0-199/200", "offset": 100},
+  {"status": 206, "content_range": null, "offset": 100},
+  {"status": 206, "content_range": "BYTES 100-199/*", "offset": 100},
+  {"status": 200, "content_range": null, "offset": 100},
+  {"status": 416, "content_range": "bytes */200", "offset": 300},
+  {"status": 404, "content_range": null, "offset": 100},
+  {"status": 503, "content_range": null, "offset": 100}
+ ]
+}

@@ -1,4 +1,4 @@
-using Test, DataEuropa, DataFrames, JSON3
+using Test, DataEuropa, DataFrames, JSON3, HTTP
 using XLSX, Parquet2   # load the optional readers
 
 const DE = DataEuropa
@@ -24,6 +24,7 @@ end
 
 include("conformance.jl")
 include("load.jl")
+include("cache_resume.jl")
 
 LIVE && @testset "live API" begin
     df = search_datasets("water"; country="pt", format="CSV", limit=3)
@@ -53,6 +54,13 @@ LIVE && @testset "live API" begin
     # A 2 MB CSV on dados.gov.pt whose distribution carries a SHA-1 checksum.
     pt = distributions("68c2be5c43136b247fe74d41")
     mktempdir() do tmp
-        @test isfile(download_distribution(first(eachrow(filter(r -> isequal(r.checksum_algorithm, "sha1"), pt))), tmp))
+        row = first(eachrow(filter(r -> isequal(r.checksum_algorithm, "sha1"), pt)))
+        data = read(download_distribution(row, joinpath(tmp, "whole.csv")))
+        # Resume from half way; the SHA-1 checksum proves the result is exact.
+        lm = HTTP.header(HTTP.head(row.url), "Last-Modified")
+        @test !isempty(lm)
+        write(joinpath(tmp, "half.csv.part"), data[1:length(data) ÷ 2])
+        write(joinpath(tmp, "half.csv.part.json"), JSON3.write(Dict("url" => row.url, "validator" => lm)))
+        @test read(download_distribution(row, joinpath(tmp, "half.csv"))) == data
     end
 end

@@ -24,6 +24,7 @@ from EU institutions and national/regional portals), built on:
 | One dataset | `get_dataset` | `get_dataset` | `de_get_dataset` |
 | Files/services of a dataset | `distributions` | `distributions` | `de_distributions` |
 | Download a file | `download` | `download_distribution` | `de_download` |
+| Response cache | `cache_on`, `cache_off`, `clear_cache` | `cache_on`, `cache_off`, `clear_cache` | `de_cache_on`, `de_cache_off`, `de_clear_cache` |
 | Download and read into a table | `load_distribution` | `load_distribution` | `de_load_distribution` |
 | Facet ids + counts | `facet_values` | `facet_values` | `de_facet_values` |
 | Hit count only | `count` | `count_datasets` | `de_count` |

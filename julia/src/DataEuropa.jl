@@ -13,7 +13,7 @@ using HTTP, JSON3, DataFrames, Downloads, CSV, Dates, SHA, MD5
 
 export search, search_datasets, iter_datasets, fetch_datasets, get_dataset, distributions,
        download_distribution, load_distribution, facet_values, count_datasets, catalogues, get_rdf,
-       sparql, pick_lang
+       sparql, pick_lang, cache_on, cache_off, clear_cache
 
 const SEARCH_URL = "https://data.europa.eu/api/hub/search"
 const REPO_URL = "https://data.europa.eu/api/hub/repo"
@@ -77,6 +77,105 @@ function _request(method, url; query=nothing, body=nothing, headers=Pair{String,
     return resp
 end
 
+# ---------------------------------------------------------------- response cache
+
+# Set by cache_on() / cache_off(); `nothing` means "use the environment variable".
+const _CACHE = Dict{Symbol,Any}(:on => nothing, :dir => nothing, :ttl => nothing)
+const _CACHE_TTL_DEFAULT = 86400  # one day, in seconds
+
+# The operating system's cache folder for dataeuropa.
+function _default_cache_dir()
+    Sys.iswindows() && return joinpath(get(ENV, "LOCALAPPDATA", joinpath(homedir(), "AppData", "Local")),
+                                       "dataeuropa", "cache")
+    Sys.isapple() && return joinpath(homedir(), "Library", "Caches", "dataeuropa")
+    xdg = get(ENV, "XDG_CACHE_HOME", "")
+    return joinpath(isempty(xdg) ? joinpath(homedir(), ".cache") : xdg, "dataeuropa")
+end
+
+_cache_enabled() = _CACHE[:on] !== nothing ? _CACHE[:on] :
+                   lowercase(strip(get(ENV, "DATAEUROPA_CACHE", ""))) in ("1", "true", "yes")
+
+function _cache_dir()
+    _CACHE[:dir] !== nothing && return _CACHE[:dir]
+    d = get(ENV, "DATAEUROPA_CACHE_DIR", "")
+    return isempty(d) ? _default_cache_dir() : d
+end
+
+function _cache_ttl()
+    _CACHE[:ttl] !== nothing && return Float64(_CACHE[:ttl])
+    t = get(ENV, "DATAEUROPA_CACHE_TTL", "")
+    return isempty(t) ? Float64(_CACHE_TTL_DEFAULT) : parse(Float64, t)
+end
+
+"""
+    cache_on(dir=nothing; ttl=nothing) -> String
+
+Turn on the on-disk response cache for this session. Returns the cache folder.
+
+Cached: dataset records ([`get_dataset`](@ref), [`distributions`](@ref)), the catalogue list
+([`catalogues`](@ref)), and searches with `limit=0` ([`facet_values`](@ref),
+[`count_datasets`](@ref)). Other searches, SPARQL and file downloads are never cached.
+
+`dir` defaults to `DATAEUROPA_CACHE_DIR`, else the operating system's cache folder. `ttl` is how
+long a response stays valid, in seconds; it defaults to `DATAEUROPA_CACHE_TTL`, else one day.
+The cache is off unless this is called or `DATAEUROPA_CACHE=1` is set.
+"""
+function cache_on(dir=nothing; ttl=nothing)
+    _CACHE[:on] = true
+    _CACHE[:dir] = dir === nothing ? nothing : String(dir)
+    _CACHE[:ttl] = ttl
+    path = _cache_dir()
+    mkpath(path)
+    return path
+end
+
+"""
+    cache_off()
+
+Turn off the response cache for this session (cached files stay; see [`clear_cache`](@ref)).
+"""
+cache_off() = (_CACHE[:on] = false; nothing)
+
+"""
+    clear_cache() -> Int
+
+Delete all cached responses. Returns how many were deleted.
+"""
+function clear_cache()
+    path = _cache_dir()
+    isdir(path) || return 0
+    n = 0
+    for name in readdir(path)
+        if occursin(r"^[0-9a-f]{64}\.json$", name)
+            rm(joinpath(path, name))
+            n += 1
+        end
+    end
+    return n
+end
+
+# File name of a cached response: SHA-256 of the URL and its sorted query parameters.
+function _cache_key(url, query=nothing)
+    q = query === nothing ? "" : join(["$k=$(query[k])" for k in sort!(collect(keys(query)); by=string)], "&")
+    return bytes2hex(SHA.sha256("$url?$q")) * ".json"
+end
+
+# GET a JSON response body, from the cache when it is on, `cacheable` and fresh.
+function _get_body(url; query=nothing, cacheable::Bool=false)
+    path = cacheable && _cache_enabled() ? joinpath(_cache_dir(), _cache_key(url, query)) : nothing
+    if path !== nothing && isfile(path) && time() - mtime(path) < _cache_ttl()
+        return read(path)
+    end
+    body = _request("GET", url; query=query).body
+    if path !== nothing
+        mkpath(dirname(path))
+        tmp = "$path.$(getpid()).tmp"   # write, then rename, so readers never see half a file
+        write(tmp, body)
+        mv(tmp, path; force=true)
+    end
+    return body
+end
+
 function _facets(facets, named)
     out = Dict{String,Vector{String}}()
     if facets !== nothing
@@ -124,6 +223,8 @@ Raw Search API call; returns the `result` object (`count`, `results`, `facets`, 
 `bbox` is `(min_lon, min_lat, max_lon, max_lat)` in WGS84 degrees. A dataset matches when its
 spatial extent overlaps the box, so datasets covering all of Europe or the world match any box.
 Datasets without a spatial extent (about half the portal) never match.
+
+With `limit=0` the result can come from the response cache (see [`cache_on`](@ref)).
 """
 function search(q::Union{Nothing,AbstractString}=nothing; filters="dataset", facets=nothing,
                 limit::Integer=10, page::Integer=0, sort=nothing, country=nothing, catalog=nothing,
@@ -144,8 +245,8 @@ function search(q::Union{Nothing,AbstractString}=nothing; filters="dataset", fac
     for (k, v) in pairs(extra)
         p[string(k)] = v
     end
-    resp = _request("GET", "$SEARCH_URL/search"; query=p)
-    return JSON3.read(resp.body).result
+    # limit=0 (facet counts, hit counts) carries no records, so it may come from the cache.
+    return JSON3.read(_get_body("$SEARCH_URL/search"; query=p, cacheable=limit == 0)).result
 end
 
 """
@@ -237,7 +338,7 @@ Full metadata for one dataset. With `raw=true` returns the untouched JSON object
 `NamedTuple` summary with an extra `keywords` and `raw` field.
 """
 function get_dataset(id::AbstractString; raw::Bool=false, lang::AbstractString="en")
-    d = JSON3.read(_request("GET", "$SEARCH_URL/datasets/$id").body).result
+    d = JSON3.read(_get_body("$SEARCH_URL/datasets/$id"; cacheable=true)).result
     raw && return d
     return merge(summarise_dataset(d, lang), (keywords=_keywords(d, lang), raw=d))
 end
@@ -316,8 +417,96 @@ function _verify_checksum(path, algorithm, value)
     return true
 end
 
+# The value to send as If-Range when resuming: a strong ETag, else Last-Modified, else nothing.
+# Weak ETags (W/"...") are not allowed in If-Range.
+function _range_validator(etag, last_modified)
+    etag isa AbstractString && !isempty(strip(etag)) && !startswith(strip(etag), "W/") && return String(strip(etag))
+    last_modified isa AbstractString && !isempty(strip(last_modified)) && return String(strip(last_modified))
+    return nothing
+end
+
+# What to do with the reply to a request for bytes `offset`- of a partial download: "append" (206
+# from `offset`), "replace" (200: the whole file, because the server ignores ranges or the file
+# changed), "restart" (416, or a 206 for other bytes: start again without a range) or "error".
+function _resume_action(status, content_range, offset)
+    if status == 206
+        m = content_range isa AbstractString ? match(r"^\s*bytes\s+(\d+)-"i, content_range) : nothing
+        return m !== nothing && parse(Int, m[1]) == offset ? "append" : "restart"
+    end
+    status == 200 && return "replace"
+    status == 416 && return "restart"
+    return "error"
+end
+
+_header(resp, name) = (i = findlast(p -> lowercase(p.first) == name, resp.headers); i === nothing ? nothing : resp.headers[i].second)
+
+# Move what arrived for `target` into the partial file `part`, given the reply.
+function _settle_piece(target, part, action)
+    if action == "append" && target != part
+        open(part, "a") do io
+            open(src -> write(io, src), target)
+        end
+        rm(target; force=true)
+    elseif target != part
+        mv(target, part; force=true)
+    end
+end
+
+# Download `url` into the partial file `part`, continuing an earlier partial download when
+# possible. Downloads.jl only reports the reply after the body, so a resumed body goes to a
+# separate file first and is appended or used in place of `part` once the status is known.
+function _fetch(url, part; resume::Bool)
+    meta = part * ".json"
+    if !startswith(lowercase(url), "http")   # file:// and the like: no ranges
+        rm(meta; force=true)
+        Downloads.download(url, part; headers=["User-Agent" => UA], timeout=600)
+        return
+    end
+    offset = 0
+    hdrs = ["User-Agent" => UA, "Accept-Encoding" => "identity"]   # offsets must refer to the file itself
+    if resume && isfile(part) && isfile(meta)
+        m = try JSON3.read(read(meta, String)) catch; nothing end
+        v = m === nothing ? nothing : _get(m, :validator)
+        if m !== nothing && _get(m, :url) == url && v isa AbstractString && filesize(part) > 0
+            offset = filesize(part)
+            push!(hdrs, "Range" => "bytes=$offset-", "If-Range" => String(v))
+        end
+    end
+    offset == 0 && (rm(part; force=true); rm(meta; force=true))
+    target = offset > 0 ? part * ".new" : part
+    keep_meta(resp) = (v = _range_validator(_header(resp, "etag"), _header(resp, "last-modified"));
+                       v === nothing ? rm(meta; force=true) : write(meta, JSON3.write(Dict("url" => url, "validator" => v))))
+    resp = try
+        open(io -> Downloads.request(url; output=io, headers=hdrs, timeout=600), target, "w")
+    catch e
+        # Interrupted: keep what arrived so the next call can continue from there.
+        r = e isa Downloads.RequestError ? e.response : nothing
+        if r !== nothing && r.status in (200, 206)
+            action = offset > 0 ? _resume_action(r.status, _header(r, "content-range"), offset) : "replace"
+            if action in ("append", "replace")
+                _settle_piece(target, part, action)
+                action == "replace" && keep_meta(r)
+            end
+        end
+        rethrow()
+    end
+    action = offset > 0 ? _resume_action(resp.status, _header(resp, "content-range"), offset) : "replace"
+    if action == "restart"
+        rm(target; force=true); rm(part; force=true); rm(meta; force=true)
+        return _fetch(url, part; resume=false)
+    end
+    if action == "error" || resp.status >= 400
+        rm(target; force=true)
+        offset == 0 && rm(meta; force=true)
+        error("HTTP $(resp.status) from $url")
+    end
+    _settle_piece(target, part, action)
+    rm(meta; force=true)
+    return
+end
+
 """
-    download_distribution(url_or_row, dest="."; verify=true) -> String
+    download_distribution(url_or_row, dest="."; verify=true, resume=true) -> String
 
 Download a distribution (URL string, or a row of [`distributions`](@ref)) to `dest`
 (file path or directory). Returns the local path.
@@ -325,13 +514,20 @@ Download a distribution (URL string, or a row of [`distributions`](@ref)) to `de
 If the row has a checksum (`checksum` and `checksum_algorithm`; MD5, SHA-1 or SHA-256), the file
 is checked against it. On a mismatch the file is deleted and an error is thrown; `verify=false`
 skips the check. `byte_size` is not checked: on the portal it is often a placeholder (0, 1, 1024).
+
+The file is written as `<file>.part` and renamed when complete. If a download is interrupted,
+calling `download_distribution` again for the same URL and destination continues where it
+stopped, when the server supports ranges and identifies the file (ETag or Last-Modified); a file
+that changed meanwhile is downloaded again from the start. `resume=false` always starts from the
+start.
 """
-function download_distribution(x, dest::AbstractString="."; verify::Bool=true)
+function download_distribution(x, dest::AbstractString="."; verify::Bool=true, resume::Bool=true)
     url = x isa AbstractString ? String(x) : _field(x, :url)
     (url === nothing || isempty(url)) && throw(ArgumentError("no URL available for this distribution"))
     name = let n = basename(HTTP.URI(url).path); isempty(n) ? "download" : HTTP.URIs.unescapeuri(n) end
     path = isdir(dest) ? joinpath(dest, name) : dest
-    Downloads.download(url, path; headers=["User-Agent" => UA], timeout=600)
+    _fetch(url, path * ".part"; resume=resume)
+    mv(path * ".part", path; force=true)
     if verify && !(x isa AbstractString)
         _verify_checksum(path, _field(x, :checksum_algorithm), _field(x, :checksum))
     end
@@ -549,7 +745,7 @@ count_datasets(q::Union{Nothing,AbstractString}=nothing; kwargs...) = Int(search
 
 Ids of all harvested catalogues.
 """
-catalogues() = String.(JSON3.read(_request("GET", "$SEARCH_URL/catalogues").body))
+catalogues() = String.(JSON3.read(_get_body("$SEARCH_URL/catalogues"; cacheable=true)))
 
 """
     get_rdf(id, fmt="ttl") -> String

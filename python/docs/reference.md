@@ -12,6 +12,9 @@
         - distributions
         - download
         - load_distribution
+        - cache_on
+        - cache_off
+        - clear_cache
         - facet_values
         - count
         - catalogues

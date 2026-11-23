@@ -1,4 +1,7 @@
+export(de_cache_off)
+export(de_cache_on)
 export(de_catalogues)
+export(de_clear_cache)
 export(de_count)
 export(de_distributions)
 export(de_download)

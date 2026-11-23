@@ -107,10 +107,33 @@ de.sparql("""
 SPARQL queries that filter text across the whole graph can take 10 to 40 seconds.
 Always use `LIMIT`.
 
+## Caching responses
+
+```python
+de.cache_on()                                  # this session; or set DATAEUROPA_CACHE=1
+de.cache_on(dir="cache/", ttl=3600)
+de.cache_off()
+de.clear_cache()                               # delete cached responses
+```
+
+The cache is off by default. When on, it keeps dataset records, the catalogue list, and
+searches with `limit` 0 (facet values and counts) on disk for a day, so repeated lookups do not
+go back to the portal. Searches that return records, SPARQL and file downloads are never cached.
+
+## Interrupted downloads
+
+Files are written as `<file>.part` and renamed when complete. Calling `download` again with the
+same URL and destination continues an interrupted download where it stopped, when the server
+supports it (most file hosts do). A file that changed on the server meanwhile is downloaded again
+from the start. `resume=False` always starts from the start.
+
 ## Settings
 
 | Environment variable | Default | Effect |
 |---|---|---|
 | `DATAEUROPA_TIMEOUT` | `60` | request timeout in seconds |
+| `DATAEUROPA_CACHE` | off | `1` turns the response cache on |
+| `DATAEUROPA_CACHE_DIR` | the operating system's cache folder | where cached responses go |
+| `DATAEUROPA_CACHE_TTL` | `86400` (one day) | how long a cached response stays valid, in seconds |
 
 Requests that fail with HTTP 429 or 5xx are retried with backoff.

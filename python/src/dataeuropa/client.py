@@ -50,6 +50,107 @@ def _timeout() -> float:
     return float(os.environ.get("DATAEUROPA_TIMEOUT", "60"))
 
 
+# ---------------------------------------------------------------- response cache
+
+# Set by cache_on() / cache_off(); None means "use the environment variable".
+_cache_settings: dict[str, Any] = {"on": None, "dir": None, "ttl": None}
+_CACHE_TTL_DEFAULT = 86400  # one day, in seconds
+
+
+def _default_cache_dir() -> str:
+    """The operating system's cache folder for dataeuropa."""
+    import sys
+
+    if sys.platform == "win32":
+        base = os.environ.get("LOCALAPPDATA") or os.path.expanduser("~/AppData/Local")
+        return os.path.join(base, "dataeuropa", "cache")
+    if sys.platform == "darwin":
+        return os.path.expanduser("~/Library/Caches/dataeuropa")
+    return os.path.join(os.environ.get("XDG_CACHE_HOME") or os.path.expanduser("~/.cache"), "dataeuropa")
+
+
+def _cache_enabled() -> bool:
+    if _cache_settings["on"] is not None:
+        return _cache_settings["on"]
+    return os.environ.get("DATAEUROPA_CACHE", "").strip().lower() in ("1", "true", "yes")
+
+
+def _cache_dir() -> str:
+    return _cache_settings["dir"] or os.environ.get("DATAEUROPA_CACHE_DIR") or _default_cache_dir()
+
+
+def _cache_ttl() -> float:
+    if _cache_settings["ttl"] is not None:
+        return float(_cache_settings["ttl"])
+    return float(os.environ.get("DATAEUROPA_CACHE_TTL") or _CACHE_TTL_DEFAULT)
+
+
+def cache_on(dir: str | os.PathLike | None = None, ttl: float | None = None) -> str:
+    """Turn on the on-disk response cache for this session. Returns the cache folder.
+
+    Cached: dataset records (:func:`get_dataset`, :func:`distributions`), the catalogue list
+    (:func:`catalogues`), and searches with ``limit=0`` (:func:`facet_values`, :func:`count`).
+    Other searches, SPARQL and file downloads are never cached.
+
+    ``dir`` defaults to ``DATAEUROPA_CACHE_DIR``, else the operating system's cache folder.
+    ``ttl`` is how long a response stays valid, in seconds; it defaults to
+    ``DATAEUROPA_CACHE_TTL``, else one day. The cache is off unless this is called or
+    ``DATAEUROPA_CACHE=1`` is set.
+    """
+    _cache_settings.update(on=True, dir=str(dir) if dir is not None else None, ttl=ttl)
+    path = _cache_dir()
+    os.makedirs(path, exist_ok=True)
+    return path
+
+
+def cache_off() -> None:
+    """Turn off the response cache for this session (cached files stay; see :func:`clear_cache`)."""
+    _cache_settings["on"] = False
+
+
+def clear_cache() -> int:
+    """Delete all cached responses. Returns how many were deleted."""
+    import re
+
+    path = _cache_dir()
+    if not os.path.isdir(path):
+        return 0
+    n = 0
+    for name in os.listdir(path):
+        if re.fullmatch(r"[0-9a-f]{64}\.json", name):
+            os.remove(os.path.join(path, name))
+            n += 1
+    return n
+
+
+def _cache_key(url: str, params: dict | None = None) -> str:
+    """File name of a cached response: SHA-256 of the URL and its sorted query parameters."""
+    import hashlib
+
+    query = "&".join(f"{k}={params[k]}" for k in sorted(params)) if params else ""
+    return hashlib.sha256(f"{url}?{query}".encode("utf-8")).hexdigest() + ".json"
+
+
+def _get_json(url: str, params: dict | None = None, *, cacheable: bool = False) -> Any:
+    """GET a JSON response, from the cache when it is on, ``cacheable`` and fresh."""
+    import time
+
+    path = os.path.join(_cache_dir(), _cache_key(url, params)) if cacheable and _cache_enabled() else None
+    if path and os.path.isfile(path) and time.time() - os.path.getmtime(path) < _cache_ttl():
+        with open(path, "rb") as fh:
+            return json.loads(fh.read())
+    r = _get_session().get(url, params=params, timeout=_timeout())
+    _raise(r)
+    data = r.json()
+    if path:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        tmp = f"{path}.{os.getpid()}.tmp"   # write, then rename, so readers never see half a file
+        with open(tmp, "wb") as fh:
+            fh.write(r.content)
+        os.replace(tmp, path)
+    return data
+
+
 def pick_lang(value: Any, lang: str = "en") -> str | None:
     """Collapse a ``{lang: text}`` mapping to one string (lang, then en, then any)."""
     if value is None:
@@ -122,6 +223,8 @@ def search(q: str | None = None, *, filters: str | Sequence[str] = "dataset",
     ``bbox`` is ``(min_lon, min_lat, max_lon, max_lat)`` in WGS84 degrees. A dataset matches when
     its spatial extent overlaps the box, so datasets covering all of Europe or the world match any
     box. Datasets without a spatial extent (about half the portal) never match.
+
+    With ``limit=0`` the result can come from the response cache (see :func:`cache_on`).
     """
     params: dict[str, Any] = {"limit": limit, "page": page, "aggregation": str(aggregation).lower()}
     if q:
@@ -143,9 +246,8 @@ def search(q: str | None = None, *, filters: str | Sequence[str] = "dataset",
     if bbox is not None:
         params.update(_bbox_params(bbox))
     params.update(extra or {})
-    r = _get_session().get(f"{SEARCH_URL}/search", params=params, timeout=_timeout())
-    _raise(r)
-    return r.json()["result"]
+    # limit=0 (facet counts, hit counts) carries no records, so it may come from the cache.
+    return _get_json(f"{SEARCH_URL}/search", params, cacheable=limit == 0)["result"]
 
 
 def _raise(r: requests.Response) -> None:
@@ -236,9 +338,7 @@ def fetch_datasets(q: str | None = None, *, max_results: int = 1000, lang: str =
 
 def get_dataset(dataset_id: str, *, raw: bool = False, lang: str = "en") -> dict:
     """Full metadata record for one dataset (id as shown in search results)."""
-    r = _get_session().get(f"{SEARCH_URL}/datasets/{dataset_id}", timeout=_timeout())
-    _raise(r)
-    d = r.json()["result"]
+    d = _get_json(f"{SEARCH_URL}/datasets/{dataset_id}", cacheable=True)["result"]
     return d if raw else {**summarise_dataset(d, lang), "keywords": _keywords(d, lang), "raw": d}
 
 
@@ -327,8 +427,79 @@ def _verify_checksum(path: str | os.PathLike, algorithm: str | None, value: str 
     return True
 
 
+def _range_validator(etag: str | None, last_modified: str | None) -> str | None:
+    """The value to send as ``If-Range`` when resuming: a strong ETag, else Last-Modified, else None.
+    Weak ETags (``W/"..."``) are not allowed in ``If-Range``."""
+    if isinstance(etag, str) and etag.strip() and not etag.strip().startswith("W/"):
+        return etag.strip()
+    if isinstance(last_modified, str) and last_modified.strip():
+        return last_modified.strip()
+    return None
+
+
+def _resume_action(status: int, content_range: str | None, offset: int) -> str:
+    """What to do with the reply to a request for bytes ``offset``- of a partial download:
+    ``"append"`` (206 from ``offset``), ``"replace"`` (200: the whole file, because the server
+    ignores ranges or the file changed), ``"restart"`` (416, or a 206 for other bytes: start again
+    without a range) or ``"error"``."""
+    import re
+
+    if status == 206:
+        m = re.match(r"\s*bytes\s+(\d+)-", content_range or "", re.IGNORECASE)
+        return "append" if m and int(m.group(1)) == offset else "restart"
+    if status == 200:
+        return "replace"
+    if status == 416:
+        return "restart"
+    return "error"
+
+
+def _fetch(url: str, part: str, *, resume: bool, chunk: int) -> requests.Response:
+    """Stream ``url`` into the partial file ``part``, continuing an earlier partial download when
+    possible. Returns the (closed) response, for its headers and final URL."""
+    meta = part + ".json"
+    offset = 0
+    headers = {"Accept-Encoding": "identity"}  # byte offsets must refer to the file itself
+    if resume and os.path.isfile(part) and os.path.isfile(meta):
+        try:
+            with open(meta, encoding="utf-8") as fh:
+                m = json.load(fh)
+        except (OSError, ValueError):
+            m = {}
+        if m.get("url") == url and m.get("validator") and os.path.getsize(part) > 0:
+            offset = os.path.getsize(part)
+            headers.update({"Range": f"bytes={offset}-", "If-Range": m["validator"]})
+    if offset == 0:
+        for f in (part, meta):
+            if os.path.exists(f):
+                os.remove(f)
+    r = _get_session().get(url, stream=True, timeout=_timeout(), allow_redirects=True, headers=headers)
+    action = _resume_action(r.status_code, r.headers.get("content-range"), offset) if offset else "replace"
+    if action == "restart":
+        r.close()
+        for f in (part, meta):
+            if os.path.exists(f):
+                os.remove(f)
+        return _fetch(url, part, resume=False, chunk=chunk)
+    _raise(r)
+    if action == "replace":
+        validator = _range_validator(r.headers.get("etag"), r.headers.get("last-modified"))
+        if validator:
+            with open(meta, "w", encoding="utf-8") as fh:
+                json.dump({"url": url, "validator": validator}, fh)
+        elif os.path.exists(meta):
+            os.remove(meta)
+    with open(part, "ab" if action == "append" else "wb") as fh:
+        for piece in r.iter_content(chunk):
+            fh.write(piece)
+    r.close()
+    if os.path.exists(meta):
+        os.remove(meta)
+    return r
+
+
 def download(url_or_row: str | dict, dest: str | os.PathLike | None = None, *, chunk: int = 1 << 20,
-             verify: bool = True) -> str:
+             verify: bool = True, resume: bool = True) -> str:
     """Download a distribution to ``dest`` (file or directory). Returns the local path.
 
     Accepts a URL, or a row/dict from :func:`distributions` (uses its ``url``). Streams to disk.
@@ -337,28 +508,31 @@ def download(url_or_row: str | dict, dest: str | os.PathLike | None = None, *, c
     file is checked against it. On a mismatch the file is deleted and ``ValueError`` is raised;
     ``verify=False`` skips the check. ``byte_size`` is not checked: on the portal it is often a
     placeholder (0, 1, 1024).
+
+    The file is written as ``<file>.part`` and renamed when complete. If a download is interrupted,
+    calling ``download`` again for the same URL and destination continues where it stopped, when
+    the server supports ranges and identifies the file (ETag or Last-Modified); a file that changed
+    meanwhile is downloaded again from the start. ``resume=False`` always starts from the start.
     """
     from urllib.parse import urlparse, unquote
 
     url = url_or_row if isinstance(url_or_row, str) else url_or_row.get("url")
     if not url:
         raise ValueError("no URL available for this distribution")
-    r = _get_session().get(url, stream=True, timeout=_timeout(), allow_redirects=True)
-    _raise(r)
-    name = None
-    cd = r.headers.get("content-disposition", "")
-    if "filename=" in cd:
-        name = cd.split("filename=")[-1].strip("\"' ;")
-    name = name or unquote(os.path.basename(urlparse(r.url).path)) or "download"
-    if dest is None:
-        path = name
-    elif os.path.isdir(dest):
-        path = os.path.join(dest, name)
-    else:
+    folder = None if dest is not None and not os.path.isdir(dest) else (str(dest) if dest is not None else "")
+    guess = unquote(os.path.basename(urlparse(url).path)) or "download"
+    part = (os.path.join(folder, guess) if folder is not None else str(dest)) + ".part"
+    r = _fetch(url, part, resume=resume, chunk=chunk)
+    if folder is None:
         path = str(dest)
-    with open(path, "wb") as fh:
-        for part in r.iter_content(chunk):
-            fh.write(part)
+    else:
+        name = None
+        cd = r.headers.get("content-disposition", "")
+        if "filename=" in cd:
+            name = cd.split("filename=")[-1].strip("\"' ;")
+        name = name or unquote(os.path.basename(urlparse(r.url).path)) or "download"
+        path = os.path.join(folder, name)
+    os.replace(part, path)
     if verify and not isinstance(url_or_row, str):
         _verify_checksum(path, url_or_row.get("checksum_algorithm"), url_or_row.get("checksum"))
     return path
@@ -564,9 +738,7 @@ def count(q: str | None = None, **kw) -> int:
 
 def catalogues() -> list[str]:
     """Ids of all harvested catalogues."""
-    r = _get_session().get(f"{SEARCH_URL}/catalogues", timeout=_timeout())
-    _raise(r)
-    return r.json()
+    return _get_json(f"{SEARCH_URL}/catalogues", cacheable=True)
 
 
 def get_rdf(dataset_id: str, fmt: str = "ttl") -> str:

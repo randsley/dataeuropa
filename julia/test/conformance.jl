@@ -34,6 +34,10 @@ function _run(case)
         return Dict("values" => [DE._file_format(get(r, :format, nothing), get(r, :media_type, nothing),
                                                  get(r, :url, nothing)) for r in data])
     end
+    kind == "range_validator" &&
+        return Dict("values" => [DE._range_validator(r.etag, r.last_modified) for r in data])
+    kind == "resume_action" &&
+        return Dict("values" => [DE._resume_action(r.status, r.content_range, r.offset) for r in data])
     kind == "summarise" && return Dict("rows" => [Dict(pairs(DE.summarise_dataset(d, args.lang))) for d in data])
     kind == "distributions" && return Dict("rows" => DE._distribution_table(data, args.lang))
     kind == "keywords" && return Dict("values" => DE._keywords(data, args.lang))

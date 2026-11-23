@@ -57,3 +57,6 @@ any box. Datasets without a spatial extent (about half the portal) never match.}
 Returns the `result` object of the Search API as a nested list
 (`count`, `results`, `facets`, ...).
 }
+\details{
+With `limit = 0` the result can come from the response cache (see [de_cache_on()]).
+}
