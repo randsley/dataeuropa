@@ -6,18 +6,35 @@ import pathlib
 
 import pytest
 
-from dataeuropa.client import _distribution_rows, _facet_rows, _keywords, _sparql_rows, summarise_dataset
+from dataeuropa.client import (_distribution_rows, _facet_rows, _file_format, _keywords, _read_table,
+                               _sparql_rows, summarise_dataset)
 
 FIXTURES = pathlib.Path(__file__).resolve().parents[2] / "fixtures"
 CASES = json.loads((FIXTURES / "cases.json").read_text(encoding="utf-8"))["cases"] if FIXTURES.exists() else []
 
 
+def plain(v):
+    """A pandas/numpy cell as a plain value; missing values become None."""
+    import pandas as pd
+    if v is None or (not isinstance(v, (list, dict)) and pd.isna(v)):
+        return None
+    if hasattr(v, "item"):
+        v = v.item()
+    return v.isoformat() if hasattr(v, "isoformat") else v
+
+
 def run(case):
+    args = case.get("args") or {}
+    kind = case["kind"]
+    if kind == "read_file":
+        df = _read_table(FIXTURES / case["input"], args["format"], args.get("sheet"))
+        return {"columns": [str(c) for c in df.columns],
+                "rows": [{str(c): plain(v) for c, v in zip(df.columns, r)} for r in df.itertuples(index=False)]}
     data = json.loads((FIXTURES / case["input"]).read_text(encoding="utf-8"))
     if case.get("select"):
         data = data[case["select"]]
-    args = case.get("args") or {}
-    kind = case["kind"]
+    if kind == "file_format":
+        return {"values": [_file_format(r.get("format"), r.get("media_type"), r.get("url")) for r in data]}
     if kind == "summarise":
         return {"rows": [summarise_dataset(d, args["lang"]) for d in data]}
     if kind == "distributions":
@@ -44,6 +61,8 @@ def test_conformance(case):
     expected = json.loads((FIXTURES / "expected" / f"{case['name']}.json").read_text(encoding="utf-8"))
     got = run(case)
     assert got.keys() == expected.keys()
+    if "columns" in expected:
+        assert got["columns"] == expected["columns"]
     if "rows" in expected:
         assert len(got["rows"]) == len(expected["rows"])
         for i, (g, e) in enumerate(zip(got["rows"], expected["rows"])):

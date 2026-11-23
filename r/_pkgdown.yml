@@ -30,6 +30,7 @@ reference:
       - de_get_dataset
       - de_distributions
       - de_download
+      - de_load_distribution
       - de_catalogues
   - title: Linked data
     contents:

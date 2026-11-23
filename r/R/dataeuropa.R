@@ -232,6 +232,183 @@ de_download <- function(x, dest = ".") {
   invisible(path)
 }
 
+# ---------------------------------------------------------------- load into a table
+
+# Format ids, media types and file extensions that map to a readable file format.
+.file_formats <- c(
+  "csv" = "csv", "text/csv" = "csv", "csv/utf8" = "csv", "comma separated value (csv)" = "csv",
+  "json" = "json", "application/json" = "json",
+  "xlsx" = "xlsx", "xlsm" = "xlsx",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" = "xlsx",
+  "parquet" = "parquet", "application/vnd.apache.parquet" = "parquet", "application/x-parquet" = "parquet")
+# Media types and extensions of compressed archives, which must be unpacked before reading.
+.archives <- c("application/zip", "application/x-zip-compressed", "application/gzip", "application/x-gzip",
+               "application/x-tar", "zip", "gz", "tgz", "tar")
+# Format ids of services (map servers, APIs) rather than files. Ids ending in "_srvc" count too.
+.service_formats <- c("wms", "wfs", "wcs", "wmts", "ogc:wms", "ogc:wfs", "api", "open-api", "ogc api features",
+                      "ogcapi-features", "arcgis geoservices rest api", "application/vnd.ogc.wms_xml", "sparql")
+
+str1 <- function(x) if (is.null(x) || length(x) == 0 || (is.atomic(x) && is.na(x[[1]]))) NULL else as.character(x[[1]])
+
+# "csv", "json", "xlsx", "parquet", "service", "archive" or NA (unknown). A compressed media type or
+# extension means "archive" whatever the format id says; otherwise the first recognised of format
+# id, media type, file extension wins.
+de_file_format <- function(fmt = NULL, media_type = NULL, url = NULL) {
+  fmt <- str1(fmt); media_type <- str1(media_type); url <- str1(url)
+  ext <- NULL
+  if (!is.null(url) && nzchar(url)) {
+    path <- sub("/+$", "", sub("[?#].*$", "", url))
+    last <- sub("^.*/", "", path)
+    if (grepl(".", last, fixed = TRUE)) ext <- sub("^.*\\.", "", last)
+  }
+  for (cand in list(media_type, ext))
+    if (!is.null(cand) && tolower(trimws(cand)) %in% .archives) return("archive")
+  for (cand in list(fmt, media_type, ext)) {
+    if (is.null(cand) || !nzchar(trimws(cand))) next
+    key <- tolower(trimws(cand))
+    if (startsWith(key, "file:///")) key <- sub("^.*/", "", key)
+    if (key %in% .service_formats || endsWith(key, "_srvc")) return("service")
+    if (key %in% names(.file_formats)) return(unname(.file_formats[key]))
+  }
+  NA_character_
+}
+
+# Refuse a downloaded file that is an archive or an HTML page rather than data.
+de_check_payload <- function(path) {
+  head <- readBin(path, "raw", 512)
+  if ((length(head) >= 4 && identical(head[1:4], as.raw(c(0x50, 0x4b, 0x03, 0x04)))) ||
+      (length(head) >= 2 && identical(head[1:2], as.raw(c(0x1f, 0x8b)))))
+    stop("the download is a compressed archive (ZIP or gzip); use de_download() and unpack it", call. = FALSE)
+  skip <- as.raw(c(0xef, 0xbb, 0xbf, 0x20, 0x09, 0x0d, 0x0a))   # byte-order mark and leading whitespace
+  first <- which(!(head %in% skip))[1]
+  rest <- if (is.na(first)) raw() else head[first:min(length(head), first + 19)]
+  start <- tolower(rawToChar(rest[rest != as.raw(0)]))
+  if (startsWith(start, "<!doctype html") || startsWith(start, "<html"))
+    stop("the download is an HTML page, not a data file (often a landing page)", call. = FALSE)
+  invisible(NULL)
+}
+
+# UTF-8 (with or without a byte-order mark), falling back to Latin-1.
+de_decode <- function(raw) {
+  if (length(raw) >= 3 && identical(raw[1:3], as.raw(c(0xef, 0xbb, 0xbf)))) raw <- raw[-(1:3)]
+  text <- rawToChar(raw)
+  if (validUTF8(text)) { Encoding(text) <- "UTF-8"; text } else iconv(text, from = "latin1", to = "UTF-8")
+}
+
+# The most frequent of , ; tab | in the header line (comma on a tie or if none occurs).
+de_sniff_delimiter <- function(text) {
+  header <- sub("\n.*$", "", text)
+  delims <- c(",", ";", "\t", "|")
+  counts <- vapply(delims, function(d) lengths(regmatches(header, gregexpr(d, header, fixed = TRUE))), 0L)
+  best <- max(counts)
+  if (best == 0 || counts[[1]] == best) return(",")
+  delims[-1][which(counts[-1] == best)[1]]
+}
+
+# An array of objects, or an object holding exactly one array of objects.
+de_json_records <- function(data) {
+  is_obj <- function(r) is.list(r) && (length(r) == 0 || !is.null(names(r)))
+  if (is.list(data) && is.null(names(data)) && all(vapply(data, is_obj, TRUE))) return(data)
+  if (is.list(data) && !is.null(names(data))) {
+    lists <- Filter(function(v) is.list(v) && length(v) > 0 && is.null(names(v)) && all(vapply(v, is_obj, TRUE)), data)
+    if (length(lists) == 1) return(lists[[1]])
+  }
+  stop("JSON is not a table: expected an array of objects, or an object holding one", call. = FALSE)
+}
+
+# One JSON column: numbers, logicals or strings become an atomic vector; anything else a list.
+json_column <- function(vals) {
+  present <- Filter(Negate(is.null), vals)
+  atomic1 <- function(v) is.atomic(v) && length(v) == 1
+  if (length(present) > 0 && all(vapply(present, atomic1, TRUE))) {
+    fill <- function(conv, na) vapply(vals, function(v) if (is.null(v)) na else conv(v), na)
+    if (all(vapply(present, is.logical, TRUE))) return(fill(as.logical, NA))
+    if (all(vapply(present, is.numeric, TRUE))) return(fill(as.numeric, NA_real_))
+    if (all(vapply(present, is.character, TRUE))) return(fill(as.character, NA_character_))
+  }
+  if (length(present) == 0) return(rep(NA, length(vals)))
+  I(lapply(vals, function(v) if (is.null(v)) NA else v))
+}
+
+# Read a local file of format `fmt` into a data frame.
+de_read_table <- function(path, fmt, sheet = NULL) {
+  if (fmt == "csv") {
+    text <- de_decode(readBin(path, "raw", file.info(path)$size))
+    df <- utils::read.csv(text = text, sep = de_sniff_delimiter(text), na.strings = "",
+                          check.names = FALSE, stringsAsFactors = FALSE, encoding = "UTF-8")
+    bool_words <- c("true", "True", "TRUE", "false", "False", "FALSE")
+    for (col in names(df)) {
+      v <- df[[col]]
+      if (is.character(v) && any(!is.na(v)) && all(is.na(v) | v %in% bool_words))
+        df[[col]] <- tolower(v) == "true"   # lowercase true/false, which read.csv leaves as text
+    }
+    return(df)
+  }
+  if (fmt == "json") {
+    records <- de_json_records(jsonlite::fromJSON(de_decode(readBin(path, "raw", file.info(path)$size)),
+                                                  simplifyVector = FALSE))
+    cols <- unique(unlist(lapply(records, names)))
+    out <- lapply(cols, function(c) json_column(lapply(records, function(r) r[[c]])))
+    names(out) <- cols
+    return(as.data.frame(out, check.names = FALSE, stringsAsFactors = FALSE))
+  }
+  if (fmt == "xlsx") {
+    if (!requireNamespace("readxl", quietly = TRUE))
+      stop("reading XLSX needs the readxl package: install.packages(\"readxl\")", call. = FALSE)
+    return(as.data.frame(readxl::read_excel(path, sheet = sheet %||% 1)))
+  }
+  if (fmt == "parquet") {
+    if (!requireNamespace("arrow", quietly = TRUE))
+      stop("reading Parquet needs the arrow package: install.packages(\"arrow\")", call. = FALSE)
+    return(as.data.frame(arrow::read_parquet(path)))
+  }
+  stop("unsupported format '", fmt, "'", call. = FALSE)
+}
+
+#' Download a distribution and read it into a data frame
+#'
+#' Reads CSV and JSON; XLSX with the readxl package and Parquet with the arrow package (both
+#' optional). The format comes from `format` if given (`"csv"`, `"json"`, `"xlsx"`, `"parquet"`),
+#' else from the row's format id, its media type, then the URL's file extension.
+#'
+#' CSV: the delimiter (`,` `;` tab `|`) is taken from the header line, text is read as UTF-8 with
+#' a Latin-1 fallback, only empty cells count as missing, and dates stay text. JSON: an array of
+#' objects, or an object holding exactly one such array; keys become columns.
+#'
+#' Stops with an error for services (WMS, WFS, APIs), compressed archives, HTML pages served
+#' instead of data, and formats it cannot tell or read.
+#'
+#' @param x A URL, or a one-row data frame from [de_distributions()].
+#' @param format Override the detected format: "csv", "json", "xlsx" or "parquet".
+#' @param sheet XLSX sheet name or 1-based index (default: the first sheet).
+#' @return A data frame.
+#' @export
+de_load_distribution <- function(x, format = NULL, sheet = NULL) {
+  row <- if (is.character(x)) list(url = x) else x
+  url <- str1(row$url)
+  if (is.null(url) || !nzchar(url)) stop("no URL available for this distribution", call. = FALSE)
+  if (!is.null(format)) {
+    fmt <- de_file_format(format)
+    if (is.na(fmt) || fmt %in% c("service", "archive"))
+      stop("format must be one of csv, json, xlsx, parquet (got '", format, "')", call. = FALSE)
+  } else {
+    fmt <- de_file_format(row$format, row$media_type, url)
+  }
+  if (identical(fmt, "service"))
+    stop(url, " is a service, not a file; open it with a client for that service", call. = FALSE)
+  if (identical(fmt, "archive"))
+    stop(url, " is a compressed archive; use de_download() and unpack it", call. = FALSE)
+  if (is.na(fmt))
+    stop("cannot tell the file format of ", url, "; pass format = \"csv\", \"json\", \"xlsx\" or \"parquet\"",
+         call. = FALSE)
+  tmp <- tempfile("dataeuropa")
+  dir.create(tmp)
+  on.exit(unlink(tmp, recursive = TRUE), add = TRUE)
+  path <- de_download(url, file.path(tmp, paste0("distribution.", fmt)))
+  if (fmt %in% c("csv", "json")) de_check_payload(path)
+  de_read_table(path, fmt, sheet)
+}
+
 #' Values and counts of a facet
 #'
 #' @param facet e.g. "country", "format", "categories", "catalog", "publisher".

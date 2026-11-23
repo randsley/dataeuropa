@@ -1,0 +1,16 @@
+{
+ "columns": [
+  "code",
+  "value"
+ ],
+ "rows": [
+  {
+   "code": "PT",
+   "value": 1.0
+  },
+  {
+   "code": "ES",
+   "value": 2.5
+  }
+ ]
+}

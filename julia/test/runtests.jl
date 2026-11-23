@@ -1,4 +1,5 @@
 using Test, DataEuropa, DataFrames, JSON3
+using XLSX, Parquet2   # load the optional readers
 
 const DE = DataEuropa
 const LIVE = get(ENV, "DATAEUROPA_OFFLINE", "0") != "1"
@@ -22,6 +23,7 @@ const LIVE = get(ENV, "DATAEUROPA_OFFLINE", "0") != "1"
 end
 
 include("conformance.jl")
+include("load.jl")
 
 LIVE && @testset "live API" begin
     df = search_datasets("water"; country="pt", format="CSV", limit=3)
@@ -44,4 +46,8 @@ LIVE && @testset "live API" begin
     total = count_datasets()
     n = count_datasets(; bbox=(20, 59.7, 31.6, 70.1))
     @test 0 < n < total
+    # A small, dated Latin-1 CSV with semicolons on data.gouv.fr (2018 budget of a French commune).
+    dist = distributions("5be153fa8b4c417561300530")
+    budget = load_distribution(first(eachrow(filter(r -> r.format == "CSV", dist))))
+    @test nrow(budget) > 0 && "Dépenses" in names(budget)
 end

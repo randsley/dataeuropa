@@ -1,16 +1,30 @@
 name = "DataEuropa"
 uuid = "5a1c0d34-7b0e-4f6e-9a55-2d3c8e1f7b42"
-authors = ["Nigel Randsley"]
 version = "0.1.0"
+authors = ["Nigel Randsley"]
 
 [deps]
+CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
 Downloads = "f43a241f-c20a-4ad4-852c-f6b1247861c6"
 HTTP = "cd3eb016-35fb-5094-929b-558a96fad6f3"
 JSON3 = "0f8b85d8-7281-11e9-16c2-39a750bddbf1"
 
+[weakdeps]
+Parquet2 = "98572fba-bba0-415d-956f-fa77e587d26d"
+XLSX = "fdbf4ff8-1666-58a4-91e7-1b58723a45e0"
+
+[extensions]
+DataEuropaParquet2Ext = "Parquet2"
+DataEuropaXLSXExt = "XLSX"
+
 [compat]
+CSV = "0.10, 1"
 DataFrames = "1"
+Dates = "1"
 HTTP = "1"
 JSON3 = "1"
+Parquet2 = "0.2"
+XLSX = "0.13"
 julia = "1.9"

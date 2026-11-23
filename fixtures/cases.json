@@ -1,5 +1,5 @@
 {
- "about": "Shared conformance cases. Each language reads this file, runs `kind` on `input` (optionally the top-level key `select` of it) with `args`, and compares with `expected`. See README.md.",
+ "about": "Shared conformance cases. Each language runs `kind` on `input` (optionally the top-level key `select` of it) with `args`, and compares with expected/<name>.json. See README.md.",
  "cases": [
   {"name": "search_en", "kind": "summarise", "input": "responses/search.json", "select": "results", "args": {"lang": "en"}},
   {"name": "search_de", "kind": "summarise", "input": "responses/search.json", "select": "results", "args": {"lang": "de"}},
@@ -17,6 +17,14 @@
   {"name": "sparql_ask", "kind": "sparql", "input": "responses/sparql_ask.json"},
   {"name": "sparql_edge", "kind": "sparql", "input": "responses/edge_cases.json", "select": "sparql_select"},
   {"name": "sparql_empty", "kind": "sparql", "input": "responses/edge_cases.json", "select": "sparql_empty"},
-  {"name": "sparql_ask_false", "kind": "sparql", "input": "responses/edge_cases.json", "select": "sparql_ask_false"}
+  {"name": "sparql_ask_false", "kind": "sparql", "input": "responses/edge_cases.json", "select": "sparql_ask_false"},
+  {"name": "file_format", "kind": "file_format", "input": "responses/formats.json"},
+  {"name": "read_comma_csv", "kind": "read_file", "input": "files/comma.csv", "args": {"format": "csv", "sheet": null}},
+  {"name": "read_semicolon_csv", "kind": "read_file", "input": "files/semicolon.csv", "args": {"format": "csv", "sheet": null}},
+  {"name": "read_records_json", "kind": "read_file", "input": "files/records.json", "args": {"format": "json", "sheet": null}},
+  {"name": "read_wrapped_json", "kind": "read_file", "input": "files/wrapped.json", "args": {"format": "json", "sheet": null}},
+  {"name": "read_xlsx_first", "kind": "read_file", "input": "files/table.xlsx", "args": {"format": "xlsx", "sheet": null}},
+  {"name": "read_xlsx_named", "kind": "read_file", "input": "files/table.xlsx", "args": {"format": "xlsx", "sheet": "Second"}},
+  {"name": "read_parquet", "kind": "read_file", "input": "files/table.parquet", "args": {"format": "parquet", "sheet": null}}
  ]
 }

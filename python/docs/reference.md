@@ -11,6 +11,7 @@
         - get_dataset
         - distributions
         - download
+        - load_distribution
         - facet_values
         - count
         - catalogues

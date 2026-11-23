@@ -15,10 +15,18 @@ norm_value <- function(x, col = "") {
 }
 
 run_case <- function(case) {
+  args <- case$args
+  if (case$kind == "read_file") {
+    df <- dataeuropa:::de_read_table(file.path(fixtures, case$input), args$format, args$sheet)
+    return(list(columns = as.list(names(df)), rows = df))
+  }
   data <- read_fixture(case$input)
   if (!is.null(case$select)) data <- data[[case$select]]
-  args <- case$args
   switch(case$kind,
+    file_format = list(values = lapply(data, function(r) {
+      f <- dataeuropa:::de_file_format(r$format, r$media_type, r$url)
+      if (is.na(f)) NULL else f
+    })),
     summarise = list(rows = dataeuropa:::bind_rows_base(lapply(data, dataeuropa:::de_summarise, lang = args$lang))),
     distributions = list(rows = dataeuropa:::de_distribution_table(data, args$lang)),
     keywords = list(values = as.list(dataeuropa:::de_keywords(data, args$lang))),
@@ -35,6 +43,8 @@ test_that("conformance cases match the Python reference", {
   for (case in read_fixture("cases.json")$cases) {
     expected <- read_fixture(file.path("expected", paste0(case$name, ".json")))
     got <- run_case(case)
+    if (!is.null(expected$columns))
+      expect_equal(got$columns, expected$columns, label = paste(case$name, "columns"))
     if (!is.null(expected$rows)) {
       df <- got$rows
       expect_equal(nrow(df), length(expected$rows), label = paste(case$name, "row count"))

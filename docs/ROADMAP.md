@@ -13,7 +13,7 @@ Suggested order: phase 1, then `load_distribution` and caching from phase 2, the
 - [x] Verify that `bbox` actually filters results. It does (overlap match), but drops datasets without a spatial extent (~47%); now validated client-side and documented.
 
 ## 2. Close the "found it, now give me the data" gap
-- [ ] `load_distribution()`: download and read straight into a DataFrame (CSV, JSON, XLSX, Parquet).
+- [x] `load_distribution()`: download and read straight into a DataFrame (CSV, JSON, XLSX, Parquet). Refuses services, archives and HTML pages; 9 shared cases in `fixtures/`.
 - [ ] Verify downloads against the API's SHA-1 checksum and `byte_size`.
 - [ ] Resumable downloads and an on-disk cache with a time limit (facets, catalogues, dataset records).
 - [ ] Skip service entries (WMS, WFS, INSPIRE DOWNLOAD SERVICE) when a file is wanted; geodata loaders (GeoDataFrame, `sf`, GeoDataFrames.jl).

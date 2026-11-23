@@ -17,11 +17,20 @@ _norm(x) = x
 _same(a, b) = (a isa Float64 && b isa Float64) ? isapprox(a, b; rtol=1e-9) : isequal(a, b)
 
 function _run(case)
+    args = get(case, :args, Dict())
+    kind = case.kind
+    if kind == "read_file"
+        sheet = get(args, :sheet, nothing)
+        df = DE._read_table(joinpath(FIXTURES, case.input), args.format; sheet=sheet === nothing ? nothing : String(sheet))
+        return Dict("columns" => names(df), "rows" => df)
+    end
     data = _readjson(case.input)
     sel = get(case, :select, nothing)
     sel === nothing || (data = data[Symbol(sel)])
-    args = get(case, :args, Dict())
-    kind = case.kind
+    if kind == "file_format"
+        return Dict("values" => [DE._file_format(get(r, :format, nothing), get(r, :media_type, nothing),
+                                                 get(r, :url, nothing)) for r in data])
+    end
     kind == "summarise" && return Dict("rows" => [Dict(pairs(DE.summarise_dataset(d, args.lang))) for d in data])
     kind == "distributions" && return Dict("rows" => DE._distribution_table(data, args.lang))
     kind == "keywords" && return Dict("values" => DE._keywords(data, args.lang))
@@ -43,6 +52,9 @@ if isdir(FIXTURES)
             @testset "$(case.name)" begin
                 expected = _readjson(joinpath("expected", "$(case.name).json"))
                 got = _run(case)
+                if haskey(expected, :columns)
+                    @test got["columns"] == String.(expected.columns)
+                end
                 if haskey(expected, :rows)
                     grows, erows = _rows(got["rows"]), expected.rows
                     @test length(grows) == length(erows)

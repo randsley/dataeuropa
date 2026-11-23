@@ -1,0 +1,36 @@
+{
+ "columns": [
+  "id",
+  "name",
+  "value",
+  "date",
+  "flag",
+  "note"
+ ],
+ "rows": [
+  {
+   "id": 1,
+   "name": "Lisboa, PT",
+   "value": 3.5,
+   "date": "2024-01-31",
+   "flag": true,
+   "note": "Zürich"
+  },
+  {
+   "id": 2,
+   "name": "Porto",
+   "value": null,
+   "date": "2024-02-29",
+   "flag": false,
+   "note": null
+  },
+  {
+   "id": 3,
+   "name": "Faro",
+   "value": 10.0,
+   "date": "2024-03-01",
+   "flag": true,
+   "note": "plain"
+  }
+ ]
+}

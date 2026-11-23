@@ -1,0 +1,20 @@
+[
+ {
+  "id": 1,
+  "name": "a",
+  "score": 0.5,
+  "ok": true
+ },
+ {
+  "id": 2,
+  "name": "b",
+  "ok": false,
+  "extra": "only here"
+ },
+ {
+  "id": 3,
+  "name": null,
+  "score": 2,
+  "ok": true
+ }
+]

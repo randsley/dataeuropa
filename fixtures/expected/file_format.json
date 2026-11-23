@@ -1,0 +1,26 @@
+{
+ "values": [
+  "csv",
+  "csv",
+  "csv",
+  "csv",
+  "json",
+  "xlsx",
+  "xlsx",
+  "parquet",
+  "service",
+  "service",
+  "service",
+  "archive",
+  "csv",
+  "xlsx",
+  "parquet",
+  null,
+  null,
+  null,
+  null,
+  "archive",
+  "archive",
+  "archive"
+ ]
+}

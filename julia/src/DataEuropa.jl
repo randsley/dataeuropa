@@ -4,15 +4,16 @@
 Julia client for the data.europa.eu open data portal: Search API, Registry (RDF) and SPARQL.
 
 Exports: `search`, `search_datasets`, `iter_datasets`, `fetch_datasets`, `get_dataset`,
-`distributions`, `download_distribution`, `facet_values`, `count_datasets`, `catalogues`,
+`distributions`, `download_distribution`, `load_distribution`, `facet_values`, `count_datasets`, `catalogues`,
 `get_rdf`, `sparql`.
 """
 module DataEuropa
 
-using HTTP, JSON3, DataFrames, Downloads
+using HTTP, JSON3, DataFrames, Downloads, CSV, Dates
 
 export search, search_datasets, iter_datasets, fetch_datasets, get_dataset, distributions,
-       download_distribution, facet_values, count_datasets, catalogues, get_rdf, sparql, pick_lang
+       download_distribution, load_distribution, facet_values, count_datasets, catalogues, get_rdf,
+       sparql, pick_lang
 
 const SEARCH_URL = "https://data.europa.eu/api/hub/search"
 const REPO_URL = "https://data.europa.eu/api/hub/repo"
@@ -281,6 +282,168 @@ function download_distribution(x, dest::AbstractString=".")
     path = isdir(dest) ? joinpath(dest, name) : dest
     Downloads.download(url, path; headers=["User-Agent" => UA], timeout=600)
     return path
+end
+
+# ---------------------------------------------------------------- load into a table
+
+# Format ids, media types and file extensions that map to a readable file format.
+const _FILE_FORMATS = Dict(
+    "csv" => "csv", "text/csv" => "csv", "csv/utf8" => "csv", "comma separated value (csv)" => "csv",
+    "json" => "json", "application/json" => "json",
+    "xlsx" => "xlsx", "xlsm" => "xlsx",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" => "xlsx",
+    "parquet" => "parquet", "application/vnd.apache.parquet" => "parquet", "application/x-parquet" => "parquet",
+)
+# Media types and extensions of compressed archives, which must be unpacked before reading.
+const _ARCHIVES = Set(["application/zip", "application/x-zip-compressed", "application/gzip",
+                       "application/x-gzip", "application/x-tar", "zip", "gz", "tgz", "tar"])
+# Format ids of services (map servers, APIs) rather than files. Ids ending in "_srvc" count too.
+const _SERVICE_FORMATS = Set(["wms", "wfs", "wcs", "wmts", "ogc:wms", "ogc:wfs", "api", "open-api",
+    "ogc api features", "ogcapi-features", "arcgis geoservices rest api", "application/vnd.ogc.wms_xml", "sparql"])
+
+_str(x) = (x === nothing || x === missing) ? nothing : string(x)
+
+# "csv", "json", "xlsx", "parquet", "service", "archive" or nothing (unknown). A compressed media
+# type or extension means "archive" whatever the format id says; otherwise the first recognised
+# of format id, media type, file extension wins.
+function _file_format(fmt=nothing, media_type=nothing, url=nothing)
+    fmt, media_type, url = _str(fmt), _str(media_type), _str(url)
+    ext = nothing
+    if url !== nothing && !isempty(url)
+        path = rstrip(first(split(first(split(url, '?'; limit=2)), '#'; limit=2)), '/')
+        last_part = last(split(path, '/'))
+        ext = occursin('.', last_part) ? String(last(split(last_part, '.'))) : nothing
+    end
+    for cand in (media_type, ext)
+        cand !== nothing && lowercase(strip(cand)) in _ARCHIVES && return "archive"
+    end
+    for cand in (fmt, media_type, ext)
+        (cand === nothing || isempty(strip(cand))) && continue
+        key = lowercase(strip(cand))
+        startswith(key, "file:///") && (key = String(last(split(key, '/'))))
+        (key in _SERVICE_FORMATS || endswith(key, "_srvc")) && return "service"
+        haskey(_FILE_FORMATS, key) && return _FILE_FORMATS[key]
+    end
+    return nothing
+end
+
+# Refuse a downloaded file that is an archive or an HTML page rather than data.
+function _check_payload(path)
+    head = open(io -> read(io, 512), path)
+    if (length(head) >= 4 && head[1:4] == UInt8[0x50, 0x4b, 0x03, 0x04]) ||
+       (length(head) >= 2 && head[1:2] == UInt8[0x1f, 0x8b])
+        throw(ArgumentError("the download is a compressed archive (ZIP or gzip); use download_distribution and unpack it"))
+    end
+    start = lowercase(lstrip(String(Char.(head)), ['﻿', 'ï', '»', '¿', ' ', '\t', '\r', '\n']))
+    (startswith(start, "<!doctype html") || startswith(start, "<html")) &&
+        throw(ArgumentError("the download is an HTML page, not a data file (often a landing page)"))
+    return nothing
+end
+
+# UTF-8 (with or without a byte-order mark), falling back to Latin-1.
+function _decode(raw::Vector{UInt8})
+    length(raw) >= 3 && raw[1:3] == UInt8[0xef, 0xbb, 0xbf] && (raw = raw[4:end])
+    return isvalid(String, raw) ? String(copy(raw)) : String(Char.(raw))
+end
+
+# The most frequent of , ; tab | in the header line (comma on a tie or if none occurs).
+function _sniff_delimiter(text::AbstractString)
+    header = first(split(text, '\n'; limit=2))
+    counts = Dict(d => count(==(d), header) for d in (',', ';', '\t', '|'))
+    best = maximum(values(counts))
+    (best == 0 || counts[','] == best) && return ','
+    return first(d for d in (';', '\t', '|') if counts[d] == best)
+end
+
+# An array of objects, or an object holding exactly one array of objects.
+function _json_records(data)
+    isobj(r) = r isa JSON3.Object
+    data isa JSON3.Array && all(isobj, data) && return collect(data)
+    if data isa JSON3.Object
+        lists = [v for (_, v) in pairs(data) if v isa JSON3.Array && !isempty(v) && all(isobj, v)]
+        length(lists) == 1 && return collect(lists[1])
+    end
+    throw(ArgumentError("JSON is not a table: expected an array of objects, or an object holding one"))
+end
+
+_plain(x) = x === nothing ? missing : x isa AbstractString ? String(x) : x
+
+# Defined by the XLSX and Parquet2 package extensions.
+function _read_xlsx end
+function _read_parquet end
+
+# Read a local file of format `fmt` into a DataFrame.
+function _read_table(path, fmt::AbstractString; sheet=nothing)
+    if fmt == "csv"
+        text = _decode(read(path))
+        return CSV.read(IOBuffer(text), DataFrame; delim=_sniff_delimiter(text), missingstring="",
+                        stringtype=String, typemap=IdDict(Dates.Date => String, Dates.DateTime => String,
+                                                          Dates.Time => String))
+    elseif fmt == "json"
+        records = _json_records(JSON3.read(_decode(read(path))))
+        cols = Symbol[]
+        for r in records, k in keys(r)
+            k in cols || push!(cols, k)
+        end
+        df = DataFrame()
+        for c in cols
+            vals = Any[_plain(get(r, c, nothing)) for r in records]
+            isnum(v) = v === missing || (v isa Real && !(v isa Bool))
+            if all(isnum, vals) && any(v -> v isa AbstractFloat, vals)
+                vals = Any[v === missing ? missing : Float64(v) for v in vals]  # mixed numbers -> Float64
+            end
+            df[!, String(c)] = identity.(vals)
+        end
+        return df
+    elseif fmt == "xlsx"
+        isempty(methods(_read_xlsx)) && throw(ArgumentError("reading XLSX needs the XLSX package: `using XLSX` first"))
+        return _read_xlsx(path, sheet)
+    elseif fmt == "parquet"
+        isempty(methods(_read_parquet)) && throw(ArgumentError("reading Parquet needs the Parquet2 package: `using Parquet2` first"))
+        return _read_parquet(path)
+    end
+    throw(ArgumentError("unsupported format $(repr(fmt))"))
+end
+
+_field(x, k) = (x isa NamedTuple || x isa DataFrameRow || x isa AbstractDict) ?
+    _str(x isa AbstractDict ? get(x, k, get(x, string(k), nothing)) : (hasproperty(x, k) ? getproperty(x, k) : nothing)) :
+    nothing
+
+"""
+    load_distribution(url_or_row; format=nothing, sheet=nothing) -> DataFrame
+
+Download a distribution and read it into a `DataFrame`. Accepts a URL, or a row of
+[`distributions`](@ref). Reads CSV and JSON; XLSX after `using XLSX`, Parquet after
+`using Parquet2`. The format comes from `format` if given (`"csv"`, `"json"`, `"xlsx"`,
+`"parquet"`), else from the row's format id, its media type, then the URL's file extension.
+`sheet` picks an XLSX sheet by name or 1-based index (default: the first).
+
+CSV: the delimiter (`,` `;` tab `|`) is taken from the header line, text is read as UTF-8 with a
+Latin-1 fallback, only empty cells count as missing, and dates stay text. JSON: an array of
+objects, or an object holding exactly one such array; keys become columns.
+
+Throws `ArgumentError` for services (WMS, WFS, APIs), compressed archives, HTML pages served
+instead of data, and formats it cannot tell or read.
+"""
+function load_distribution(x; format=nothing, sheet=nothing)
+    url = x isa AbstractString ? String(x) : _field(x, :url)
+    (url === nothing || isempty(url)) && throw(ArgumentError("no URL available for this distribution"))
+    if format !== nothing
+        fmt = _file_format(format)
+        fmt in (nothing, "service", "archive") &&
+            throw(ArgumentError("format must be one of csv, json, xlsx, parquet (got $(repr(format)))"))
+    else
+        fmt = x isa AbstractString ? _file_format(nothing, nothing, url) :
+              _file_format(_field(x, :format), _field(x, :media_type), url)
+    end
+    fmt == "service" && throw(ArgumentError("$url is a service, not a file; open it with a client for that service"))
+    fmt == "archive" && throw(ArgumentError("$url is a compressed archive; use download_distribution and unpack it"))
+    fmt === nothing && throw(ArgumentError("cannot tell the file format of $url; pass format=\"csv\", \"json\", \"xlsx\" or \"parquet\""))
+    return mktempdir() do tmp
+        path = download_distribution(url, joinpath(tmp, "distribution.$fmt"))
+        fmt in ("csv", "json") && _check_payload(path)
+        _read_table(path, fmt; sheet=sheet)
+    end
 end
 
 """

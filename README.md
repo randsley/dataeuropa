@@ -24,6 +24,7 @@ from EU institutions and national/regional portals), built on:
 | One dataset | `get_dataset` | `get_dataset` | `de_get_dataset` |
 | Files/services of a dataset | `distributions` | `distributions` | `de_distributions` |
 | Download a file | `download` | `download_distribution` | `de_download` |
+| Download and read into a table | `load_distribution` | `load_distribution` | `de_load_distribution` |
 | Facet ids + counts | `facet_values` | `facet_values` | `de_facet_values` |
 | Hit count only | `count` | `count_datasets` | `de_count` |
 | Harvested catalogues | `catalogues` | `catalogues` | `de_catalogues` |
@@ -43,6 +44,7 @@ datasets with no extent (about half the portal) never match, so it suits geodata
 import dataeuropa as de
 df = de.search_datasets("water quality", country="pt", format="CSV", limit=5)
 dist = de.distributions(df.id[0]); de.download(dist.iloc[0], "data/")
+table = de.load_distribution(dist.iloc[0])  # CSV, JSON, XLSX or Parquet straight into a DataFrame
 de.facet_values("format", q="flood")          # what formats exist for 'flood'?
 de.sparql("SELECT (COUNT(*) AS ?n) WHERE { ?s a <http://www.w3.org/ns/dcat#Dataset> }")
 ```
@@ -50,19 +52,28 @@ de.sparql("SELECT (COUNT(*) AS ?n) WHERE { ?s a <http://www.w3.org/ns/dcat#Datas
 using DataEuropa
 df = search_datasets("water quality"; country="pt", format="CSV", limit=5)
 dist = distributions(df.id[1]); download_distribution(dist[1, :], "data/")
+table = load_distribution(dist[1, :])
 ```
 ```r
 library(dataeuropa)
 df <- de_search_datasets("water quality", country = "pt", format = "CSV", limit = 5)
 dist <- de_distributions(df$id[1]); de_download(dist[1, ], "data/")
+table <- de_load_distribution(dist[1, ])
 ```
 
 ## Install (from this folder)
 
 ```
 pip install ./python[pandas]                       # Python  (needs requests; pandas optional)
-julia -e 'using Pkg; Pkg.develop(path="julia")'    # Julia   (HTTP, JSON3, DataFrames)
+julia -e 'using Pkg; Pkg.develop(path="julia")'    # Julia   (HTTP, JSON3, DataFrames, CSV)
 R CMD INSTALL r                                    # R       (httr2, jsonlite)
+```
+
+Reading XLSX and Parquet with `load_distribution` needs an optional package: Python
+`pip install "./python[xlsx,parquet]"` (openpyxl, pyarrow); Julia `using XLSX` / `using Parquet2`;
+R `install.packages(c("readxl", "arrow"))`.
+
+```
 ```
 
 ## Prior art (searched 23 Nov 2026)

@@ -12,16 +12,37 @@ import sys
 HERE = pathlib.Path(__file__).parent
 sys.path.insert(0, str(HERE.parent / "python" / "src"))
 
-from dataeuropa.client import (_distribution_rows, _facet_rows, _keywords,  # noqa: E402
-                               _sparql_rows, summarise_dataset)
+from dataeuropa.client import (_distribution_rows, _facet_rows, _file_format, _keywords,  # noqa: E402
+                               _read_table, _sparql_rows, summarise_dataset)
+
+
+def plain(v):
+    """A pandas/numpy cell as a JSON value; missing values become None."""
+    import pandas as pd
+    if v is None or (not isinstance(v, (list, dict)) and pd.isna(v)):
+        return None
+    if hasattr(v, "item"):          # numpy scalar
+        v = v.item()
+    if hasattr(v, "isoformat"):     # date / datetime
+        return v.isoformat()
+    return v
+
+
+def table(df):
+    return {"columns": [str(c) for c in df.columns],
+            "rows": [{str(c): plain(v) for c, v in zip(df.columns, row)} for row in df.itertuples(index=False)]}
 
 
 def run(case: dict):
+    args = case.get("args") or {}
+    kind = case["kind"]
+    if kind == "read_file":
+        return table(_read_table(HERE / case["input"], args["format"], args.get("sheet")))
     data = json.loads((HERE / case["input"]).read_text(encoding="utf-8"))
     if case.get("select"):
         data = data[case["select"]]
-    args = case.get("args") or {}
-    kind = case["kind"]
+    if kind == "file_format":
+        return {"values": [_file_format(r.get("format"), r.get("media_type"), r.get("url")) for r in data]}
     if kind == "summarise":
         return {"rows": [summarise_dataset(d, args["lang"]) for d in data]}
     if kind == "distributions":

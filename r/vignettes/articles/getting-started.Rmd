@@ -68,6 +68,27 @@ Not every distribution is a file. Many are services (WMS, WFS, INSPIRE download 
 and some publisher URLs are placeholders such as `https://localhost/...`.
 Check the `format` column before downloading.
 
+## Reading a file into a table
+
+```{r}
+dist <- de_distributions(dataset_id)
+df <- de_load_distribution(dist[1, ])                    # format detected from the row
+df <- de_load_distribution(url, format = "csv")          # or say which
+df <- de_load_distribution(url, sheet = "Data")          # XLSX sheet by name or 1-based index
+```
+
+Reads CSV and JSON; XLSX with the readxl package and Parquet with the arrow package (both
+optional: `install.packages(c("readxl", "arrow"))`). The format comes from the row's format id,
+then its media type, then the URL's file extension.
+
+- **CSV**: the delimiter (`,` `;` tab `|`) is detected from the header line; text is read as
+  UTF-8, falling back to Latin-1; only empty cells count as missing. Decimal commas (`12,5`) and
+  dates stay text.
+- **JSON**: an array of objects, or an object holding exactly one such array.
+
+It refuses, with a clear error, services (WMS, WFS, APIs), compressed archives (use
+`de_download()` and unpack them), and HTML pages that some publishers serve instead of the file.
+
 ## Metadata as RDF, and SPARQL
 
 ```{r}

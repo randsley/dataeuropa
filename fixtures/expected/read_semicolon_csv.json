@@ -1,0 +1,19 @@
+{
+ "columns": [
+  "city",
+  "population",
+  "share"
+ ],
+ "rows": [
+  {
+   "city": "München",
+   "population": 1512491,
+   "share": "12,5"
+  },
+  {
+   "city": "Köln",
+   "population": 1084831,
+   "share": "7,25"
+  }
+ ]
+}

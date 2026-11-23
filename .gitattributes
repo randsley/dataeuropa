@@ -1,0 +1,2 @@
+# Sample files are read byte for byte by the tests; never convert line endings.
+fixtures/files/** binary

@@ -1,0 +1,4 @@
+﻿id,name,value,date,flag,note
+1,"Lisboa, PT",3.5,2024-01-31,true,Zürich
+2,Porto,,2024-02-29,false,
+3,Faro,10,2024-03-01,true,plain

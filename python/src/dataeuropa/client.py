@@ -302,6 +302,170 @@ def download(url_or_row: str | dict, dest: str | os.PathLike | None = None, *, c
     return path
 
 
+# ---------------------------------------------------------------- load into a table
+
+# Format ids, media types and file extensions that map to a readable file format.
+_FILE_FORMATS = {
+    "csv": "csv", "text/csv": "csv", "csv/utf8": "csv", "comma separated value (csv)": "csv",
+    "json": "json", "application/json": "json",
+    "xlsx": "xlsx", "xlsm": "xlsx",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "xlsx",
+    "parquet": "parquet", "application/vnd.apache.parquet": "parquet", "application/x-parquet": "parquet",
+}
+# Media types and extensions of compressed archives, which must be unpacked before reading.
+_ARCHIVES = {"application/zip", "application/x-zip-compressed", "application/gzip", "application/x-gzip",
+             "application/x-tar", "zip", "gz", "tgz", "tar"}
+# Format ids of services (map servers, APIs) rather than files. Ids ending in "_srvc" count too.
+_SERVICE_FORMATS = {
+    "wms", "wfs", "wcs", "wmts", "ogc:wms", "ogc:wfs", "api", "open-api", "ogc api features",
+    "ogcapi-features", "arcgis geoservices rest api", "application/vnd.ogc.wms_xml", "sparql",
+}
+
+
+def _file_format(fmt: str | None = None, media_type: str | None = None, url: str | None = None) -> str | None:
+    """``"csv"``, ``"json"``, ``"xlsx"``, ``"parquet"``, ``"service"``, ``"archive"`` or None (unknown).
+
+    A compressed media type or file extension (ZIP, gzip, tar) means ``"archive"``, whatever the
+    format id says. Otherwise looks at the format id, then the media type, then the file
+    extension, and uses the first one it recognises.
+    """
+    ext = None
+    if isinstance(url, str) and url:
+        path = url.split("?", 1)[0].split("#", 1)[0].rstrip("/")
+        last = path.rsplit("/", 1)[-1]
+        ext = last.rsplit(".", 1)[-1] if "." in last else None
+    for cand in (media_type, ext):
+        if isinstance(cand, str) and cand.strip().lower() in _ARCHIVES:
+            return "archive"
+    for cand in (fmt, media_type, ext):
+        if not isinstance(cand, str) or not cand.strip():
+            continue
+        key = cand.strip().lower()
+        if key.startswith("file:///"):
+            key = key.rsplit("/", 1)[-1]
+        if key in _SERVICE_FORMATS or key.endswith("_srvc"):
+            return "service"
+        if key in _FILE_FORMATS:
+            return _FILE_FORMATS[key]
+    return None
+
+
+def _check_payload(path: str | os.PathLike) -> None:
+    """Refuse a downloaded file that is an archive or an HTML page rather than data."""
+    with open(path, "rb") as fh:
+        head = fh.read(512)
+    if head.startswith(b"PK\x03\x04") or head.startswith(b"\x1f\x8b"):
+        raise ValueError("the download is a compressed archive (ZIP or gzip); use download() and unpack it")
+    start = head.lstrip(b"\xef\xbb\xbf \t\r\n").lower()
+    if start.startswith(b"<!doctype html") or start.startswith(b"<html"):
+        raise ValueError("the download is an HTML page, not a data file (often a landing page)")
+
+
+def _decode(raw: bytes) -> str:
+    """UTF-8 (with or without a byte-order mark), falling back to Latin-1."""
+    if raw.startswith(b"\xef\xbb\xbf"):
+        raw = raw[3:]
+    try:
+        return raw.decode("utf-8")
+    except UnicodeDecodeError:
+        return raw.decode("latin-1")
+
+
+def _sniff_delimiter(text: str) -> str:
+    """The most frequent of , ; tab | in the header line (comma on a tie or if none occurs)."""
+    header = text.split("\n", 1)[0]
+    counts = {d: header.count(d) for d in (",", ";", "\t", "|")}
+    best = max(counts.values())
+    if best == 0 or counts[","] == best:
+        return ","
+    return next(d for d in (";", "\t", "|") if counts[d] == best)
+
+
+def _json_records(data: Any) -> list[dict]:
+    """An array of objects, or an object holding exactly one array of objects."""
+    if isinstance(data, list) and all(isinstance(r, dict) for r in data):
+        return data
+    if isinstance(data, dict):
+        lists = [v for v in data.values() if isinstance(v, list) and v and all(isinstance(r, dict) for r in v)]
+        if len(lists) == 1:
+            return lists[0]
+    raise ValueError("JSON is not a table: expected an array of objects, or an object holding one")
+
+
+def _read_table(path: str | os.PathLike, fmt: str, sheet: str | int | None = None):
+    """Read a local file of format ``fmt`` into a pandas DataFrame."""
+    try:
+        import pandas as pd
+    except ImportError:
+        raise ImportError("load_distribution needs pandas: pip install 'dataeuropa[pandas]'") from None
+    if fmt == "csv":
+        import io
+        with open(path, "rb") as fh:
+            text = _decode(fh.read())
+        return pd.read_csv(io.StringIO(text), sep=_sniff_delimiter(text), keep_default_na=False, na_values=[""])
+    if fmt == "json":
+        with open(path, "rb") as fh:
+            records = _json_records(json.loads(_decode(fh.read())))
+        cols: list[str] = []
+        for r in records:
+            cols.extend(k for k in r if k not in cols)
+        return pd.DataFrame([[r.get(c) for c in cols] for r in records], columns=cols)
+    if fmt == "xlsx":
+        try:
+            import openpyxl  # noqa: F401
+        except ImportError:
+            raise ImportError("reading XLSX needs openpyxl: pip install 'dataeuropa[xlsx]'") from None
+        return pd.read_excel(path, sheet_name=0 if sheet is None else sheet, engine="openpyxl")
+    if fmt == "parquet":
+        try:
+            import pyarrow  # noqa: F401
+        except ImportError:
+            raise ImportError("reading Parquet needs pyarrow: pip install 'dataeuropa[parquet]'") from None
+        return pd.read_parquet(path, engine="pyarrow")
+    raise ValueError(f"unsupported format {fmt!r}")
+
+
+def load_distribution(url_or_row: str | dict, *, format: str | None = None, sheet: str | int | None = None):
+    """Download a distribution and read it into a pandas DataFrame.
+
+    Accepts a URL, or a row/dict from :func:`distributions`. Reads CSV and JSON (needs pandas),
+    XLSX (needs openpyxl) and Parquet (needs pyarrow). The format comes from ``format`` if given
+    (``"csv"``, ``"json"``, ``"xlsx"``, ``"parquet"``), else from the row's format id, its media
+    type, then the URL's file extension. ``sheet`` picks an XLSX sheet by name or 0-based index
+    (default: the first).
+
+    CSV: the delimiter (``,`` ``;`` tab ``|``) is taken from the header line, text is read as
+    UTF-8 with a Latin-1 fallback, and only empty cells count as missing. JSON: an array of
+    objects, or an object holding exactly one such array; keys become columns.
+
+    Raises ``ValueError`` for services (WMS, WFS, APIs), compressed archives, HTML pages served
+    instead of data, and formats it cannot tell or read.
+    """
+    import tempfile
+
+    row = {"url": url_or_row} if isinstance(url_or_row, str) else url_or_row
+    url = row.get("url")
+    if not url:
+        raise ValueError("no URL available for this distribution")
+    if format is not None:
+        fmt = _file_format(format)
+        if fmt in (None, "service"):
+            raise ValueError(f"format must be one of csv, json, xlsx, parquet (got {format!r})")
+    else:
+        fmt = _file_format(row.get("format"), row.get("media_type"), url)
+    if fmt == "service":
+        raise ValueError(f"{url} is a service ({row.get('format')}), not a file; open it with a client for that service")
+    if fmt == "archive":
+        raise ValueError(f"{url} is a compressed archive; use download() and unpack it")
+    if fmt is None:
+        raise ValueError(f"cannot tell the file format of {url}; pass format='csv', 'json', 'xlsx' or 'parquet'")
+    with tempfile.TemporaryDirectory() as tmp:
+        path = download(url, os.path.join(tmp, f"distribution.{fmt}"))
+        if fmt in ("csv", "json"):  # XLSX and Parquet are binary; their readers report bad files themselves
+            _check_payload(path)
+        return _read_table(path, fmt, sheet)
+
+
 def facet_values(facet: str, q: str | None = None, *, top: int | None = 50, filters: str = "dataset",
                  **kw) -> Any:
     """List the values (and counts) of a facet, e.g. ``"country"``, ``"format"``, ``"categories"``."""

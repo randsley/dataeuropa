@@ -72,3 +72,65 @@ def test_live_bbox_filters():
     total = de.count()
     n = de.count(bbox=(20, 59.7, 31.6, 70.1))
     assert 0 < n < total
+
+
+# ---------------------------------------------------------------- load_distribution (offline)
+
+FILES = __import__("pathlib").Path(__file__).resolve().parents[2] / "fixtures" / "files"
+
+
+@pytest.fixture
+def fake_download(monkeypatch, tmp_path):
+    """Make download() copy a local file instead of fetching the URL (the URL's last part names it)."""
+    import shutil
+    import dataeuropa.client as client
+
+    def fake(url, dest=None, **kw):
+        name = url.rsplit("/", 1)[-1].split("?", 1)[0]
+        src = FILES / name if (FILES / name).exists() else tmp_path / name
+        shutil.copy(src, dest)
+        return str(dest)
+    monkeypatch.setattr(client, "download", fake)
+    return tmp_path
+
+
+@pytest.mark.skipif(not FILES.exists(), reason="fixtures folder not available")
+def test_load_distribution_reads_by_detected_format(fake_download):
+    df = de.load_distribution({"url": "https://x.example/semicolon.csv", "format": "CSV"})
+    assert list(df.columns) == ["city", "population", "share"] and len(df) == 2
+    df = de.load_distribution("https://x.example/table.parquet")             # from the URL extension
+    assert list(df.columns) == ["id", "value", "label"]
+    df = de.load_distribution("https://x.example/table.xlsx", sheet="Second")
+    assert list(df["k"]) == ["x", "y"]
+    df = de.load_distribution("https://x.example/wrapped.json", format="json")
+    assert list(df["code"]) == ["PT", "ES"]
+
+
+def test_load_distribution_refuses_what_it_cannot_read(fake_download):
+    with pytest.raises(ValueError, match="service"):
+        de.load_distribution({"url": "https://x.example/wms", "format": "WMS_SRVC"})
+    with pytest.raises(ValueError, match="archive"):
+        de.load_distribution({"url": "https://x.example/get", "format": "CSV", "media_type": "application/zip"})
+    with pytest.raises(ValueError, match="cannot tell"):
+        de.load_distribution("https://x.example/data")
+    with pytest.raises(ValueError, match="format must be"):
+        de.load_distribution("https://x.example/a.csv", format="shapefile")
+    with pytest.raises(ValueError, match="no URL"):
+        de.load_distribution({"url": None})
+    (fake_download / "page.csv").write_text("<!DOCTYPE html><html><body>Landing page</body></html>")
+    with pytest.raises(ValueError, match="HTML page"):
+        de.load_distribution("https://x.example/page.csv")
+    (fake_download / "zipped.csv").write_bytes(b"PK\x03\x04rest-of-zip")
+    with pytest.raises(ValueError, match="archive"):
+        de.load_distribution("https://x.example/zipped.csv")
+    (fake_download / "list.json").write_text("[1, 2, 3]")
+    with pytest.raises(ValueError, match="not a table"):
+        de.load_distribution("https://x.example/list.json")
+
+
+@live
+def test_live_load_distribution():
+    # A small, dated Latin-1 CSV with semicolons on data.gouv.fr (2018 budget of a French commune).
+    dist = de.distributions("5be153fa8b4c417561300530")
+    df = de.load_distribution(dist[dist.format == "CSV"].iloc[0])
+    assert len(df) > 0 and "Dépenses" in df.columns

@@ -14,7 +14,9 @@ dependencies = ["requests>=2.28"]
 
 [project.optional-dependencies]
 pandas = ["pandas>=1.5"]
-test = ["pytest", "pandas"]
+xlsx = ["pandas>=1.5", "openpyxl>=3.1"]
+parquet = ["pandas>=1.5", "pyarrow>=14"]
+test = ["pytest", "pandas", "openpyxl", "pyarrow"]
 docs = ["mkdocs-material>=9.5,<10", "mkdocstrings[python]>=0.26"]
 
 [tool.setuptools.packages.find]

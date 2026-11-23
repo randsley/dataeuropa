@@ -6,6 +6,8 @@ inputs, the expected outputs, and the list of cases that all three test suites r
 | Path | What it is |
 |---|---|
 | `responses/*.json` | Real API responses recorded by `record.py`, trimmed to stay small |
+| `responses/formats.json` | Format ids, media types and URLs for format detection |
+| `files/*` | Sample CSV, JSON, XLSX and Parquet files, written by `make_files.py` (kept byte for byte: see `.gitattributes`) |
 | `responses/edge_cases.json` | Hand-written records for cases the live data rarely shows (missing fields, language fallback, ties, unbound SPARQL variables) |
 | `cases.json` | The cases: which input to read, which conversion to run, with which arguments |
 | `expected/<case>.json` | Expected output for each case, generated from the Python client |
@@ -24,6 +26,8 @@ then guard against unintended changes, and the Julia and R tests check that they
 | `keywords` | `_keywords` | `_keywords` | `de_keywords` |
 | `facets` | `_facet_rows` | `_facet_table` | `de_facet_table` |
 | `sparql` | `_sparql_rows` | `_sparql_result` | `de_sparql_table` |
+| `file_format` | `_file_format` | `_file_format` | `de_file_format` |
+| `read_file` | `_read_table` | `_read_table` | `de_read_table` |
 
 ## How results are compared
 
@@ -32,6 +36,7 @@ then guard against unintended changes, and the Julia and R tests check that they
 - Numbers are compared as floating point (R stores counts and sizes as doubles).
 - `formats` is a list. R stores it as a comma-separated string, which the R test splits.
 - SPARQL ASK results compare as `{"boolean": ...}`; keyword lists as `{"values": [...]}`.
+- `read_file` cases also compare column names and order. Dates compare as ISO text.
 
 ## Running the tests
 
