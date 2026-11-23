@@ -18,7 +18,8 @@ Suggested order: phase 1, then `load_distribution` and caching from phase 2, the
 - [x] Resumable downloads (Range with If-Range, so a changed file restarts) and an opt-in on-disk cache with a time limit (dataset records, catalogues, `limit=0` searches).
 - [x] Skip service entries when a file is wanted: a `kind` column (file, service, page, none, unknown) and `files_only`. Recognises INSPIRE download services, OGC API Features, Esri REST, feeds, OGC queries in URLs, web pages, localhost placeholders, and Cyrillic look-alike letters in format ids (`сsv`).
   - [ ] Future extension: read services instead of skipping them. WFS `GetFeature` and OGC API Features return features as GeoJSON, so they can share the geodata loaders below; WMS/WMTS are images and stay out of scope.
-- [ ] Geodata loaders (GeoDataFrame, `sf`, GeoDataFrames.jl). Plan: [`geodata-plan.md`](geodata-plan.md).
+- [x] Geodata loaders, step 1 (files): `load_geodata` into a GeoDataFrame, `sf` or a GeoDataFrames.jl table, through GDAL. Opens ZIP archives in place, picks layers, keeps or reprojects the CRS, refuses files over 200 MB unless asked. Plan and decisions: [`geodata-plan.md`](geodata-plan.md).
+  - [ ] Step 2: WFS `GetFeature` and OGC API Features (the services extension above).
 
 ## 3. Use more of the portal
 - [ ] Metadata Quality Assurance (MQA) API: quality scores and link-check results (`https://data.europa.eu/api/mqa/cache/`).

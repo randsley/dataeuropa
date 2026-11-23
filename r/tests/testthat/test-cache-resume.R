@@ -146,6 +146,14 @@ test_that("downloads leave no partial files", {
   expect_equal(list.files(tmp, all.files = TRUE, no.. = TRUE), "data.bin")
 })
 
+test_that("a size limit stops large downloads", {
+  skip_if(port == 0, "no local HTTP server")
+  reset_state(); tmp <- withr::local_tempdir()
+  expect_error(de_download(url, tmp, max_bytes = 1000), "larger than the limit of 1,000 bytes", class = "dataeuropa_too_large")
+  expect_length(list.files(tmp, all.files = TRUE, no.. = TRUE), 0)
+  expect_equal(readBin(de_download(url, tmp, max_bytes = 20000), "raw", 1e5), served()$body)
+})
+
 test_that("an interrupted download resumes", {
   skip_if(port == 0, "no local HTTP server")
   reset_state(); tmp <- withr::local_tempdir(); interrupted(tmp, 1000)

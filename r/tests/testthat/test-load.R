@@ -67,7 +67,7 @@ test_that("checksums are normalised", {
 test_that("de_download checks the checksum", {
   skip_if_not(dir.exists(files), "fixtures folder not available")
   # Stand in for the HTTP request: write the bytes of fixtures/files/<last part of the URL>.
-  local_mocked_bindings(de_fetch_to = function(url, part, resume = TRUE) {
+  local_mocked_bindings(de_fetch_to = function(url, part, resume = TRUE, max_bytes = NULL) {
     file.copy(file.path(files, sub("^.*/", "", url)), part, overwrite = TRUE)
     invisible(part)
   }, .package = "dataeuropa")

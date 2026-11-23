@@ -26,6 +26,7 @@ from EU institutions and national/regional portals), built on:
 | Download a file | `download` | `download_distribution` | `de_download` |
 | Response cache | `cache_on`, `cache_off`, `clear_cache` | `cache_on`, `cache_off`, `clear_cache` | `de_cache_on`, `de_cache_off`, `de_clear_cache` |
 | Download and read into a table | `load_distribution` | `load_distribution` | `de_load_distribution` |
+| Download and read geodata | `load_geodata` | `load_geodata` | `de_load_geodata` |
 | Facet ids + counts | `facet_values` | `facet_values` | `de_facet_values` |
 | Hit count only | `count` | `count_datasets` | `de_count` |
 | Harvested catalogues | `catalogues` | `catalogues` | `de_catalogues` |
@@ -72,7 +73,9 @@ R CMD INSTALL r                                    # R       (httr2, jsonlite, o
 
 Reading XLSX and Parquet with `load_distribution` needs an optional package: Python
 `pip install "./python[xlsx,parquet]"` (openpyxl, pyarrow); Julia `using XLSX` / `using Parquet2`;
-R `install.packages(c("readxl", "arrow"))`.
+R `install.packages(c("readxl", "arrow"))`. Reading geodata with `load_geodata` (GeoJSON, Shapefile,
+GeoPackage, KML, GML, ... through GDAL) needs Python `pip install "./python[geo]"` (geopandas,
+pyogrio); Julia `using GeoDataFrames`; R `install.packages("sf")`.
 
 ```
 ```

@@ -113,8 +113,9 @@ de_http_get <- function(url, query = list()) {
 # GET a JSON response, from the cache when it is on, `cacheable` and fresh.
 de_get_json <- function(url, query = list(), cacheable = FALSE) {
   path <- if (cacheable && de_cache_enabled()) file.path(de_cache_dir(), de_cache_key(url, query)) else NULL
-  if (!is.null(path) && file.exists(path) &&
-      difftime(Sys.time(), file.mtime(path), units = "secs") < de_cache_ttl()) {
+  ttl <- de_cache_ttl()   # ttl 0: never fresh, even when the file time is a little ahead of the clock
+  if (!is.null(path) && ttl > 0 && file.exists(path) &&
+      difftime(Sys.time(), file.mtime(path), units = "secs") < ttl) {
     body <- readChar(path, file.info(path)$size, useBytes = TRUE)
     Encoding(body) <- "UTF-8"
   } else {
@@ -401,11 +402,22 @@ de_resume_action <- function(status, content_range, offset) {
 }
 
 # Stream `url` into the partial file `part`, continuing an earlier partial download when possible.
-de_fetch_to <- function(url, part, resume = TRUE) {
+# The error raised when a download goes over its size limit (after deleting the partial file).
+too_large <- function(url, max_bytes)
+  structure(class = c("dataeuropa_too_large", "error", "condition"),
+            list(message = paste0(url, " is larger than the limit of ",
+                                  format(max_bytes, big.mark = ",", scientific = FALSE),
+                                  " bytes; the download was stopped"), call = NULL))
+
+de_fetch_to <- function(url, part, resume = TRUE, max_bytes = NULL) {
   meta <- paste0(part, ".json")
   if (!grepl("^https?://", url, ignore.case = TRUE)) {   # file:// and the like: no ranges
     unlink(meta)
     httr2::req_perform(de_req(url), path = part)
+    if (!is.null(max_bytes) && file.size(part) > max_bytes) {
+      unlink(part)
+      stop(too_large(url, max_bytes))
+    }
     return(invisible(part))
   }
   offset <- 0
@@ -425,7 +437,7 @@ de_fetch_to <- function(url, part, resume = TRUE) {
   action <- if (offset > 0) de_resume_action(status, httr2::resp_header(resp, "content-range"), offset) else "replace"
   if (action == "restart") {
     unlink(c(part, meta))
-    return(de_fetch_to(url, part, resume = FALSE))
+    return(de_fetch_to(url, part, resume = FALSE, max_bytes = max_bytes))
   }
   if (action == "error" || status >= 400)
     stop("HTTP ", status, " from ", url, call. = FALSE)
@@ -433,9 +445,26 @@ de_fetch_to <- function(url, part, resume = TRUE) {
     v <- de_range_validator(httr2::resp_header(resp, "etag"), httr2::resp_header(resp, "last-modified"))
     if (is.null(v)) unlink(meta) else writeLines(jsonlite::toJSON(list(url = url, validator = v), auto_unbox = TRUE), meta)
   }
+  start <- if (action == "append") offset else 0
+  announced <- suppressWarnings(as.numeric(httr2::resp_header(resp, "content-length") %||% NA))
+  if (!is.null(max_bytes) && !is.na(announced) && start + announced > max_bytes) {
+    unlink(c(part, meta))
+    stop(too_large(url, max_bytes))
+  }
   con <- file(part, if (action == "append") "ab" else "wb")
   on.exit(close(con), add = TRUE)
-  while (!httr2::resp_stream_is_complete(resp)) writeBin(httr2::resp_stream_raw(resp, kb = 1024), con)
+  size <- start
+  while (!httr2::resp_stream_is_complete(resp)) {
+    piece <- httr2::resp_stream_raw(resp, kb = 1024)
+    size <- size + length(piece)
+    if (!is.null(max_bytes) && size > max_bytes) {
+      close(con)
+      on.exit(close(resp))
+      unlink(c(part, meta))
+      stop(too_large(url, max_bytes))
+    }
+    writeBin(piece, con)
+  }
   close(con)
   on.exit(close(resp))
   unlink(meta)
@@ -458,15 +487,17 @@ de_fetch_to <- function(url, part, resume = TRUE) {
 #' @param dest File path or directory (default: current directory).
 #' @param verify Check the file against the row's checksum, if it has one.
 #' @param resume Continue an interrupted download of the same URL to the same place.
+#' @param max_bytes Stop a download that is (or is announced as) larger than this, delete the
+#'   partial file and raise an error. Default: no limit.
 #' @return The local path, invisibly.
 #' @export
-de_download <- function(x, dest = ".", verify = TRUE, resume = TRUE) {
+de_download <- function(x, dest = ".", verify = TRUE, resume = TRUE, max_bytes = NULL) {
   url <- if (is.character(x)) x else str1(x$url)
   if (is.null(url) || !nzchar(url)) stop("no URL available for this distribution", call. = FALSE)
   name <- utils::URLdecode(basename(sub("[?#].*$", "", url)))
   if (!nzchar(name)) name <- "download"
   path <- if (dir.exists(dest)) file.path(dest, name) else dest
-  de_fetch_to(url, paste0(path, ".part"), resume = resume)
+  de_fetch_to(url, paste0(path, ".part"), resume = resume, max_bytes = max_bytes)
   file.rename(paste0(path, ".part"), path)
   if (verify && !is.character(x)) de_verify_checksum(path, x$checksum_algorithm, x$checksum)
   invisible(path)
@@ -570,11 +601,21 @@ de_check_payload <- function(path) {
   if ((length(head) >= 4 && identical(head[1:4], as.raw(c(0x50, 0x4b, 0x03, 0x04)))) ||
       (length(head) >= 2 && identical(head[1:2], as.raw(c(0x1f, 0x8b)))))
     stop("the download is a compressed archive (ZIP or gzip); use de_download() and unpack it", call. = FALSE)
+  de_check_html(head)
+}
+
+# Refuse a download whose first bytes `head` are an HTML page.
+de_check_html <- function(head) {
   skip <- as.raw(c(0xef, 0xbb, 0xbf, 0x20, 0x09, 0x0d, 0x0a))   # byte-order mark and leading whitespace
   first <- which(!(head %in% skip))[1]
-  rest <- if (is.na(first)) raw() else head[first:min(length(head), first + 19)]
-  start <- tolower(rawToChar(rest[rest != as.raw(0)]))
-  if (startsWith(start, "<!doctype html") || startsWith(start, "<html"))
+  rest <- if (is.na(first)) integer() else as.integer(head[first:min(length(head), first + 19)])
+  upper <- rest >= 65L & rest <= 90L
+  rest[upper] <- rest[upper] + 32L                               # ASCII lowercase, on bytes: binary
+  starts <- function(prefix) {                                   # files are not valid text
+    p <- as.integer(charToRaw(prefix))
+    length(rest) >= length(p) && all(rest[seq_along(p)] == p)
+  }
+  if (starts("<!doctype html") || starts("<html"))
     stop("the download is an HTML page, not a data file (often a landing page)", call. = FALSE)
   invisible(NULL)
 }
@@ -701,6 +742,209 @@ de_load_distribution <- function(x, format = NULL, sheet = NULL) {
   path <- de_download(x, file.path(tmp, paste0("distribution.", fmt)))
   if (fmt %in% c("csv", "json")) de_check_payload(path)
   de_read_table(path, fmt, sheet)
+}
+
+# ---------------------------------------------------------------- geodata
+
+# Format ids, media types and extensions of vector geodata files, after de_format_key(). Values
+# are the file extension the download is saved under (GDAL needs it for some formats); "zip" for
+# formats published as ZIP archives (shapefiles, MapInfo, file geodatabases).
+.geo_formats <- c(
+  "geojson" = "geojson", "application/geo+json" = "geojson", "geo+json" = "geojson",
+  "application/vnd.geo+json" = "geojson",
+  "kml" = "kml", "application/vnd.google-earth.kml+xml" = "kml", "vnd.google-earth.kml+xml" = "kml",
+  "kmz" = "kmz", "application/vnd.google-earth.kmz" = "kmz", "vnd.google-earth.kmz" = "kmz",
+  "gml" = "gml", "application/gml+xml" = "gml", "gml+xml" = "gml", "geographic markup language (gml)" = "gml",
+  "xplangml" = "gml", "kuntagml" = "gml",
+  "gpkg" = "gpkg", "geopackage" = "gpkg", "geopackage - gpkg" = "gpkg", "application/geopackage+sqlite3" = "gpkg",
+  "geopackage+sqlite3" = "gpkg",
+  "gpx" = "gpx", "application/gpx+xml" = "gpx", "gpx+xml" = "gpx",
+  "fgb" = "fgb", "flatgeobuf" = "fgb",
+  "shp" = "zip", "shape" = "zip", "shapefile" = "zip", "shapefiles" = "zip", "shapefile (zip)" = "zip",
+  "shapefile zip" = "zip", "shp / zip" = "zip", "esri shape" = "zip", "esri shapefile" = "zip",
+  "esri shapefile (shp)" = "zip", "www:download:esri shapefile" = "zip",
+  "tab" = "zip", "mapinfo tab" = "zip", "gdb" = "zip", "esri file geodatabase" = "zip", "file geodatabase" = "zip")
+# Extensions of the files GDAL is asked to open inside an archive; a ".gdb" folder counts too.
+.geo_member_exts <- c("shp", "gpkg", "geojson", "kml", "gml", "gpx", "tab", "fgb")
+.nested_archive_exts <- c("zip", "kmz", "gz", "tgz", "tar", "7z", "rar")
+
+# The extension to save a geodata download under ("geojson", "kml", "kmz", "gml", "gpkg", "gpx",
+# "fgb", or "zip" for shapefiles, MapInfo and file geodatabases), from the format id, then the
+# media type, then the URL's extension. NA if none of them names a geodata format.
+de_geo_format <- function(fmt = NULL, media_type = NULL, url = NULL) {
+  for (cand in list(str1(fmt), str1(media_type), de_url_extension(str1(url)))) {
+    if (!has_text(cand)) next
+    key <- de_format_key(cand)
+    if (key %in% names(.geo_formats)) return(unname(.geo_formats[key]))
+  }
+  NA_character_
+}
+
+# The lowercase extension of the last part of each path, "" if none.
+path_ext <- function(paths) {
+  base <- sub("^.*/", "", paths)
+  ifelse(grepl(".", base, fixed = TRUE), tolower(sub("^.*\\.", "", base)), "")
+}
+
+# Choose the file to read inside an archive, from its member `names`. Candidates: files ending in
+# .shp, .gpkg, .geojson, .kml, .gml, .gpx, .tab or .fgb, and .gdb folders; macOS metadata is
+# ignored. One candidate: that one. Several: the one whose name (without extension) or path equals
+# `layer`, ignoring case; `layer` is then used up. Returns list(member, layer left for reading).
+de_geo_member <- function(names, layer = NULL) {
+  names <- as.character(unlist(names))
+  files <- gsub("\\\\", "/", names[!grepl("[/\\\\]$", names)])
+  files <- files[!startsWith(files, "__MACOSX/") & !startsWith(sub("^.*/", "", files), "._")]
+  cands <- character()
+  for (n in files) {
+    pos <- regexpr(".gdb/", tolower(n), fixed = TRUE)
+    if (pos > 0) {
+      folder <- substr(n, 1, pos + 3)
+      if (!(folder %in% cands)) cands <- c(cands, folder)
+    } else if (path_ext(n) %in% .geo_member_exts) {
+      cands <- c(cands, n)
+    }
+  }
+  cands <- sort(cands, method = "radix")
+  if (!length(cands)) {
+    nested <- sort(files[path_ext(files) %in% .nested_archive_exts], method = "radix")
+    if (length(nested))
+      stop("the archive holds other archives (", paste(nested, collapse = ", "),
+           "); de_download() it and unpack them", call. = FALSE)
+    stop("the archive holds no geodata file (looked for .shp, .gpkg, .geojson, .kml, .gml, .gpx, .tab, ",
+         ".fgb files and .gdb folders)", call. = FALSE)
+  }
+  if (length(cands) == 1) return(list(member = cands, layer = layer))
+  if (is.character(layer) && length(layer) == 1) {
+    want <- tolower(layer)
+    stems <- tolower(sub("\\.[^.]*$", "", sub("^.*/", "", cands)))
+    hits <- cands[tolower(cands) == want | stems == want]
+    if (length(hits) == 1) return(list(member = hits, layer = NULL))
+  }
+  stop("the archive holds ", length(cands), " geodata files (", paste(cands, collapse = ", "),
+       "); pick one with layer =", call. = FALSE)
+}
+
+# The layer to read: `layer` by name (exact, else ignoring case) or 1-based position; by default
+# the first, with a message if there are more.
+de_pick_layer <- function(layers, layer = NULL) {
+  if (!length(layers)) stop("the file holds no layers", call. = FALSE)
+  all <- paste(layers, collapse = ", ")
+  if (is.null(layer)) {
+    if (length(layers) > 1)
+      message("the file has ", length(layers), " layers (", all, "); reading '", layers[1],
+              "', pick another with layer =")
+    return(layers[1])
+  }
+  if (is.numeric(layer)) {
+    if (length(layer) == 1 && layer == round(layer) && layer >= 1 && layer <= length(layers)) return(layers[layer])
+    stop("layer ", layer, " is out of range: the file has ", length(layers), " layers (", all, ")", call. = FALSE)
+  }
+  if (layer %in% layers) return(layer)
+  hits <- layers[tolower(layers) == tolower(layer)]
+  if (length(hits) == 1) return(hits)
+  stop("no layer '", layer, "'; the file has ", all, call. = FALSE)
+}
+
+# Read a local geodata file (or a ZIP holding one) into an sf data frame.
+de_read_geodata <- function(path, layer = NULL, crs = NULL) {
+  if (!requireNamespace("sf", quietly = TRUE))
+    stop("de_load_geodata() needs the sf package: install.packages(\"sf\")", call. = FALSE)
+  head <- readBin(path, "raw", 512)
+  de_check_html(head)
+  src <- normalizePath(path, winslash = "/")
+  if (length(head) >= 4 && identical(head[1:4], as.raw(c(0x50, 0x4b, 0x03, 0x04)))) {
+    pick <- de_geo_member(utils::unzip(path, list = TRUE)$Name, layer)
+    src <- paste0("/vsizip/", src, "/", pick$member)
+    layer <- pick$layer
+  } else if (length(head) >= 2 && identical(head[1:2], as.raw(c(0x1f, 0x8b)))) {
+    src <- paste0("/vsigzip/", src)
+  }
+  layers <- tryCatch(suppressWarnings(sf::st_layers(src)$name),
+                     error = function(e) stop("cannot read the file as geodata: ", conditionMessage(e), call. = FALSE))
+  df <- withCallingHandlers(
+    sf::st_read(src, layer = de_pick_layer(layers, layer), quiet = TRUE, stringsAsFactors = FALSE),
+    warning = function(w) if (grepl("no simple feature geometries", conditionMessage(w))) invokeRestart("muffleWarning"))
+  if (!inherits(df, "sf")) stop("the file has no geometries (a plain table?); use de_load_distribution()", call. = FALSE)
+  if (attr(df, "sf_column") != "geometry") sf::st_geometry(df) <- "geometry"
+  if (is.na(sf::st_crs(df))) {
+    if (!is.null(crs))
+      stop("the data has no coordinate reference system (no .prj file?), so it cannot be reprojected; ",
+           "read it without crs and set one with sf::st_set_crs()", call. = FALSE)
+    warning("the data has no coordinate reference system (no .prj file?); coordinates are as stored", call. = FALSE)
+  } else if (!is.null(crs)) {
+    df <- sf::st_transform(df, crs)
+  }
+  df
+}
+
+# 2D geometry type names, as GEOS and the Python reference spell them.
+.geometry_types <- c(POINT = "Point", LINESTRING = "LineString", POLYGON = "Polygon", MULTIPOINT = "MultiPoint",
+                     MULTILINESTRING = "MultiLineString", MULTIPOLYGON = "MultiPolygon",
+                     GEOMETRYCOLLECTION = "GeometryCollection")
+
+# What the conformance cases compare of an sf data frame: attribute columns (or the values of
+# `columns` only), row count (nrow), 2D geometry types, EPSG code and bounds.
+de_geo_summary <- function(df, columns = NULL) {
+  plain <- sf::st_drop_geometry(df)
+  attrs <- names(plain)
+  out <- list()
+  if (is.null(columns)) out$columns <- as.list(attrs)
+  cols <- if (is.null(columns)) attrs else as.character(unlist(columns))
+  out$values <- stats::setNames(lapply(cols, function(col) as.list(plain[[col]])), cols)
+  out$nrow <- nrow(df)
+  types <- unique(as.character(sf::st_geometry_type(df)))
+  types <- ifelse(types %in% names(.geometry_types), .geometry_types[types], types)
+  out$geometry_types <- as.list(sort(unique(unname(types)), method = "radix"))
+  epsg <- sf::st_crs(df)$epsg
+  out["crs"] <- list(if (is.null(epsg) || is.na(epsg)) NULL else epsg)
+  out$bounds <- as.list(round(unname(as.numeric(sf::st_bbox(df))), 6))
+  out
+}
+
+#' Download a geodata distribution into an sf data frame
+#'
+#' Needs the sf package. GDAL does the reading, so any vector format it knows works: GeoJSON,
+#' Shapefile, GeoPackage, KML/KMZ, GML, GPX, MapInfo TAB, FlatGeobuf, file geodatabase. The
+#' geometry column is always called `geometry`.
+#'
+#' ZIP archives (how shapefiles are published) are opened in place. Inside, the one geodata file is
+#' read (a .shp with its .dbf/.shx/.prj, .gpkg, .geojson, .kml, .gml, .gpx, .tab, .fgb, or a .gdb
+#' folder); if there are several, `layer` picks one by file name (without extension), otherwise an
+#' error lists them. Archives inside archives are not opened.
+#'
+#' The source coordinate reference system is kept; a file without one (a shapefile without .prj)
+#' is read as stored, with a warning.
+#'
+#' Raises an error for services (WMS, WFS), web pages, HTML served instead of data, files GDAL
+#' cannot read, and checksum mismatches.
+#' @param x A URL, or a one-row data frame from [de_distributions()].
+#' @param layer A layer by name or 1-based position, in files with several (GeoPackage, file
+#'   geodatabase). Default: the first, with a message if there are more.
+#' @param crs Reproject to this coordinate reference system, e.g. `"EPSG:4326"`.
+#' @param max_mb Do not download files larger than this many megabytes; `Inf` lifts the limit.
+#' @return An sf data frame.
+#' @export
+de_load_geodata <- function(x, layer = NULL, crs = NULL, max_mb = 200) {
+  row <- if (is.character(x)) list(url = x) else x
+  url <- str1(row$url)
+  if (is.null(url) || !nzchar(url)) stop("no URL available for this distribution", call. = FALSE)
+  kind <- de_distribution_kind(row$format, row$media_type, url, row$download_url)
+  if (kind == "service")
+    stop(url, " is a service (", str1(row$format) %||% "", "), not a file; reading services is not supported yet",
+         call. = FALSE)
+  if (kind == "page") stop(url, " is a web page, not a file", call. = FALSE)
+  ext <- de_geo_format(row$format, row$media_type, url)
+  if (is.na(ext)) ext <- de_url_extension(url) %||% ""
+  if (!grepl("^[A-Za-z0-9]{1,8}$", ext)) ext <- "dat"
+  tmp <- tempfile("dataeuropa")
+  dir.create(tmp)
+  on.exit(unlink(tmp, recursive = TRUE), add = TRUE)
+  limit <- if (is.null(max_mb) || is.infinite(max_mb)) NULL else max_mb * 1e6
+  path <- tryCatch(de_download(x, file.path(tmp, paste0("distribution.", tolower(ext))), max_bytes = limit),
+                   dataeuropa_too_large = function(e)
+                     stop(url, " is larger than ", format(max_mb, scientific = FALSE),
+                          " MB; pass max_mb = Inf to load it anyway", call. = FALSE))
+  de_read_geodata(path, layer, crs)
 }
 
 #' Values and counts of a facet

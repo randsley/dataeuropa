@@ -27,12 +27,38 @@ function _run(case)
     if kind == "file_hash"
         return Dict("values" => [DE._file_hash(joinpath(FIXTURES, case.input), String(a)) for a in args.algorithms])
     end
+    if kind == "read_geo"
+        arg(k) = (v = get(args, k, nothing); v isa AbstractString ? String(v) : v)
+        df = try
+            Base.CoreLogging.with_logger(Base.CoreLogging.NullLogger()) do
+                DE._read_geodata(joinpath(FIXTURES, case.input), arg(:layer), arg(:crs))
+            end
+        catch e
+            e isa ArgumentError || rethrow()
+            nothing
+        end
+        cols = get(args, :columns, nothing)
+        return df === nothing ? Dict("error" => true) : DE._geo_summary(df, cols === nothing ? nothing : String.(cols))
+    end
     data = _readjson(case.input)
     sel = get(case, :select, nothing)
     sel === nothing || (data = data[Symbol(sel)])
     if kind == "file_format"
         return Dict("values" => [DE._file_format(get(r, :format, nothing), get(r, :media_type, nothing),
                                                  get(r, :url, nothing)) for r in data])
+    end
+    kind == "geo_format" &&
+        return Dict("values" => [DE._geo_format(get(r, :format, nothing), get(r, :media_type, nothing),
+                                                get(r, :url, nothing)) for r in data])
+    if kind == "geo_member"
+        return Dict("values" => map(data) do r
+            try
+                Any[DE._geo_member(String.(r.names), r.layer === nothing ? nothing : String(r.layer))...]
+            catch e
+                e isa ArgumentError || rethrow()
+                "error"
+            end
+        end)
     end
     kind == "distribution_kind" &&
         return Dict("values" => [DE._distribution_kind(get(r, :format, nothing), get(r, :media_type, nothing),
@@ -52,6 +78,24 @@ function _run(case)
     error("unknown kind $kind")
 end
 
+# A geodata summary against the expected one; bounds to within 1e-9 (relative).
+function _check_geo(got, expected)
+    if get(expected, :error, false) == true
+        @test get(got, "error", false) == true
+        return
+    end
+    @test !haskey(got, "error")
+    haskey(got, "error") && return
+    haskey(expected, :columns) && @test got["columns"] == String.(expected.columns)
+    for (col, ev) in pairs(expected.values)
+        @test _norm(got["values"][String(col)]) == _norm(ev)
+    end
+    @test got["nrow"] == expected.nrow
+    @test got["geometry_types"] == String.(expected.geometry_types)
+    @test _norm(got["crs"]) == _norm(expected.crs)
+    @test all(isapprox.(Float64.(got["bounds"]), Float64.(expected.bounds); rtol=1e-9))
+end
+
 # Rows as a vector of column => value lookups, whether they come from a DataFrame or a vector.
 _rows(df::DataFrame) = [Dict(string(c) => r[c] for c in names(df)) for r in eachrow(df)]
 _rows(v::AbstractVector) = [Dict(string(k) => val for (k, val) in r) for r in v]
@@ -62,10 +106,10 @@ if isdir(FIXTURES)
             @testset "$(case.name)" begin
                 expected = _readjson(joinpath("expected", "$(case.name).json"))
                 got = _run(case)
-                if haskey(expected, :columns)
-                    @test got["columns"] == String.(expected.columns)
-                end
-                if haskey(expected, :rows)
+                haskey(expected, :columns) && case.kind != "read_geo" && @test got["columns"] == String.(expected.columns)
+                if case.kind == "read_geo"
+                    _check_geo(got, expected)
+                elseif haskey(expected, :rows)
                     grows, erows = _rows(got["rows"]), expected.rows
                     @test length(grows) == length(erows)
                     for (i, (g, e)) in enumerate(zip(grows, erows)), (col, ev) in pairs(e)

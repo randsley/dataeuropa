@@ -1,0 +1,19 @@
+{
+ "values": {
+  "Name": [
+   "Lisboa",
+   "Porto"
+  ]
+ },
+ "nrow": 2,
+ "geometry_types": [
+  "Point"
+ ],
+ "crs": 4326,
+ "bounds": [
+  -9.1393,
+  38.7223,
+  -8.6291,
+  41.1579
+ ]
+}

@@ -136,7 +136,8 @@ def _get_json(url: str, params: dict | None = None, *, cacheable: bool = False) 
     import time
 
     path = os.path.join(_cache_dir(), _cache_key(url, params)) if cacheable and _cache_enabled() else None
-    if path and os.path.isfile(path) and time.time() - os.path.getmtime(path) < _cache_ttl():
+    ttl = _cache_ttl()  # ttl 0: never fresh, even when the file time is a little ahead of the clock
+    if path and ttl > 0 and os.path.isfile(path) and time.time() - os.path.getmtime(path) < ttl:
         with open(path, "rb") as fh:
             return json.loads(fh.read())
     r = _get_session().get(url, params=params, timeout=_timeout())
@@ -464,9 +465,14 @@ def _resume_action(status: int, content_range: str | None, offset: int) -> str:
     return "error"
 
 
-def _fetch(url: str, part: str, *, resume: bool, chunk: int) -> requests.Response:
+class _TooLarge(ValueError):
+    """A download went over its size limit; the partial file was deleted."""
+
+
+def _fetch(url: str, part: str, *, resume: bool, chunk: int, max_bytes: int | None = None) -> requests.Response:
     """Stream ``url`` into the partial file ``part``, continuing an earlier partial download when
-    possible. Returns the (closed) response, for its headers and final URL."""
+    possible. Returns the (closed) response, for its headers and final URL. Over ``max_bytes``
+    (announced or received), deletes the partial file and raises ``_TooLarge``."""
     meta = part + ".json"
     offset = 0
     headers = {"Accept-Encoding": "identity"}  # byte offsets must refer to the file itself
@@ -490,8 +496,20 @@ def _fetch(url: str, part: str, *, resume: bool, chunk: int) -> requests.Respons
         for f in (part, meta):
             if os.path.exists(f):
                 os.remove(f)
-        return _fetch(url, part, resume=False, chunk=chunk)
+        return _fetch(url, part, resume=False, chunk=chunk, max_bytes=max_bytes)
     _raise(r)
+    start = offset if action == "append" else 0
+
+    def too_large():
+        r.close()
+        for f in (part, meta):
+            if os.path.exists(f):
+                os.remove(f)
+        return _TooLarge(f"{url} is larger than the limit of {max_bytes:,} bytes; the download was stopped")
+
+    announced = r.headers.get("content-length", "")
+    if max_bytes is not None and announced.isdigit() and start + int(announced) > max_bytes:
+        raise too_large()
     if action == "replace":
         validator = _range_validator(r.headers.get("etag"), r.headers.get("last-modified"))
         if validator:
@@ -499,8 +517,13 @@ def _fetch(url: str, part: str, *, resume: bool, chunk: int) -> requests.Respons
                 json.dump({"url": url, "validator": validator}, fh)
         elif os.path.exists(meta):
             os.remove(meta)
+    size = start
     with open(part, "ab" if action == "append" else "wb") as fh:
         for piece in r.iter_content(chunk):
+            size += len(piece)
+            if max_bytes is not None and size > max_bytes:
+                fh.close()
+                raise too_large()
             fh.write(piece)
     r.close()
     if os.path.exists(meta):
@@ -509,7 +532,7 @@ def _fetch(url: str, part: str, *, resume: bool, chunk: int) -> requests.Respons
 
 
 def download(url_or_row: str | dict, dest: str | os.PathLike | None = None, *, chunk: int = 1 << 20,
-             verify: bool = True, resume: bool = True) -> str:
+             verify: bool = True, resume: bool = True, max_bytes: int | None = None) -> str:
     """Download a distribution to ``dest`` (file or directory). Returns the local path.
 
     Accepts a URL, or a row/dict from :func:`distributions` (uses its ``url``). Streams to disk.
@@ -523,6 +546,9 @@ def download(url_or_row: str | dict, dest: str | os.PathLike | None = None, *, c
     calling ``download`` again for the same URL and destination continues where it stopped, when
     the server supports ranges and identifies the file (ETag or Last-Modified); a file that changed
     meanwhile is downloaded again from the start. ``resume=False`` always starts from the start.
+
+    ``max_bytes`` stops a download that is (or is announced as) larger, deletes the partial file
+    and raises ``ValueError``. Default: no limit.
     """
     from urllib.parse import urlparse, unquote
 
@@ -532,7 +558,7 @@ def download(url_or_row: str | dict, dest: str | os.PathLike | None = None, *, c
     folder = None if dest is not None and not os.path.isdir(dest) else (str(dest) if dest is not None else "")
     guess = unquote(os.path.basename(urlparse(url).path)) or "download"
     part = (os.path.join(folder, guess) if folder is not None else str(dest)) + ".part"
-    r = _fetch(url, part, resume=resume, chunk=chunk)
+    r = _fetch(url, part, resume=resume, chunk=chunk, max_bytes=max_bytes)
     if folder is None:
         path = str(dest)
     else:
@@ -777,6 +803,221 @@ def load_distribution(url_or_row: str | dict, *, format: str | None = None, shee
         if fmt in ("csv", "json"):  # XLSX and Parquet are binary; their readers report bad files themselves
             _check_payload(path)
         return _read_table(path, fmt, sheet)
+
+
+# ---------------------------------------------------------------- geodata
+
+# Format ids, media types and extensions of vector geodata files, after _format_key(). Values are
+# the file extension the download is saved under (GDAL needs it for some formats); "zip" for
+# formats published as ZIP archives (shapefiles, MapInfo, file geodatabases).
+_GEO_FORMATS = {
+    "geojson": "geojson", "application/geo+json": "geojson", "geo+json": "geojson",
+    "application/vnd.geo+json": "geojson",
+    "kml": "kml", "application/vnd.google-earth.kml+xml": "kml", "vnd.google-earth.kml+xml": "kml",
+    "kmz": "kmz", "application/vnd.google-earth.kmz": "kmz", "vnd.google-earth.kmz": "kmz",
+    "gml": "gml", "application/gml+xml": "gml", "gml+xml": "gml", "geographic markup language (gml)": "gml",
+    "xplangml": "gml", "kuntagml": "gml",
+    "gpkg": "gpkg", "geopackage": "gpkg", "geopackage - gpkg": "gpkg", "application/geopackage+sqlite3": "gpkg",
+    "geopackage+sqlite3": "gpkg",
+    "gpx": "gpx", "application/gpx+xml": "gpx", "gpx+xml": "gpx",
+    "fgb": "fgb", "flatgeobuf": "fgb",
+    "shp": "zip", "shape": "zip", "shapefile": "zip", "shapefiles": "zip", "shapefile (zip)": "zip",
+    "shapefile zip": "zip", "shp / zip": "zip", "esri shape": "zip", "esri shapefile": "zip",
+    "esri shapefile (shp)": "zip", "www:download:esri shapefile": "zip",
+    "tab": "zip", "mapinfo tab": "zip", "gdb": "zip", "esri file geodatabase": "zip", "file geodatabase": "zip",
+}
+# Extensions of the files GDAL is asked to open inside an archive; a ".gdb" folder counts too.
+_GEO_MEMBER_EXTS = ("shp", "gpkg", "geojson", "kml", "gml", "gpx", "tab", "fgb")
+_NESTED_ARCHIVE_EXTS = ("zip", "kmz", "gz", "tgz", "tar", "7z", "rar")
+
+
+def _geo_format(fmt: str | None = None, media_type: str | None = None, url: str | None = None) -> str | None:
+    """The extension to save a geodata download under (``"geojson"``, ``"kml"``, ``"kmz"``,
+    ``"gml"``, ``"gpkg"``, ``"gpx"``, ``"fgb"``, or ``"zip"`` for shapefiles, MapInfo and file
+    geodatabases), from the format id, then the media type, then the URL's extension. None if
+    none of them names a geodata format."""
+    for cand in (fmt, media_type, _url_extension(url)):
+        if isinstance(cand, str) and cand.strip():
+            key = _format_key(cand)
+            if key in _GEO_FORMATS:
+                return _GEO_FORMATS[key]
+    return None
+
+
+def _geo_member(names: list[str], layer: str | int | None = None) -> tuple[str, str | int | None]:
+    """Choose the file to read inside an archive, from its member ``names``.
+
+    Candidates: files ending in .shp, .gpkg, .geojson, .kml, .gml, .gpx, .tab or .fgb, and .gdb
+    folders; macOS metadata (``__MACOSX/``, ``._*``) is ignored. One candidate: that one. Several:
+    the one whose name (without extension) or path equals ``layer``, ignoring case; ``layer`` is
+    then used up and the second value is None. Otherwise raises ``ValueError`` listing them.
+    Returns ``(member, layer left for reading inside it)``.
+    """
+    files = [n.replace("\\", "/") for n in names if not n.endswith("/") and not n.endswith("\\")]
+    files = [n for n in files if not n.startswith("__MACOSX/") and not n.rsplit("/", 1)[-1].startswith("._")]
+    cands: list[str] = []
+    for n in files:
+        low = n.lower()
+        if ".gdb/" in low:
+            folder = n[:low.index(".gdb/") + 4]
+            if folder not in cands:
+                cands.append(folder)
+        elif "." in low.rsplit("/", 1)[-1] and low.rsplit(".", 1)[-1] in _GEO_MEMBER_EXTS:
+            cands.append(n)
+    cands.sort()
+    if not cands:
+        nested = sorted(n for n in files if "." in n.rsplit("/", 1)[-1] and n.rsplit(".", 1)[-1].lower() in _NESTED_ARCHIVE_EXTS)
+        if nested:
+            raise ValueError(f"the archive holds other archives ({', '.join(nested)}); download() it and unpack them")
+        raise ValueError("the archive holds no geodata file (looked for .shp, .gpkg, .geojson, .kml, .gml, .gpx, "
+                         ".tab, .fgb files and .gdb folders)")
+    if len(cands) == 1:
+        return cands[0], layer
+    if isinstance(layer, str):
+        want = layer.lower()
+        hits = [c for c in cands if c.lower() == want or c.rsplit("/", 1)[-1].rsplit(".", 1)[0].lower() == want]
+        if len(hits) == 1:
+            return hits[0], None
+    raise ValueError(f"the archive holds {len(cands)} geodata files ({', '.join(cands)}); pick one with layer=")
+
+
+def _pick_layer(layers: list[str], layer: str | int | None = None) -> str:
+    """The layer to read: ``layer`` by name (exact, else ignoring case) or 0-based position;
+    by default the first, with a warning if there are more."""
+    import warnings
+
+    if not layers:
+        raise ValueError("the file holds no layers")
+    if layer is None:
+        if len(layers) > 1:
+            warnings.warn(f"the file has {len(layers)} layers ({', '.join(layers)}); reading {layers[0]!r}, "
+                          f"pick another with layer=", stacklevel=3)
+        return layers[0]
+    if isinstance(layer, int) and not isinstance(layer, bool):
+        if 0 <= layer < len(layers):
+            return layers[layer]
+        raise ValueError(f"layer {layer} is out of range: the file has {len(layers)} layers ({', '.join(layers)})")
+    if layer in layers:
+        return layer
+    hits = [n for n in layers if n.lower() == str(layer).lower()]
+    if len(hits) == 1:
+        return hits[0]
+    raise ValueError(f"no layer {layer!r}; the file has {', '.join(layers)}")
+
+
+def _read_geodata(path: str | os.PathLike, layer: str | int | None = None, crs: Any = None):
+    """Read a local geodata file (or a ZIP holding one) into a GeoDataFrame."""
+    import warnings
+    import zipfile
+
+    try:
+        import geopandas
+        import pyogrio
+    except ImportError:
+        raise ImportError("load_geodata needs geopandas and pyogrio: pip install 'dataeuropa[geo]'") from None
+    with open(path, "rb") as fh:
+        head = fh.read(512)
+    start = head.lstrip(b"\xef\xbb\xbf \t\r\n").lower()
+    if start.startswith(b"<!doctype html") or start.startswith(b"<html"):
+        raise ValueError("the download is an HTML page, not a data file (often a landing page)")
+    src = os.path.abspath(path).replace("\\", "/")
+    if head.startswith(b"PK\x03\x04"):
+        with zipfile.ZipFile(path) as z:
+            member, layer = _geo_member(z.namelist(), layer)
+        src = f"/vsizip/{src}/{member}"
+    elif head.startswith(b"\x1f\x8b"):
+        src = f"/vsigzip/{src}"
+    try:
+        layers = [str(entry[0]) for entry in pyogrio.list_layers(src)]
+    except Exception as e:  # pyogrio raises its own DataSourceError
+        raise ValueError(f"cannot read the file as geodata: {e}") from None
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", message=".*has GPKG application_id.*")
+        gdf = geopandas.read_file(src, layer=_pick_layer(layers, layer), engine="pyogrio")
+    if not isinstance(gdf, geopandas.GeoDataFrame) or getattr(gdf, "_geometry_column_name", None) not in gdf.columns:
+        raise ValueError("the file has no geometries (a plain table?); use load_distribution()")
+    if gdf.crs is None:
+        if crs is not None:
+            raise ValueError("the data has no coordinate reference system (no .prj file?), so it cannot be "
+                             "reprojected; read it without crs= and set one with set_crs()")
+        warnings.warn("the data has no coordinate reference system (no .prj file?); coordinates are as stored",
+                      stacklevel=2)
+    elif crs is not None:
+        gdf = gdf.to_crs(crs)
+    return gdf
+
+
+# 2D geometry type names, as reported by GEOS, sf (upper case) and GDAL.
+_GEOMETRY_TYPES = {t.upper(): t for t in ("Point", "LineString", "Polygon", "MultiPoint", "MultiLineString",
+                                          "MultiPolygon", "GeometryCollection")}
+
+
+def _geo_summary(gdf, columns: list[str] | None = None) -> dict:
+    """What the conformance cases compare of a GeoDataFrame: attribute columns (or the values of
+    ``columns`` only), row count (``nrow``), 2D geometry types, EPSG code and bounds."""
+    import pandas as pd
+
+    def plain(v):
+        if v is None or (not isinstance(v, (list, dict)) and pd.isna(v)):
+            return None
+        return v.item() if hasattr(v, "item") else v
+
+    attrs = [str(c) for c in gdf.columns if c != gdf.geometry.name]
+    out: dict = {"columns": attrs} if columns is None else {}
+    out["values"] = {c: [plain(v) for v in gdf[c]] for c in (attrs if columns is None else columns)}
+    out["nrow"] = len(gdf)
+    out["geometry_types"] = sorted({_GEOMETRY_TYPES.get(t.upper().replace(" Z", ""), t) for t in gdf.geom_type})
+    out["crs"] = gdf.crs.to_epsg() if gdf.crs is not None else None
+    out["bounds"] = [round(float(b), 6) for b in gdf.total_bounds]
+    return out
+
+
+def load_geodata(url_or_row: str | dict, *, layer: str | int | None = None, crs: Any = None,
+                 max_mb: float | None = 200):
+    """Download a geodata distribution and read it into a geopandas GeoDataFrame.
+
+    Accepts a URL, or a row/dict from :func:`distributions`. Needs geopandas and pyogrio
+    (``pip install 'dataeuropa[geo]'``); GDAL does the reading, so any vector format it knows
+    works: GeoJSON, Shapefile, GeoPackage, KML/KMZ, GML, GPX, MapInfo TAB, FlatGeobuf, file
+    geodatabase.
+
+    ZIP archives (how shapefiles are published) are opened in place. Inside, the one geodata file
+    is read (a .shp with its .dbf/.shx/.prj, .gpkg, .geojson, .kml, .gml, .gpx, .tab, .fgb, or a
+    .gdb folder); if there are several, ``layer`` picks one by file name (without extension),
+    otherwise ``ValueError`` lists them. Archives inside archives are not opened.
+
+    ``layer`` picks a layer by name or 0-based position in files with several (GeoPackage, file
+    geodatabase); by default the first is read, with a warning if there are more.
+
+    The source coordinate reference system is kept. ``crs`` (e.g. ``"EPSG:4326"``) reprojects; a
+    file without one (a shapefile without .prj) is read as stored, with a warning.
+
+    Files over ``max_mb`` megabytes (default 200) are not downloaded; ``max_mb=None`` lifts the
+    limit. Raises ``ValueError`` for services (WMS, WFS), web pages, HTML served instead of data,
+    files GDAL cannot read, and checksum mismatches.
+    """
+    import re
+    import tempfile
+
+    row = {"url": url_or_row} if isinstance(url_or_row, str) else url_or_row
+    url = row.get("url")
+    if not url:
+        raise ValueError("no URL available for this distribution")
+    kind = _distribution_kind(row.get("format"), row.get("media_type"), url, row.get("download_url"))
+    if kind == "service":
+        raise ValueError(f"{url} is a service ({row.get('format')}), not a file; reading services is not supported yet")
+    if kind == "page":
+        raise ValueError(f"{url} is a web page, not a file")
+    ext = _geo_format(row.get("format"), row.get("media_type"), url) or _url_extension(url) or ""
+    if not re.fullmatch(r"[A-Za-z0-9]{1,8}", ext):
+        ext = "dat"
+    limit = None if max_mb is None else int(max_mb * 1_000_000)
+    with tempfile.TemporaryDirectory() as tmp:
+        try:
+            path = download(url_or_row, os.path.join(tmp, f"distribution.{ext.lower()}"), max_bytes=limit)
+        except _TooLarge:
+            raise ValueError(f"{url} is larger than {max_mb:g} MB; pass max_mb=None to load it anyway") from None
+        return _read_geodata(path, layer, crs)
 
 
 def facet_values(facet: str, q: str | None = None, *, top: int | None = 50, filters: str = "dataset",

@@ -96,6 +96,33 @@ It refuses, with a clear error, services (WMS, WFS, APIs), compressed archives (
 `download_distribution` and unpack them), and HTML pages that some publishers serve instead of
 the file.
 
+## Reading geodata
+
+```julia
+using GeoDataFrames                                       # loads the geodata reader
+dist = distributions(dataset_id; files_only=true)
+df = load_geodata(dist[1, :])                             # GeoJSON, zipped Shapefile, GeoPackage, KML, GML, ...
+df = load_geodata(url; layer="wells")                     # a layer of a GeoPackage, or a file in a ZIP
+df = load_geodata(url; crs="EPSG:4326")                   # reproject
+df = load_geodata(url; max_mb=nothing)                    # files over 200 MB are refused by default
+```
+
+GDAL (through GeoDataFrames.jl) does the reading, so any vector format it knows works. The result
+is a `DataFrame` with a `geometry` column, as GeoDataFrames.jl makes them; the coordinate reference
+system is in its `"crs"` metadata.
+
+- **ZIP archives** (how shapefiles are published) are opened in place. Inside, the one geodata
+  file is read; if there are several, `layer` picks one by file name, otherwise the error lists
+  them.
+- **Layers**: `layer` picks one by name or 1-based position; by default the first, with a note
+  when there are more.
+- **Coordinate systems**: the source CRS is kept; `crs` reprojects. A file without one (a
+  shapefile without `.prj`) is read as stored, with a warning.
+- **Size**: files over `max_mb` megabytes (default 200) are not downloaded.
+  `download_distribution` takes the same limit as `max_bytes`.
+
+Services (WMS, WFS) and web pages are refused; reading WFS and OGC API Features is planned.
+
 ## Metadata as RDF, and SPARQL
 
 ```julia

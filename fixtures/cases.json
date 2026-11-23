@@ -30,6 +30,23 @@
   {"name": "read_wrapped_json", "kind": "read_file", "input": "files/wrapped.json", "args": {"format": "json", "sheet": null}},
   {"name": "read_xlsx_first", "kind": "read_file", "input": "files/table.xlsx", "args": {"format": "xlsx", "sheet": null}},
   {"name": "read_xlsx_named", "kind": "read_file", "input": "files/table.xlsx", "args": {"format": "xlsx", "sheet": "Second"}},
-  {"name": "read_parquet", "kind": "read_file", "input": "files/table.parquet", "args": {"format": "parquet", "sheet": null}}
+  {"name": "read_parquet", "kind": "read_file", "input": "files/table.parquet", "args": {"format": "parquet", "sheet": null}},
+  {"name": "geo_format", "kind": "geo_format", "input": "responses/geo_formats.json"},
+  {"name": "geo_member", "kind": "geo_member", "input": "responses/geo_members.json"},
+  {"name": "geo_geojson", "kind": "read_geo", "input": "files/geo/points.geojson", "args": {}},
+  {"name": "geo_shapefile_zip", "kind": "read_geo", "input": "files/geo/roads.zip", "args": {}},
+  {"name": "geo_shapefile_pick", "kind": "read_geo", "input": "files/geo/two_shapes.zip", "args": {"layer": "rivers"}},
+  {"name": "geo_shapefile_ambiguous", "kind": "read_geo", "input": "files/geo/two_shapes.zip", "args": {}},
+  {"name": "geo_no_geodata", "kind": "read_geo", "input": "files/geo/no_geo.zip", "args": {}},
+  {"name": "geo_gpkg_first", "kind": "read_geo", "input": "files/geo/layers.gpkg", "args": {}},
+  {"name": "geo_gpkg_layer", "kind": "read_geo", "input": "files/geo/layers.gpkg", "args": {"layer": "wells"}},
+  {"name": "geo_gpkg_missing_layer", "kind": "read_geo", "input": "files/geo/layers.gpkg", "args": {"layer": "roads"}},
+  {"name": "geo_kml", "kind": "read_geo", "input": "files/geo/places.kml", "args": {"columns": ["Name"]}},
+  {"name": "geo_kmz", "kind": "read_geo", "input": "files/geo/places.kmz", "args": {"columns": ["Name"]}},
+  {"name": "geo_gml", "kind": "read_geo", "input": "files/geo/features.gml", "args": {"columns": ["id", "name", "value"]}},
+  {"name": "geo_reproject", "kind": "read_geo", "input": "files/geo/points.geojson", "args": {"crs": "EPSG:3035"}},
+  {"name": "geo_no_prj", "kind": "read_geo", "input": "files/geo/no_prj.zip", "args": {}},
+  {"name": "geo_no_prj_reproject", "kind": "read_geo", "input": "files/geo/no_prj.zip", "args": {"crs": "EPSG:4326"}},
+  {"name": "geo_plain_table", "kind": "read_geo", "input": "files/comma.csv", "args": {}}
  ]
 }

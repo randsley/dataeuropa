@@ -1,5 +1,5 @@
 using Test, DataEuropa, DataFrames, JSON3, HTTP
-using XLSX, Parquet2   # load the optional readers
+using XLSX, Parquet2, GeoDataFrames   # load the optional readers
 
 const DE = DataEuropa
 const LIVE = get(ENV, "DATAEUROPA_OFFLINE", "0") != "1"
@@ -25,6 +25,7 @@ end
 include("conformance.jl")
 include("load.jl")
 include("cache_resume.jl")
+include("geodata.jl")
 
 LIVE && @testset "live API" begin
     df = search_datasets("water"; country="pt", format="CSV", limit=3)

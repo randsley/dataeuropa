@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+<Document>
+  <name>places</name>
+  <Placemark>
+    <name>Lisboa</name>
+    <description>Capital</description>
+    <Point><coordinates>-9.1393,38.7223,0</coordinates></Point>
+  </Placemark>
+  <Placemark>
+    <name>Porto</name>
+    <description>North</description>
+    <Point><coordinates>-8.6291,41.1579,0</coordinates></Point>
+  </Placemark>
+</Document>
+</kml>

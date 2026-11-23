@@ -94,6 +94,31 @@ id, then its media type, then the URL's file extension.
 It refuses, with a clear error, services (WMS, WFS, APIs), compressed archives (use `download`
 and unpack them), and HTML pages that some publishers serve instead of the file.
 
+## Reading geodata
+
+```python
+dist = de.distributions(dataset_id, files_only=True)
+gdf = de.load_geodata(dist.iloc[0])                     # GeoJSON, zipped Shapefile, GeoPackage, KML, GML, ...
+gdf = de.load_geodata(url, layer="wells")               # a layer of a GeoPackage, or a file in a ZIP
+gdf = de.load_geodata(url, crs="EPSG:4326")             # reproject
+gdf = de.load_geodata(url, max_mb=None)                 # files over 200 MB are refused by default
+```
+
+Needs geopandas and pyogrio (`pip install "dataeuropa[geo]"`); GDAL does the reading, so any
+vector format it knows works. The result is a GeoDataFrame whose geometry column is `geometry`.
+
+- **ZIP archives** (how shapefiles are published) are opened in place. Inside, the one geodata
+  file is read; if there are several, `layer` picks one by file name, otherwise the error lists
+  them.
+- **Layers**: `layer` picks one by name or 0-based position; by default the first, with a warning
+  when there are more.
+- **Coordinate systems**: the source CRS is kept; `crs` reprojects. A file without one (a
+  shapefile without `.prj`) is read as stored, with a warning.
+- **Size**: files over `max_mb` megabytes (default 200) are not downloaded. `download` takes the
+  same limit as `max_bytes`.
+
+Services (WMS, WFS) and web pages are refused; reading WFS and OGC API Features is planned.
+
 ## Metadata as RDF, and SPARQL
 
 ```python

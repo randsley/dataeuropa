@@ -12,7 +12,7 @@ module DataEuropa
 using HTTP, JSON3, DataFrames, Downloads, CSV, Dates, SHA, MD5
 
 export search, search_datasets, iter_datasets, fetch_datasets, get_dataset, distributions,
-       download_distribution, load_distribution, facet_values, count_datasets, catalogues, get_rdf,
+       download_distribution, load_distribution, load_geodata, facet_values, count_datasets, catalogues, get_rdf,
        sparql, pick_lang, cache_on, cache_off, clear_cache
 
 const SEARCH_URL = "https://data.europa.eu/api/hub/search"
@@ -163,7 +163,8 @@ end
 # GET a JSON response body, from the cache when it is on, `cacheable` and fresh.
 function _get_body(url; query=nothing, cacheable::Bool=false)
     path = cacheable && _cache_enabled() ? joinpath(_cache_dir(), _cache_key(url, query)) : nothing
-    if path !== nothing && isfile(path) && time() - mtime(path) < _cache_ttl()
+    ttl = _cache_ttl()   # ttl 0: never fresh, even when the file time is a little ahead of the clock
+    if path !== nothing && ttl > 0 && isfile(path) && time() - mtime(path) < ttl
         return read(path)
     end
     body = _request("GET", url; query=query).body
@@ -464,11 +465,24 @@ end
 # Download `url` into the partial file `part`, continuing an earlier partial download when
 # possible. Downloads.jl only reports the reply after the body, so a resumed body goes to a
 # separate file first and is appended or used in place of `part` once the status is known.
-function _fetch(url, part; resume::Bool)
+# Thrown when a download goes over its size limit (after deleting the partial file).
+struct _TooLarge <: Exception
+    msg::String
+end
+_TooLarge(url, max_bytes::Integer) =
+    _TooLarge("$url is larger than the limit of $(_thousands(max_bytes)) bytes; the download was stopped")
+Base.showerror(io::IO, e::_TooLarge) = print(io, e.msg)
+_thousands(n::Integer) = replace(string(n), r"(?<=\d)(?=(\d{3})+$)" => ",")
+
+function _fetch(url, part; resume::Bool, max_bytes::Union{Nothing,Integer}=nothing)
     meta = part * ".json"
     if !startswith(lowercase(url), "http")   # file:// and the like: no ranges
         rm(meta; force=true)
         Downloads.download(url, part; headers=["User-Agent" => UA], timeout=600)
+        if max_bytes !== nothing && filesize(part) > max_bytes
+            rm(part; force=true)
+            throw(_TooLarge(url, max_bytes))
+        end
         return
     end
     offset = 0
@@ -485,9 +499,24 @@ function _fetch(url, part; resume::Bool)
     target = offset > 0 ? part * ".new" : part
     keep_meta(resp) = (v = _range_validator(_header(resp, "etag"), _header(resp, "last-modified"));
                        v === nothing ? rm(meta; force=true) : write(meta, JSON3.write(Dict("url" => url, "validator" => v))))
+    # The size limit: the progress callback sees the announced size (`total`, 0 if unknown) and the
+    # bytes received, and interrupts the transfer when either goes over. A resumed part counts too.
+    over = Ref(false)
+    stop = max_bytes === nothing ? nothing : Base.Event()
+    progress = max_bytes === nothing ? nothing : (total, now) -> begin
+        if !over[] && offset + max(total, now) > max_bytes
+            over[] = true
+            notify(stop)
+        end
+    end
     resp = try
-        open(io -> Downloads.request(url; output=io, headers=hdrs, timeout=600), target, "w")
+        open(io -> Downloads.request(url; output=io, headers=hdrs, timeout=600, progress=progress, interrupt=stop),
+             target, "w")
     catch e
+        if over[]
+            rm(target; force=true); rm(part; force=true); rm(meta; force=true)
+            throw(_TooLarge(url, max_bytes))
+        end
         # Interrupted: keep what arrived so the next call can continue from there.
         r = e isa Downloads.RequestError ? e.response : nothing
         if r !== nothing && r.status in (200, 206)
@@ -502,7 +531,7 @@ function _fetch(url, part; resume::Bool)
     action = offset > 0 ? _resume_action(resp.status, _header(resp, "content-range"), offset) : "replace"
     if action == "restart"
         rm(target; force=true); rm(part; force=true); rm(meta; force=true)
-        return _fetch(url, part; resume=false)
+        return _fetch(url, part; resume=false, max_bytes=max_bytes)
     end
     if action == "error" || resp.status >= 400
         rm(target; force=true)
@@ -515,7 +544,7 @@ function _fetch(url, part; resume::Bool)
 end
 
 """
-    download_distribution(url_or_row, dest="."; verify=true, resume=true) -> String
+    download_distribution(url_or_row, dest="."; verify=true, resume=true, max_bytes=nothing) -> String
 
 Download a distribution (URL string, or a row of [`distributions`](@ref)) to `dest`
 (file path or directory). Returns the local path.
@@ -529,13 +558,17 @@ calling `download_distribution` again for the same URL and destination continues
 stopped, when the server supports ranges and identifies the file (ETag or Last-Modified); a file
 that changed meanwhile is downloaded again from the start. `resume=false` always starts from the
 start.
+
+`max_bytes` stops a download that is (or is announced as) larger, deletes the partial file and
+throws an error. Default: no limit.
 """
-function download_distribution(x, dest::AbstractString="."; verify::Bool=true, resume::Bool=true)
+function download_distribution(x, dest::AbstractString="."; verify::Bool=true, resume::Bool=true,
+                               max_bytes::Union{Nothing,Integer}=nothing)
     url = x isa AbstractString ? String(x) : _field(x, :url)
     (url === nothing || isempty(url)) && throw(ArgumentError("no URL available for this distribution"))
     name = let n = basename(HTTP.URI(url).path); isempty(n) ? "download" : HTTP.URIs.unescapeuri(n) end
     path = isdir(dest) ? joinpath(dest, name) : dest
-    _fetch(url, path * ".part"; resume=resume)
+    _fetch(url, path * ".part"; resume=resume, max_bytes=max_bytes)
     mv(path * ".part", path; force=true)
     if verify && !(x isa AbstractString)
         _verify_checksum(path, _field(x, :checksum_algorithm), _field(x, :checksum))
@@ -642,6 +675,11 @@ function _check_payload(path)
        (length(head) >= 2 && head[1:2] == UInt8[0x1f, 0x8b])
         throw(ArgumentError("the download is a compressed archive (ZIP or gzip); use download_distribution and unpack it"))
     end
+    return _check_html(head)
+end
+
+# Refuse a download whose first bytes `head` are an HTML page.
+function _check_html(head::Vector{UInt8})
     start = lowercase(lstrip(String(Char.(head)), ['﻿', 'ï', '»', '¿', ' ', '\t', '\r', '\n']))
     (startswith(start, "<!doctype html") || startswith(start, "<html")) &&
         throw(ArgumentError("the download is an HTML page, not a data file (often a landing page)"))
@@ -753,6 +791,163 @@ function load_distribution(x; format=nothing, sheet=nothing)
         path = download_distribution(x, joinpath(tmp, "distribution.$fmt"))
         fmt in ("csv", "json") && _check_payload(path)
         _read_table(path, fmt; sheet=sheet)
+    end
+end
+
+# ---------------------------------------------------------------- geodata
+
+# Format ids, media types and extensions of vector geodata files, after _format_key(). Values are
+# the file extension the download is saved under (GDAL needs it for some formats); "zip" for
+# formats published as ZIP archives (shapefiles, MapInfo, file geodatabases).
+const _GEO_FORMATS = Dict(
+    "geojson" => "geojson", "application/geo+json" => "geojson", "geo+json" => "geojson",
+    "application/vnd.geo+json" => "geojson",
+    "kml" => "kml", "application/vnd.google-earth.kml+xml" => "kml", "vnd.google-earth.kml+xml" => "kml",
+    "kmz" => "kmz", "application/vnd.google-earth.kmz" => "kmz", "vnd.google-earth.kmz" => "kmz",
+    "gml" => "gml", "application/gml+xml" => "gml", "gml+xml" => "gml", "geographic markup language (gml)" => "gml",
+    "xplangml" => "gml", "kuntagml" => "gml",
+    "gpkg" => "gpkg", "geopackage" => "gpkg", "geopackage - gpkg" => "gpkg",
+    "application/geopackage+sqlite3" => "gpkg", "geopackage+sqlite3" => "gpkg",
+    "gpx" => "gpx", "application/gpx+xml" => "gpx", "gpx+xml" => "gpx",
+    "fgb" => "fgb", "flatgeobuf" => "fgb",
+    "shp" => "zip", "shape" => "zip", "shapefile" => "zip", "shapefiles" => "zip", "shapefile (zip)" => "zip",
+    "shapefile zip" => "zip", "shp / zip" => "zip", "esri shape" => "zip", "esri shapefile" => "zip",
+    "esri shapefile (shp)" => "zip", "www:download:esri shapefile" => "zip",
+    "tab" => "zip", "mapinfo tab" => "zip", "gdb" => "zip", "esri file geodatabase" => "zip",
+    "file geodatabase" => "zip",
+)
+# Extensions of the files GDAL is asked to open inside an archive; a ".gdb" folder counts too.
+const _GEO_MEMBER_EXTS = ("shp", "gpkg", "geojson", "kml", "gml", "gpx", "tab", "fgb")
+const _NESTED_ARCHIVE_EXTS = ("zip", "kmz", "gz", "tgz", "tar", "7z", "rar")
+
+# The extension to save a geodata download under ("geojson", "kml", "kmz", "gml", "gpkg", "gpx",
+# "fgb", or "zip" for shapefiles, MapInfo and file geodatabases), from the format id, then the
+# media type, then the URL's extension. `nothing` if none of them names a geodata format.
+function _geo_format(fmt=nothing, media_type=nothing, url=nothing)
+    for cand in (_str(fmt), _str(media_type), _url_extension(_str(url)))
+        (cand === nothing || isempty(strip(cand))) && continue
+        key = _format_key(cand)
+        haskey(_GEO_FORMATS, key) && return _GEO_FORMATS[key]
+    end
+    return nothing
+end
+
+# The lowercase extension of the last part of a path, "" if none.
+function _path_ext(path)
+    base = last(split(path, '/'))
+    return occursin('.', base) ? lowercase(last(split(base, '.'))) : ""
+end
+
+# Choose the file to read inside an archive, from its member `names`. Candidates: files ending in
+# .shp, .gpkg, .geojson, .kml, .gml, .gpx, .tab or .fgb, and .gdb folders; macOS metadata is
+# ignored. One candidate: that one. Several: the one whose name (without extension) or path equals
+# `layer`, ignoring case; `layer` is then used up. Returns (member, layer left for reading).
+function _geo_member(names, layer=nothing)
+    files = [replace(String(n), '\\' => '/') for n in names if !endswith(n, "/") && !endswith(n, "\\")]
+    filter!(n -> !startswith(n, "__MACOSX/") && !startswith(last(split(n, '/')), "._"), files)
+    cands = String[]
+    for n in files
+        m = match(r"\.gdb/"i, n)
+        if m !== nothing
+            folder = n[1:m.offset+3]
+            folder in cands || push!(cands, folder)
+        elseif _path_ext(n) in _GEO_MEMBER_EXTS
+            push!(cands, n)
+        end
+    end
+    sort!(cands)
+    if isempty(cands)
+        nested = sort([n for n in files if _path_ext(n) in _NESTED_ARCHIVE_EXTS])
+        isempty(nested) || throw(ArgumentError("the archive holds other archives ($(join(nested, ", "))); " *
+                                               "download_distribution it and unpack them"))
+        throw(ArgumentError("the archive holds no geodata file (looked for .shp, .gpkg, .geojson, .kml, .gml, " *
+                            ".gpx, .tab, .fgb files and .gdb folders)"))
+    end
+    length(cands) == 1 && return (cands[1], layer)
+    if layer isa AbstractString
+        want = lowercase(layer)
+        stem(c) = (b = String(last(split(c, '/'))); lowercase(occursin('.', b) ? b[1:findlast('.', b)-1] : b))
+        hits = [c for c in cands if lowercase(c) == want || stem(c) == want]
+        length(hits) == 1 && return (hits[1], nothing)
+    end
+    throw(ArgumentError("the archive holds $(length(cands)) geodata files ($(join(cands, ", "))); pick one with layer="))
+end
+
+# The layer to read: `layer` by name (exact, else ignoring case) or 1-based position; by default
+# the first, with a note if there are more.
+function _pick_layer(layers, layer=nothing)
+    isempty(layers) && throw(ArgumentError("the file holds no layers"))
+    all = join(layers, ", ")
+    if layer === nothing
+        length(layers) > 1 &&
+            @info "the file has $(length(layers)) layers ($all); reading $(repr(first(layers))), pick another with layer="
+        return first(layers)
+    end
+    if layer isa Integer
+        1 <= layer <= length(layers) && return layers[layer]
+        throw(ArgumentError("layer $layer is out of range: the file has $(length(layers)) layers ($all)"))
+    end
+    String(layer) in layers && return String(layer)
+    hits = [n for n in layers if lowercase(n) == lowercase(String(layer))]
+    length(hits) == 1 && return hits[1]
+    throw(ArgumentError("no layer $(repr(String(layer))); the file has $all"))
+end
+
+# 2D geometry type names, as GEOS and the Python reference spell them.
+const _GEOMETRY_TYPES = Dict(uppercase(t) => t for t in ("Point", "LineString", "Polygon", "MultiPoint",
+                                                         "MultiLineString", "MultiPolygon", "GeometryCollection"))
+
+# Defined by the GeoDataFrames package extension: read a local geodata file (or a ZIP holding one)
+# into a DataFrame with a `geometry` column; and summarise one for the conformance tests.
+function _read_geodata end
+function _geo_summary end
+
+"""
+    load_geodata(url_or_row; layer=nothing, crs=nothing, max_mb=200) -> DataFrame
+
+Download a geodata distribution and read it into a `DataFrame` with a `geometry` column, as
+GeoDataFrames.jl does. Needs `using GeoDataFrames` first. GDAL does the reading, so any vector
+format it knows works: GeoJSON, Shapefile, GeoPackage, KML/KMZ, GML, GPX, MapInfo TAB, FlatGeobuf,
+file geodatabase. The coordinate reference system is in the table's `"crs"` metadata.
+
+ZIP archives (how shapefiles are published) are opened in place. Inside, the one geodata file is
+read (a .shp with its .dbf/.shx/.prj, .gpkg, .geojson, .kml, .gml, .gpx, .tab, .fgb, or a .gdb
+folder); if there are several, `layer` picks one by file name (without extension), otherwise an
+error lists them. Archives inside archives are not opened.
+
+`layer` picks a layer by name or 1-based position in files with several (GeoPackage, file
+geodatabase); by default the first is read, with a note if there are more.
+
+The source coordinate reference system is kept. `crs` (e.g. `"EPSG:4326"`) reprojects; a file
+without one (a shapefile without .prj) is read as stored, with a warning.
+
+Files over `max_mb` megabytes (default 200) are not downloaded; `max_mb=nothing` lifts the limit.
+Throws `ArgumentError` for services (WMS, WFS), web pages, HTML served instead of data, and files
+GDAL cannot read; and an error for checksum mismatches.
+"""
+function load_geodata(x; layer=nothing, crs=nothing, max_mb::Union{Nothing,Real}=200)
+    isempty(methods(_read_geodata)) &&
+        throw(ArgumentError("load_geodata needs the GeoDataFrames package: `using GeoDataFrames` first"))
+    url = x isa AbstractString ? String(x) : _field(x, :url)
+    (url === nothing || isempty(url)) && throw(ArgumentError("no URL available for this distribution"))
+    fmt, media_type, dl = x isa AbstractString ? (nothing, nothing, nothing) :
+                          (_field(x, :format), _field(x, :media_type), _field(x, :download_url))
+    kind = _distribution_kind(fmt, media_type, url, dl)
+    kind == "service" &&
+        throw(ArgumentError("$url is a service ($(something(fmt, ""))), not a file; reading services is not supported yet"))
+    kind == "page" && throw(ArgumentError("$url is a web page, not a file"))
+    ext = something(_geo_format(fmt, media_type, url), _url_extension(url), "")
+    occursin(r"^[A-Za-z0-9]{1,8}$", ext) || (ext = "dat")
+    limit = max_mb === nothing || isinf(max_mb) ? nothing : floor(Int, max_mb * 1_000_000)
+    return mktempdir() do tmp
+        path = try
+            download_distribution(x, joinpath(tmp, "distribution.$(lowercase(ext))"); max_bytes=limit)
+        catch e
+            e isa _TooLarge || rethrow()
+            mb = isinteger(max_mb) ? string(Int(max_mb)) : string(max_mb)
+            throw(ArgumentError("$url is larger than $mb MB; pass max_mb=nothing to load it anyway"))
+        end
+        _read_geodata(path, layer, crs)
     end
 end
 

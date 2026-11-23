@@ -12,7 +12,8 @@ import sys
 HERE = pathlib.Path(__file__).parent
 sys.path.insert(0, str(HERE.parent / "python" / "src"))
 
-from dataeuropa.client import (_distribution_kind, _distribution_rows, _facet_rows, _file_format, _file_hash, _keywords,
+from dataeuropa.client import (_distribution_kind, _distribution_rows, _facet_rows, _file_format, _file_hash, _geo_format, _geo_member,
+                               _geo_summary, _keywords, _read_geodata,
                                _range_validator, _resume_action,  # noqa: E402
                                _read_table, _sparql_rows, summarise_dataset)
 
@@ -41,6 +42,15 @@ def run(case: dict):
         return table(_read_table(HERE / case["input"], args["format"], args.get("sheet")))
     if kind == "file_hash":
         return {"values": [_file_hash(HERE / case["input"], a) for a in args["algorithms"]]}
+    if kind == "read_geo":
+        import warnings
+        try:
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                gdf = _read_geodata(HERE / case["input"], args.get("layer"), args.get("crs"))
+        except ValueError:
+            return {"error": True}
+        return _geo_summary(gdf, args.get("columns"))
     data = json.loads((HERE / case["input"]).read_text(encoding="utf-8"))
     if case.get("select"):
         data = data[case["select"]]
@@ -49,6 +59,15 @@ def run(case: dict):
     if kind == "distribution_kind":
         return {"values": [_distribution_kind(r.get("format"), r.get("media_type"), r.get("url"), r.get("download_url"))
                            for r in data]}
+    if kind == "geo_format":
+        return {"values": [_geo_format(r.get("format"), r.get("media_type"), r.get("url")) for r in data]}
+    if kind == "geo_member":
+        def member(r):
+            try:
+                return list(_geo_member(r["names"], r["layer"]))
+            except ValueError:
+                return "error"
+        return {"values": [member(r) for r in data]}
     if kind == "range_validator":
         return {"values": [_range_validator(r["etag"], r["last_modified"]) for r in data]}
     if kind == "resume_action":

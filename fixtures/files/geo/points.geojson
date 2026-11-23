@@ -1,0 +1,10 @@
+{
+"type": "FeatureCollection",
+"name": "points",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+"features": [
+{ "type": "Feature", "properties": { "id": 1, "name": "Lisboa", "value": 3.5 }, "geometry": { "type": "Point", "coordinates": [ -9.1393, 38.7223 ] } },
+{ "type": "Feature", "properties": { "id": 2, "name": "Porto", "value": null }, "geometry": { "type": "Point", "coordinates": [ -8.6291, 41.1579 ] } },
+{ "type": "Feature", "properties": { "id": 3, "name": "Faro", "value": 10.0 }, "geometry": { "type": "Point", "coordinates": [ -7.9304, 37.0194 ] } }
+]
+}

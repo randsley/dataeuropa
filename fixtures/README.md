@@ -10,6 +10,9 @@ inputs, the expected outputs, and the list of cases that all three test suites r
 | `responses/formats.json` | Format ids, media types and URLs for format detection |
 | `responses/kinds.json` | Distributions to sort into files, services, pages and unusable URLs |
 | `files/*` | Sample CSV, JSON, XLSX and Parquet files, written by `make_files.py` (kept byte for byte: see `.gitattributes`) |
+| `files/geo/*` | Sample geodata: GeoJSON, zipped shapefiles (one, two, one without `.prj`), a two-layer GeoPackage, KML, KMZ, GML, and a ZIP with no geodata; written by `make_geo_files.py` (needs geopandas) |
+| `responses/geo_formats.json` | Format ids, media types and URLs to map to a geodata file type |
+| `responses/geo_members.json` | Archive listings to pick the geodata file from |
 | `responses/edge_cases.json` | Hand-written records for cases the live data rarely shows (missing fields, language fallback, ties, unbound SPARQL variables) |
 | `cases.json` | The cases: which input to read, which conversion to run, with which arguments |
 | `expected/<case>.json` | Expected output for each case, generated from the Python client |
@@ -34,6 +37,9 @@ then guard against unintended changes, and the Julia and R tests check that they
 | `file_hash` | `_file_hash` | `_file_hash` | `de_file_hash` |
 | `range_validator` | `_range_validator` | `_range_validator` | `de_range_validator` |
 | `resume_action` | `_resume_action` | `_resume_action` | `de_resume_action` |
+| `geo_format` | `_geo_format` | `_geo_format` | `de_geo_format` |
+| `geo_member` | `_geo_member` | `_geo_member` | `de_geo_member` |
+| `read_geo` | `_read_geodata` + `_geo_summary` | `_read_geodata` + `_geo_summary` (GeoDataFrames extension) | `de_read_geodata` + `de_geo_summary` |
 
 ## How results are compared
 
@@ -43,6 +49,10 @@ then guard against unintended changes, and the Julia and R tests check that they
 - `formats` is a list. R stores it as a comma-separated string, which the R test splits.
 - SPARQL ASK results compare as `{"boolean": ...}`; keyword lists as `{"values": [...]}`.
 - `read_file` cases also compare column names and order. Dates compare as ISO text.
+- `read_geo` cases compare a summary: attribute columns (without geometry), their values, the row
+  count (`nrow`), the 2D geometry types, the EPSG code and the bounds (to 1e-9, relative). Cases
+  with `columns` compare only those columns' values: KML column sets differ between readers.
+  An error compares as `{"error": true}`, whatever the message.
 
 ## Running the tests
 

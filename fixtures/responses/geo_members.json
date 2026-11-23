@@ -1,0 +1,110 @@
+[
+ {
+  "names": [
+   "roads.shp",
+   "roads.shx",
+   "roads.dbf",
+   "roads.prj"
+  ],
+  "layer": null
+ },
+ {
+  "names": [
+   "data/",
+   "data/roads.shp",
+   "data/roads.dbf",
+   "data/README.txt",
+   "__MACOSX/data/._roads.shp"
+  ],
+  "layer": null
+ },
+ {
+  "names": [
+   "data/Roads.SHP",
+   "data/Roads.dbf"
+  ],
+  "layer": "x"
+ },
+ {
+  "names": [
+   "a.shp",
+   "a.dbf",
+   "b.shp",
+   "b.dbf"
+  ],
+  "layer": null
+ },
+ {
+  "names": [
+   "a.shp",
+   "a.dbf",
+   "b.shp",
+   "b.dbf"
+  ],
+  "layer": "B"
+ },
+ {
+  "names": [
+   "a.shp",
+   "a.dbf",
+   "b.shp",
+   "b.dbf"
+  ],
+  "layer": "c"
+ },
+ {
+  "names": [
+   "x/a.gpkg",
+   "y/a.geojson"
+  ],
+  "layer": "a"
+ },
+ {
+  "names": [
+   "x/a.gpkg",
+   "y/a.geojson"
+  ],
+  "layer": "y/a.geojson"
+ },
+ {
+  "names": [
+   "parcels.gdb/",
+   "parcels.gdb/a00000001.gdbtable",
+   "parcels.gdb/a00000001.gdbtablx",
+   "parcels.gdb/gdb"
+  ],
+  "layer": "parcels"
+ },
+ {
+  "names": [
+   "doc.kml",
+   "files/icon.png"
+  ],
+  "layer": null
+ },
+ {
+  "names": [
+   "roads.shp.xml",
+   "metadata.xml",
+   "roads.json"
+  ],
+  "layer": null
+ },
+ {
+  "names": [
+   "inner.zip",
+   "readme.txt"
+  ],
+  "layer": null
+ },
+ {
+  "names": [],
+  "layer": null
+ },
+ {
+  "names": [
+   "one.gpkg"
+  ],
+  "layer": "parcels"
+ }
+]

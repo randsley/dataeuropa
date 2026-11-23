@@ -1,0 +1,42 @@
+{
+ "values": [
+  [
+   "roads.shp",
+   null
+  ],
+  [
+   "data/roads.shp",
+   null
+  ],
+  [
+   "data/Roads.SHP",
+   "x"
+  ],
+  "error",
+  [
+   "b.shp",
+   null
+  ],
+  "error",
+  "error",
+  [
+   "y/a.geojson",
+   null
+  ],
+  [
+   "parcels.gdb",
+   "parcels"
+  ],
+  [
+   "doc.kml",
+   null
+  ],
+  "error",
+  "error",
+  "error",
+  [
+   "one.gpkg",
+   "parcels"
+  ]
+ ]
+}

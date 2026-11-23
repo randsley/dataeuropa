@@ -4,7 +4,7 @@
 \alias{de_download}
 \title{Download a distribution to disk}
 \usage{
-de_download(x, dest = ".", verify = TRUE, resume = TRUE)
+de_download(x, dest = ".", verify = TRUE, resume = TRUE, max_bytes = NULL)
 }
 \arguments{
 \item{x}{A URL, or a one-row data frame from [de_distributions()].}
@@ -14,6 +14,9 @@ de_download(x, dest = ".", verify = TRUE, resume = TRUE)
 \item{verify}{Check the file against the row's checksum, if it has one.}
 
 \item{resume}{Continue an interrupted download of the same URL to the same place.}
+
+\item{max_bytes}{Stop a download that is (or is announced as) larger than this, delete the
+partial file and raise an error. Default: no limit.}
 }
 \value{
 The local path, invisibly.

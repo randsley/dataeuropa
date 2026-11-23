@@ -1,6 +1,6 @@
 # Plan: geodata loaders
 
-Status: proposal, not started. Needs decisions on the open questions at the end before work begins.
+Status: step 1 (files) done; step 2 (services) not started. Decisions recorded at the end.
 
 ## Why
 
@@ -72,9 +72,14 @@ The roadmap's future extension for services fits here. WFS `GetFeature` (with
 so `load_geodata` could accept those distributions too, with paging and a feature limit. WMS and
 WMTS return images and stay out of scope.
 
-## Open questions
+## Decisions (November 2026)
 
-1. Approve the three packages (geopandas + pyogrio, sf, GeoDataFrames.jl) as optional?
-2. A separate `load_geodata` verb (proposed), or a `geo=True` option on `load_distribution`?
-3. Default size limit before asking for an opt-in (proposal: 200 MB)?
-4. Order: files first (GeoJSON, Shapefile, GeoPackage, KML), then services as a second step?
+1. **Packages approved**, all optional: Python `geopandas` + `pyogrio` (extra `dataeuropa[geo]`),
+   R `sf` (`Suggests`), Julia `GeoDataFrames.jl` (weak dependency with a package extension).
+2. **A separate verb**, `load_geodata` (`de_load_geodata` in R); `load_distribution` stays for tables.
+3. **Size limit 200 MB**: larger files need an explicit opt-in.
+4. **Files first, then services**, as two steps:
+   - Step 1: GeoJSON, zipped Shapefile, GeoPackage, KML/KMZ and GML files; layer choice; keep
+     the source CRS, with optional reprojection; the size limit.
+   - Step 2: WFS `GetFeature` and OGC API Features, reusing the step 1 reader, with paging and a
+     feature limit.

@@ -1,0 +1,100 @@
+[
+ {
+  "format": "GEOJSON"
+ },
+ {
+  "format": "file:///srv/udata/ftype/geojson"
+ },
+ {
+  "media_type": "application/geo+json"
+ },
+ {
+  "format": "KML"
+ },
+ {
+  "format": "vnd.google-earth.kml+xml"
+ },
+ {
+  "format": "KMZ"
+ },
+ {
+  "format": "GML"
+ },
+ {
+  "format": "XPlanGML"
+ },
+ {
+  "format": "KUNTAGML"
+ },
+ {
+  "format": "Geographic Markup Language (GML)"
+ },
+ {
+  "format": "GPKG"
+ },
+ {
+  "format": "geopackage - gpkg"
+ },
+ {
+  "media_type": "application/geopackage+sqlite3"
+ },
+ {
+  "format": "SHP"
+ },
+ {
+  "format": "esri shapefile (shp)"
+ },
+ {
+  "format": "SHP / ZIP"
+ },
+ {
+  "format": "Esri Shape"
+ },
+ {
+  "format": "www:download:esri shapefile"
+ },
+ {
+  "format": "shapefile (zip)"
+ },
+ {
+  "format": "ѕhp"
+ },
+ {
+  "format": "mapinfo tab"
+ },
+ {
+  "format": "GDB"
+ },
+ {
+  "format": "GPX"
+ },
+ {
+  "format": "gpx+xml"
+ },
+ {
+  "format": "ZIP",
+  "url": "https://example.org/roads.shp"
+ },
+ {
+  "format": null,
+  "url": "https://example.org/a/b.geojson?x=1"
+ },
+ {
+  "format": "CSV",
+  "url": "https://example.org/a.csv"
+ },
+ {
+  "format": "GEOTIFF"
+ },
+ {
+  "format": "DXF"
+ },
+ {
+  "format": "WFS_SRVC"
+ },
+ {
+  "format": "",
+  "media_type": "",
+  "url": ""
+ }
+]

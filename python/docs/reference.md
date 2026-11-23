@@ -12,6 +12,7 @@
         - distributions
         - download
         - load_distribution
+        - load_geodata
         - cache_on
         - cache_off
         - clear_cache

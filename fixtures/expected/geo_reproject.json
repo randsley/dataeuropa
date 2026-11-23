@@ -1,0 +1,35 @@
+{
+ "columns": [
+  "id",
+  "name",
+  "value"
+ ],
+ "values": {
+  "id": [
+   1,
+   2,
+   3
+  ],
+  "name": [
+   "Lisboa",
+   "Porto",
+   "Faro"
+  ],
+  "value": [
+   3.5,
+   null,
+   10.0
+  ]
+ },
+ "nrow": 3,
+ "geometry_types": [
+  "Point"
+ ],
+ "crs": 3035,
+ "bounds": [
+  2665519.214312,
+  1737068.409924,
+  2768622.533135,
+  2199089.345556
+ ]
+}

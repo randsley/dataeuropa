@@ -1,0 +1,25 @@
+{
+ "columns": [
+  "id",
+  "name"
+ ],
+ "values": {
+  "id": [
+   1
+  ],
+  "name": [
+   "Tejo"
+  ]
+ },
+ "nrow": 1,
+ "geometry_types": [
+  "LineString"
+ ],
+ "crs": 3763,
+ "bounds": [
+  -100000.0,
+  -110000.0,
+  -60000.0,
+  -105000.0
+ ]
+}

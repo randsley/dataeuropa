@@ -1,0 +1,27 @@
+{
+ "columns": [
+  "id",
+  "name"
+ ],
+ "values": {
+  "id": [
+   1,
+   2
+  ],
+  "name": [
+   "A1",
+   "A2"
+  ]
+ },
+ "nrow": 2,
+ "geometry_types": [
+  "LineString"
+ ],
+ "crs": null,
+ "bounds": [
+  -90000.0,
+  -260000.0,
+  -45000.0,
+  -90000.0
+ ]
+}
