@@ -69,85 +69,113 @@ test_that("the cache can be turned on from the environment", {
 # ---------------------------------------------------------------- resumable downloads
 
 # One file served by R's built-in HTTP server, with ranges, Last-Modified and If-Range like a real
-# host. Change state$body / state$modified to change the file; state$ranges records Range headers.
-state <- new.env()
+# host. The server runs in a separate R process (callr): in this process it would only answer while
+# R's event loop runs, which a blocking download does not do on Linux. The test and the server
+# share a folder: body.bin and modified.txt are the served file, ranges.txt logs each Range header.
+shared <- tempfile("dataeuropa-server")
+dir.create(shared)
+
+set_file <- function(body = NULL, modified = NULL) {
+  if (!is.null(body)) writeBin(body, file.path(shared, "body.bin"))
+  if (!is.null(modified)) writeLines(modified, file.path(shared, "modified.txt"))
+}
+served <- function() list(body = readBin(file.path(shared, "body.bin"), "raw", 1e6),
+                          modified = readLines(file.path(shared, "modified.txt")))
+ranges <- function() {
+  f <- file.path(shared, "ranges.txt")
+  if (!file.exists(f)) return(list())
+  lapply(readLines(f), function(r) if (r == "NONE") NULL else r)
+}
 reset_state <- function() {
-  state$body <- as.raw(rep(0:255, 40))
-  state$modified <- "Thu, 11 Sep 2025 12:19:52 GMT"
-  state$ranges <- list()
+  unlink(file.path(shared, "ranges.txt"))
+  set_file(as.raw(rep(0:255, 40)), "Thu, 11 Sep 2025 12:19:52 GMT")
 }
-header_value <- function(headers, name) {
-  lines <- strsplit(rawToChar(headers), "\r?\n")[[1]]
-  hit <- lines[startsWith(tolower(lines), paste0(tolower(name), ":"))]
-  if (length(hit)) trimws(sub("^[^:]*:", "", hit[1])) else NULL
-}
-serve_file <- function(path, query, body, headers) {
-  rng <- header_value(headers, "Range")
-  ifr <- header_value(headers, "If-Range")
-  state$ranges <- c(state$ranges, list(rng))
-  b <- state$body
-  if (!is.null(rng) && (is.null(ifr) || ifr == state$modified)) {
-    start <- as.numeric(sub("-$", "", sub("^bytes=", "", rng)))
-    if (start >= length(b))
-      return(list(payload = raw(), "content-type" = "application/octet-stream",
-                  headers = paste0("Content-Range: bytes */", length(b)), "status code" = 416L))
-    return(list(payload = b[(start + 1):length(b)], "content-type" = "application/octet-stream",
-                headers = c(sprintf("Content-Range: bytes %d-%d/%d", start, length(b) - 1, length(b)),
-                            paste("Last-Modified:", state$modified)),
-                "status code" = 206L))
+reset_state()
+
+server <- callr::r_bg(function(shared) {
+  header_value <- function(headers, name) {
+    lines <- strsplit(rawToChar(headers), "\r?\n")[[1]]
+    hit <- lines[startsWith(tolower(lines), paste0(tolower(name), ":"))]
+    if (length(hit)) trimws(sub("^[^:]*:", "", hit[1])) else NULL
   }
-  list(payload = b, "content-type" = "application/octet-stream",
-       headers = paste("Last-Modified:", state$modified), "status code" = 200L)
+  serve_file <- function(path, query, body, headers) {
+    b <- readBin(file.path(shared, "body.bin"), "raw", 1e6)
+    modified <- readLines(file.path(shared, "modified.txt"))
+    rng <- header_value(headers, "Range")
+    ifr <- header_value(headers, "If-Range")
+    cat(if (is.null(rng)) "NONE" else rng, "\n", sep = "", file = file.path(shared, "ranges.txt"), append = TRUE)
+    if (!is.null(rng) && (is.null(ifr) || ifr == modified)) {
+      start <- as.numeric(sub("-$", "", sub("^bytes=", "", rng)))
+      if (start >= length(b))
+        return(list(payload = raw(), "content-type" = "application/octet-stream",
+                    headers = paste0("Content-Range: bytes */", length(b)), "status code" = 416L))
+      return(list(payload = b[(start + 1):length(b)], "content-type" = "application/octet-stream",
+                  headers = c(sprintf("Content-Range: bytes %d-%d/%d", start, length(b) - 1, length(b)),
+                              paste("Last-Modified:", modified)),
+                  "status code" = 206L))
+    }
+    list(payload = b, "content-type" = "application/octet-stream",
+         headers = paste("Last-Modified:", modified), "status code" = 200L)
+  }
+  assign("dataeuropa-test", serve_file, envir = get(".httpd.handlers.env", asNamespace("tools")))
+  port <- suppressMessages(tools::startDynamicHelp(NA))
+  writeLines(as.character(port), file.path(shared, "port.txt"))
+  repeat Sys.sleep(0.05)   # keep the process, and with it the server, alive
+}, args = list(shared = shared))
+withr::defer(server$kill(), envir = testthat::teardown_env())
+
+port <- 0L
+for (i in 1:100) {   # wait up to 10 s for the server to start
+  if (file.exists(file.path(shared, "port.txt"))) { port <- as.integer(readLines(file.path(shared, "port.txt"))); break }
+  if (!server$is_alive()) break
+  Sys.sleep(0.1)
 }
-port <- tryCatch(suppressMessages(tools::startDynamicHelp(NA)), error = function(e) 0L)
-if (port > 0) assign("dataeuropa-test", serve_file, envir = get(".httpd.handlers.env", asNamespace("tools")))
 url <- sprintf("http://127.0.0.1:%d/custom/dataeuropa-test/data.bin", port)
 
 # Leave the first `n` bytes as a partial download, as an interrupted call would.
 interrupted <- function(folder, n, from = url) {
-  writeBin(state$body[seq_len(n)], file.path(folder, "data.bin.part"))
-  writeLines(jsonlite::toJSON(list(url = from, validator = state$modified), auto_unbox = TRUE),
+  writeBin(served()$body[seq_len(n)], file.path(folder, "data.bin.part"))
+  writeLines(jsonlite::toJSON(list(url = from, validator = served()$modified), auto_unbox = TRUE),
              file.path(folder, "data.bin.part.json"))
 }
 
 test_that("downloads leave no partial files", {
   skip_if(port == 0, "no local HTTP server")
   reset_state(); tmp <- withr::local_tempdir()
-  expect_equal(readBin(de_download(url, tmp), "raw", 1e5), state$body)
+  expect_equal(readBin(de_download(url, tmp), "raw", 1e5), served()$body)
   expect_equal(list.files(tmp, all.files = TRUE, no.. = TRUE), "data.bin")
 })
 
 test_that("an interrupted download resumes", {
   skip_if(port == 0, "no local HTTP server")
   reset_state(); tmp <- withr::local_tempdir(); interrupted(tmp, 1000)
-  expect_equal(readBin(de_download(url, tmp), "raw", 1e5), state$body)
-  expect_equal(state$ranges, list("bytes=1000-"))
+  expect_equal(readBin(de_download(url, tmp), "raw", 1e5), served()$body)
+  expect_equal(ranges(), list("bytes=1000-"))
   expect_equal(list.files(tmp, all.files = TRUE, no.. = TRUE), "data.bin")
 })
 
 test_that("a file that changed meanwhile is downloaded again", {
   skip_if(port == 0, "no local HTTP server")
   reset_state(); tmp <- withr::local_tempdir(); interrupted(tmp, 1000)
-  state$modified <- "Fri, 12 Sep 2025 08:00:00 GMT"
-  state$body <- charToRaw(strrep("new content", 100))
-  expect_equal(readBin(de_download(url, tmp), "raw", 1e5), state$body)
+  set_file(charToRaw(strrep("new content", 100)), "Fri, 12 Sep 2025 08:00:00 GMT")
+  expect_equal(readBin(de_download(url, tmp), "raw", 1e5), served()$body)
 })
 
 test_that("a partial file longer than the file starts again", {
   skip_if(port == 0, "no local HTTP server")
   reset_state(); tmp <- withr::local_tempdir(); interrupted(tmp, 1000)
-  state$body <- state$body[1:500]
-  expect_equal(readBin(de_download(url, tmp), "raw", 1e5), state$body)
-  expect_equal(state$ranges, list("bytes=1000-", NULL))
+  set_file(served()$body[1:500])
+  expect_equal(readBin(de_download(url, tmp), "raw", 1e5), served()$body)
+  expect_equal(ranges(), list("bytes=1000-", NULL))
 })
 
 test_that("resume = FALSE and a partial file of another URL start from the start", {
   skip_if(port == 0, "no local HTTP server")
   reset_state(); tmp <- withr::local_tempdir(); interrupted(tmp, 1000)
-  expect_equal(readBin(de_download(url, tmp, resume = FALSE), "raw", 1e5), state$body)
+  expect_equal(readBin(de_download(url, tmp, resume = FALSE), "raw", 1e5), served()$body)
   interrupted(tmp, 1000, from = "http://elsewhere.example/data.bin")
-  expect_equal(readBin(de_download(url, file.path(tmp, "data.bin")), "raw", 1e5), state$body)
-  expect_equal(state$ranges, list(NULL, NULL))
+  expect_equal(readBin(de_download(url, file.path(tmp, "data.bin")), "raw", 1e5), served()$body)
+  expect_equal(ranges(), list(NULL, NULL))
 })
 
 test_that("live resume, checked by SHA-1", {
