@@ -6,3 +6,5 @@ __pycache__/
 julia/Manifest.toml
 .DS_Store
 CLAUDE.md
+julia/docs/Manifest.toml
+julia/docs/build/

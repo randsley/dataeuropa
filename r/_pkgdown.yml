@@ -1,0 +1,41 @@
+url: https://randsley.github.io/dataeuropa/r/
+
+template:
+  bootstrap: 5
+  light-switch: true
+
+navbar:
+  structure:
+    left: [intro, reference, articles]
+    right: [search, all-languages, github, lightswitch]
+  components:
+    all-languages:
+      text: All languages
+      href: https://randsley.github.io/dataeuropa/
+    github:
+      icon: fa-github
+      href: https://github.com/randsley/dataeuropa
+      aria-label: GitHub
+
+reference:
+  - title: Search
+    contents:
+      - de_search_datasets
+      - de_search
+      - de_fetch_datasets
+      - de_count
+      - de_facet_values
+  - title: Datasets and files
+    contents:
+      - de_get_dataset
+      - de_distributions
+      - de_download
+      - de_catalogues
+  - title: Linked data
+    contents:
+      - de_get_rdf
+      - de_sparql
+  - title: Helpers
+    contents:
+      - de_pick_lang
+      - dataeuropa-package

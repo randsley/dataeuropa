@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>dataeuropa</title>
+<meta name="description" content="Python, Julia and R clients for data.europa.eu, the European open data portal.">
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1c2024; --muted: #5b6470; --line: #e2e5e9;
+    --card: #f6f7f9; --accent: #1f4fa3; --code: #f1f3f6;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #14171b; --fg: #e6e8eb; --muted: #9aa3ad; --line: #2a2f36;
+            --card: #1b1f24; --accent: #8fb3ff; --code: #1f242a; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg);
+         font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 860px; margin: 0 auto; padding: 48px 16px 64px; }
+  h1 { font-size: 2rem; margin: 0 0 8px; }
+  h2 { font-size: 1.2rem; margin: 40px 0 12px; }
+  p.lead { color: var(--muted); margin: 0 0 32px; font-size: 1.1rem; }
+  a { color: var(--accent); }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+  .card { display: block; padding: 16px; border: 1px solid var(--line); border-radius: 8px;
+          background: var(--card); text-decoration: none; color: var(--fg); }
+  .card:hover { border-color: var(--accent); }
+  .card strong { display: block; color: var(--accent); margin-bottom: 4px; }
+  .card span { color: var(--muted); font-size: .92rem; }
+  .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); }
+  .tabs button { font: inherit; padding: 6px 14px; border: 1px solid transparent; border-bottom: none;
+                 background: none; color: var(--muted); cursor: pointer; border-radius: 6px 6px 0 0; }
+  .tabs button[aria-selected="true"] { color: var(--fg); border-color: var(--line); background: var(--code); }
+  pre { margin: 0; padding: 14px 16px; background: var(--code); border: 1px solid var(--line);
+        border-top: none; border-radius: 0 0 6px 6px; overflow-x: auto; font-size: .88rem; }
+  code { font-family: ui-monospace, "Cascadia Code", Menlo, Consolas, monospace; }
+  table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; }
+  .scroll { overflow-x: auto; }
+  footer { margin-top: 48px; color: var(--muted); font-size: .9rem; }
+</style>
+</head>
+<body>
+<main>
+  <h1>dataeuropa</h1>
+  <p class="lead">Python, Julia and R clients for <a href="https://data.europa.eu">data.europa.eu</a>,
+  the European open data portal: about 1.9 million dataset records from EU institutions and
+  national and regional portals. Same verbs, same behaviour in all three languages. No API key needed.</p>
+
+  <div class="cards">
+    <a class="card" href="python/"><strong>Python</strong><span>dataeuropa · requests, optional pandas</span></a>
+    <a class="card" href="julia/"><strong>Julia</strong><span>DataEuropa.jl · HTTP, JSON3, DataFrames</span></a>
+    <a class="card" href="r/"><strong>R</strong><span>dataeuropa · httr2, jsonlite, base data frames</span></a>
+  </div>
+
+  <h2>Search, then download</h2>
+  <div class="tabs" role="tablist">
+    <button role="tab" aria-selected="true" data-lang="python">Python</button>
+    <button role="tab" aria-selected="false" data-lang="julia">Julia</button>
+    <button role="tab" aria-selected="false" data-lang="r">R</button>
+  </div>
+  <pre data-lang="python"><code>import dataeuropa as de
+
+df = de.search_datasets("water quality", country="pt", format="CSV", limit=5)
+dist = de.distributions(df.id[0])
+de.download(dist.iloc[0], "data/")</code></pre>
+  <pre data-lang="julia" hidden><code>using DataEuropa
+
+df = search_datasets("water quality"; country="pt", format="CSV", limit=5)
+dist = distributions(df.id[1])
+download_distribution(dist[1, :], "data/")</code></pre>
+  <pre data-lang="r" hidden><code>library(dataeuropa)
+
+df &lt;- de_search_datasets("water quality", country = "pt", format = "CSV", limit = 5)
+dist &lt;- de_distributions(df$id[1])
+de_download(dist[1, ], "data/")</code></pre>
+
+  <h2>Install</h2>
+  <div class="tabs" role="tablist">
+    <button role="tab" aria-selected="true" data-lang="python">Python</button>
+    <button role="tab" aria-selected="false" data-lang="julia">Julia</button>
+    <button role="tab" aria-selected="false" data-lang="r">R</button>
+  </div>
+  <pre data-lang="python"><code>pip install "dataeuropa[pandas] @ git+https://github.com/randsley/dataeuropa#subdirectory=python"</code></pre>
+  <pre data-lang="julia" hidden><code>using Pkg
+Pkg.add(url="https://github.com/randsley/dataeuropa", subdir="julia")</code></pre>
+  <pre data-lang="r" hidden><code>remotes::install_github("randsley/dataeuropa", subdir = "r")</code></pre>
+
+  <h2>Same verbs in each language</h2>
+  <div class="scroll">
+  <table>
+    <tr><th>Task</th><th>Python</th><th>Julia</th><th>R</th></tr>
+    <tr><td>Search to table</td><td><code>search_datasets</code></td><td><code>search_datasets</code></td><td><code>de_search_datasets</code></td></tr>
+    <tr><td>Raw Search API result</td><td><code>search</code></td><td><code>search</code></td><td><code>de_search</code></td></tr>
+    <tr><td>Bulk retrieval (scroll)</td><td><code>fetch_datasets</code></td><td><code>fetch_datasets</code></td><td><code>de_fetch_datasets</code></td></tr>
+    <tr><td>One dataset</td><td><code>get_dataset</code></td><td><code>get_dataset</code></td><td><code>de_get_dataset</code></td></tr>
+    <tr><td>Files and services</td><td><code>distributions</code></td><td><code>distributions</code></td><td><code>de_distributions</code></td></tr>
+    <tr><td>Download a file</td><td><code>download</code></td><td><code>download_distribution</code></td><td><code>de_download</code></td></tr>
+    <tr><td>Facet values and counts</td><td><code>facet_values</code></td><td><code>facet_values</code></td><td><code>de_facet_values</code></td></tr>
+    <tr><td>Hit count only</td><td><code>count</code></td><td><code>count_datasets</code></td><td><code>de_count</code></td></tr>
+    <tr><td>Harvested catalogues</td><td><code>catalogues</code></td><td><code>catalogues</code></td><td><code>de_catalogues</code></td></tr>
+    <tr><td>Dataset as RDF</td><td><code>get_rdf</code></td><td><code>get_rdf</code></td><td><code>de_get_rdf</code></td></tr>
+    <tr><td>SPARQL</td><td><code>sparql</code></td><td><code>sparql</code></td><td><code>de_sparql</code></td></tr>
+  </table>
+  </div>
+
+  <footer>
+    Source, issues and roadmap on <a href="https://github.com/randsley/dataeuropa">GitHub</a>. MIT licence.
+    Not affiliated with the Publications Office of the European Union.
+  </footer>
+</main>
+<script>
+  // One language choice drives every tab group on the page; remembered per viewer.
+  function show(lang) {
+    document.querySelectorAll(".tabs button").forEach(b =>
+      b.setAttribute("aria-selected", String(b.dataset.lang === lang)));
+    document.querySelectorAll("pre[data-lang]").forEach(p => { p.hidden = p.dataset.lang !== lang; });
+    try { localStorage.setItem("dataeuropa-lang", lang); } catch (e) {}
+  }
+  document.querySelectorAll(".tabs button").forEach(b => b.addEventListener("click", () => show(b.dataset.lang)));
+  let saved = null;
+  try { saved = localStorage.getItem("dataeuropa-lang"); } catch (e) {}
+  if (saved) show(saved);
+</script>
+</body>
+</html>
