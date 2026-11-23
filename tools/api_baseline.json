@@ -1,0 +1,56 @@
+{
+ "spec_version": "5.3.13",
+ "params": {
+  "/search": [
+   "accessControlPermissions",
+   "aggregation",
+   "aggregationAllFields",
+   "aggregationFields",
+   "autocomplete",
+   "bboxMaxLat",
+   "bboxMaxLon",
+   "bboxMinLat",
+   "bboxMinLon",
+   "boost",
+   "countOnly",
+   "countryData",
+   "dataServices",
+   "dateType",
+   "facetGroupOperator",
+   "facetOperator",
+   "facets",
+   "fields",
+   "filter",
+   "filterDistributions",
+   "filters",
+   "globalAggregation",
+   "includeChildren",
+   "includes",
+   "limit",
+   "maxDate",
+   "maxScoring",
+   "minDate",
+   "minScoring",
+   "page",
+   "pitId",
+   "q",
+   "resource",
+   "scroll",
+   "searchAfter",
+   "searchAfterSort",
+   "showScore",
+   "sort",
+   "superCatalogue",
+   "vocabulary"
+  ],
+  "/scroll": [
+   "scrollId"
+  ],
+  "/datasets/{id}": [
+   "id"
+  ],
+  "/catalogues": [
+   "alias"
+  ]
+ }
+}
