@@ -72,6 +72,12 @@ end
         roads = load_geodata("$oapif/collections/roads/items?f=json"; layer=1, crs="EPSG:3035")
         @test nrow(roads) == 2 && DE._geo_summary(roads)["crs"] == 3035
         @test nrow(load_geodata((url=oapif, format="OGCFEAT"); layer="roads")) == 2
+        # The collection description stays whole JSON, on both read paths (GeoDataFrames alone
+        # drops it with a warning, or cuts it at the first "=").
+        for kw in ((; max_features=nothing), (; max_features=7))
+            t = @test_logs min_level=Base.CoreLogging.Info load_geodata("$oapif/collections/places?f=json"; kw...) # no warnings
+            @test DE.JSON3.read(metadata(t, "json:metadata")).id == "places"
+        end
 
         limited = @test_logs (:warn, r"more than 4 features; read the first 4") match_mode=:any load_geodata(
             "$oapif/collections/places"; max_features=4)

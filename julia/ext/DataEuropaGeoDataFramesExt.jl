@@ -6,8 +6,26 @@ const AG = GeoDataFrames.AG
 const GI = GeoDataFrames.GeoInterface
 const GFT = GeoDataFrames.GFT
 
-# Layer names, and each layer's FID column when it is not also a field ("fid" in GeoPackages;
-# GeoJSON reports an "id" property as FID column but it stays a field). "" if none.
+# A layer's GDAL metadata as table metadata: items of the default domain as top-level keys, other
+# domains as a Dict. Domains named "json:..." or "xml:..." hold one document, kept whole as a string
+# (GeoDataFrames splits those at their first "=" too, which mangles them; for an OGC API layer,
+# "json:metadata" is the collection's JSON description).
+function _layer_metadata(layer)
+    md = Dict{String,Any}()
+    for domain in something(AG.GDAL.gdalgetmetadatadomainlist(layer.ptr), String[])
+        items = something(AG.GDAL.gdalgetmetadata(layer.ptr, domain), String[])
+        if startswith(domain, "json:") || startswith(domain, "xml:")
+            isempty(items) || (md[domain] = first(items))
+            continue
+        end
+        kv = Dict(String(k) => String(v) for (k, v) in (split(s, '='; limit=2) for s in items) if !isempty(v))
+        domain == "" ? merge!(md, kv) : (md[domain] = kv)
+    end
+    return md
+end
+
+# Each layer's name, FID column when it is not also a field ("fid" in GeoPackages; GeoJSON reports
+# an "id" property as FID column but it stays a field; "" if none), and metadata.
 function _layers(src)
     return AG.read(src) do ds
         map(0:AG.nlayer(ds)-1) do i
@@ -15,7 +33,7 @@ function _layers(src)
             fid = AG.GDAL.ogr_l_getfidcolumn(layer.ptr)
             defn = AG.layerdefn(layer)
             fields = [AG.getname(AG.getfielddefn(defn, j)) for j in 0:AG.nfield(defn)-1]
-            (AG.getname(layer), fid in fields ? "" : fid)
+            (AG.getname(layer), fid in fields ? "" : fid, _layer_metadata(layer))
         end
     end
 end
@@ -85,7 +103,7 @@ function DataEuropa._read_source(src, layer=nothing, crs=nothing; max_features=n
         throw(ArgumentError("cannot read $what as geodata: $(sprint(showerror, e))"))
     end
     name = DataEuropa._pick_layer(first.(layers), layer)
-    fid = last(layers[findfirst(l -> first(l) == name, layers)])
+    _, fid, layer_md = layers[findfirst(l -> first(l) == name, layers)]
     df = try
         if max_features === nothing
             CL.with_logger(_QuietMetadata(CL.current_logger())) do
@@ -106,6 +124,11 @@ function DataEuropa._read_source(src, layer=nothing, crs=nothing; max_features=n
     gcols = metadata(df, "geometrycolumns", ())
     (isempty(gcols) || !(String(first(gcols)) in names(df))) &&
         throw(ArgumentError("$what has no geometries (a plain table?); use load_distribution"))
+    # The layer metadata straight from GDAL, for both read paths (the SQL path has none, and
+    # GeoDataFrames.read mangles json: and xml: domains).
+    for (key, value) in layer_md
+        key in ("crs", "geometrycolumns") || metadata!(df, key, value; style=:default)
+    end
     # Like Python and R: the FID column is not an attribute, and the geometry column is `geometry`.
     !isempty(fid) && fid in names(df) && select!(df, Not(fid))
     if first(gcols) != :geometry
