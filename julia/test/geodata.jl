@@ -62,6 +62,13 @@ for _ in 1:240   # wait up to 2 minutes for Julia to start and load HTTP
     end
 end
 
+@testset "picking layers" begin
+    wfs = ["ns:roads", "ns:Rivers", "other:rivers"]
+    @test DE._pick_layer(wfs, "roads") == "ns:roads" && DE._pick_layer(wfs, "NS:ROADS") == "ns:roads"
+    @test_throws "no layer \"rivers\"; the service has" DE._pick_layer(wfs, "rivers", "the service")
+    @test (@test_logs (:info, r"the service has 3 layers") DE._pick_layer(wfs, nothing, "the service")) == "ns:roads"
+end
+
 @testset "feature services" begin
     @test oapif_ready
     if oapif_ready

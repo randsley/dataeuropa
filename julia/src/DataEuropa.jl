@@ -873,24 +873,28 @@ function _geo_member(names, layer=nothing)
     throw(ArgumentError("the archive holds $(length(cands)) geodata files ($(join(cands, ", "))); pick one with layer="))
 end
 
-# The layer to read: `layer` by name (exact, else ignoring case) or 1-based position; by default
-# the first, with a note if there are more.
-function _pick_layer(layers, layer=nothing)
-    isempty(layers) && throw(ArgumentError("the file holds no layers"))
+# The layer to read: `layer` by name (exact, else ignoring case, else once without a namespace
+# prefix, as in WFS names: "roads" for "ns:roads") or 1-based position; by default the first,
+# with a note if there are more. `what` names the source in messages.
+function _pick_layer(layers, layer=nothing, what="the file")
+    isempty(layers) && throw(ArgumentError("$what holds no layers"))
     all = join(layers, ", ")
     if layer === nothing
         length(layers) > 1 &&
-            @info "the file has $(length(layers)) layers ($all); reading $(repr(first(layers))), pick another with layer="
+            @info "$what has $(length(layers)) layers ($all); reading $(repr(first(layers))), pick another with layer="
         return first(layers)
     end
     if layer isa Integer
         1 <= layer <= length(layers) && return layers[layer]
-        throw(ArgumentError("layer $layer is out of range: the file has $(length(layers)) layers ($all)"))
+        throw(ArgumentError("layer $layer is out of range: $what has $(length(layers)) layers ($all)"))
     end
     String(layer) in layers && return String(layer)
-    hits = [n for n in layers if lowercase(n) == lowercase(String(layer))]
-    length(hits) == 1 && return hits[1]
-    throw(ArgumentError("no layer $(repr(String(layer))); the file has $all"))
+    want = lowercase(String(layer))
+    for hits in ([n for n in layers if lowercase(n) == want],
+                 [n for n in layers if last(split(lowercase(n), ':')) == want])   # without a namespace prefix
+        length(hits) == 1 && return hits[1]
+    end
+    throw(ArgumentError("no layer $(repr(String(layer))); $what has $all"))
 end
 
 # 2D geometry type names, as GEOS and the Python reference spell them.

@@ -60,6 +60,15 @@ test_that("large files, services and pages are refused", {
   expect_error(de_load_geodata(list(url = "https://example.org/map", format = "HTML")), "web page")
 })
 
+test_that("layers are picked by name, case or without a namespace prefix", {
+  pick <- dataeuropa:::de_pick_layer
+  wfs <- c("ns:roads", "ns:Rivers", "other:rivers")
+  expect_equal(pick(wfs, "roads"), "ns:roads")
+  expect_equal(pick(wfs, "NS:ROADS"), "ns:roads")
+  expect_error(pick(wfs, "rivers", "the service"), "no layer 'rivers'; the service has", fixed = TRUE)
+  expect_message(expect_equal(pick(wfs, what = "the service"), "ns:roads"), "the service has 3 layers")
+})
+
 # ---------------------------------------------------------------- feature services
 
 # A minimal OGC API Features server, as fixtures/README.md describes: the collections in

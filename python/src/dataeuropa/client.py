@@ -917,28 +917,31 @@ def _service_source(fmt: str | None = None, url: str | None = None) -> str | Non
     return f"WFS:{u}" if key in _WFS_FORMATS else None
 
 
-def _pick_layer(layers: list[str], layer: str | int | None = None) -> str:
-    """The layer to read: ``layer`` by name (exact, else ignoring case) or 0-based position;
-    by default the first, with a warning if there are more."""
+def _pick_layer(layers: list[str], layer: str | int | None = None, what: str = "the file") -> str:
+    """The layer to read: ``layer`` by name or 0-based position; by default the first, with a
+    warning if there are more. A name matches exactly, else ignoring case, else (once) the part
+    after a namespace prefix, as in WFS layer names (``"roads"`` for ``"ns:roads"``)."""
     import warnings
 
     if not layers:
-        raise ValueError("the file holds no layers")
+        raise ValueError(f"{what} holds no layers")
     if layer is None:
         if len(layers) > 1:
-            warnings.warn(f"the file has {len(layers)} layers ({', '.join(layers)}); reading {layers[0]!r}, "
+            warnings.warn(f"{what} has {len(layers)} layers ({', '.join(layers)}); reading {layers[0]!r}, "
                           f"pick another with layer=", stacklevel=3)
         return layers[0]
     if isinstance(layer, int) and not isinstance(layer, bool):
         if 0 <= layer < len(layers):
             return layers[layer]
-        raise ValueError(f"layer {layer} is out of range: the file has {len(layers)} layers ({', '.join(layers)})")
+        raise ValueError(f"layer {layer} is out of range: {what} has {len(layers)} layers ({', '.join(layers)})")
     if layer in layers:
         return layer
-    hits = [n for n in layers if n.lower() == str(layer).lower()]
-    if len(hits) == 1:
-        return hits[0]
-    raise ValueError(f"no layer {layer!r}; the file has {', '.join(layers)}")
+    want = str(layer).lower()
+    for hits in ([n for n in layers if n.lower() == want],
+                 [n for n in layers if n.lower().rpartition(":")[2] == want]):
+        if len(hits) == 1:
+            return hits[0]
+    raise ValueError(f"no layer {layer!r}; {what} has {', '.join(layers)}")
 
 
 def _read_geodata(path: str | os.PathLike, layer: str | int | None = None, crs: Any = None):
@@ -979,7 +982,7 @@ def _read_source(src: str, layer: str | int | None = None, crs: Any = None, max_
         layers = [str(entry[0]) for entry in pyogrio.list_layers(src)]
     except Exception as e:  # pyogrio raises its own DataSourceError
         raise ValueError(f"cannot read {what} as geodata: {e}") from None
-    name = _pick_layer(layers, layer)
+    name = _pick_layer(layers, layer, what)
     extra = {} if max_features is None else {"max_features": max_features + 1}
     try:
         with warnings.catch_warnings():

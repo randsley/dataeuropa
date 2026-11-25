@@ -116,6 +116,16 @@ def oapif():
     proc.kill()
 
 
+def test_pick_layer():
+    pick = de.client._pick_layer
+    wfs = ["ns:roads", "ns:Rivers", "other:rivers"]
+    assert pick(wfs, "roads") == "ns:roads" and pick(wfs, "NS:ROADS") == "ns:roads"
+    with pytest.raises(ValueError, match="no layer 'rivers'; the service has"):  # two without a prefix
+        pick(wfs, "rivers", "the service")
+    with pytest.warns(UserWarning, match="the service has 3 layers"):
+        assert pick(wfs, what="the service") == "ns:roads"
+
+
 def test_ogc_api_features(oapif):
     gdf = de.load_geodata({"url": f"{oapif}/collections/places", "format": "OGCFEAT"})
     assert len(gdf) == 7 and list(gdf["name"])[:2] == ["P1", "P2"] and gdf.crs.to_epsg() == 4326

@@ -853,25 +853,29 @@ de_service_source <- function(fmt = NULL, url = NULL) {
   if (key %in% .wfs_formats) paste0("WFS:", u) else NA_character_
 }
 
-# The layer to read: `layer` by name (exact, else ignoring case) or 1-based position; by default
+# The layer to read: `layer` by name (exact, else ignoring case, else once without a namespace
+# prefix, as in WFS names: "roads" for "ns:roads") or 1-based position; by default
 # the first, with a message if there are more.
-de_pick_layer <- function(layers, layer = NULL) {
-  if (!length(layers)) stop("the file holds no layers", call. = FALSE)
+de_pick_layer <- function(layers, layer = NULL, what = "the file") {
+  if (!length(layers)) stop(what, " holds no layers", call. = FALSE)
   all <- paste(layers, collapse = ", ")
   if (is.null(layer)) {
     if (length(layers) > 1)
-      message("the file has ", length(layers), " layers (", all, "); reading '", layers[1],
+      message(what, " has ", length(layers), " layers (", all, "); reading '", layers[1],
               "', pick another with layer =")
     return(layers[1])
   }
   if (is.numeric(layer)) {
     if (length(layer) == 1 && layer == round(layer) && layer >= 1 && layer <= length(layers)) return(layers[layer])
-    stop("layer ", layer, " is out of range: the file has ", length(layers), " layers (", all, ")", call. = FALSE)
+    stop("layer ", layer, " is out of range: ", what, " has ", length(layers), " layers (", all, ")", call. = FALSE)
   }
   if (layer %in% layers) return(layer)
-  hits <- layers[tolower(layers) == tolower(layer)]
+  want <- tolower(layer)
+  hits <- layers[tolower(layers) == want]
   if (length(hits) == 1) return(hits)
-  stop("no layer '", layer, "'; the file has ", all, call. = FALSE)
+  hits <- layers[sub("^.*:", "", tolower(layers)) == want]   # without a namespace prefix ("ns:roads")
+  if (length(hits) == 1) return(hits)
+  stop("no layer '", layer, "'; ", what, " has ", all, call. = FALSE)
 }
 
 # Read a local geodata file (or a ZIP holding one) into an sf data frame.
@@ -896,7 +900,7 @@ de_read_geodata <- function(path, layer = NULL, crs = NULL) {
 de_read_source <- function(src, layer = NULL, crs = NULL, max_features = NULL, what = "the file") {
   layers <- tryCatch(suppressWarnings(sf::st_layers(src)$name),
                      error = function(e) stop("cannot read ", what, " as geodata: ", conditionMessage(e), call. = FALSE))
-  name <- de_pick_layer(layers, layer)
+  name <- de_pick_layer(layers, layer, what)
   quiet_read <- function(...) withCallingHandlers(
     sf::st_read(src, ..., quiet = TRUE, stringsAsFactors = FALSE),
     warning = function(w) if (grepl("no simple feature geometries", conditionMessage(w))) invokeRestart("muffleWarning"))

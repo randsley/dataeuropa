@@ -102,7 +102,7 @@ function DataEuropa._read_source(src, layer=nothing, crs=nothing; max_features=n
     catch e
         throw(ArgumentError("cannot read $what as geodata: $(sprint(showerror, e))"))
     end
-    name = DataEuropa._pick_layer(first.(layers), layer)
+    name = DataEuropa._pick_layer(first.(layers), layer, what)
     _, fid, layer_md = layers[findfirst(l -> first(l) == name, layers)]
     df = try
         if max_features === nothing
