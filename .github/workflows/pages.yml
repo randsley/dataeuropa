@@ -72,16 +72,11 @@ jobs:
           name: docs-r
           path: out/r
 
-  deploy:
+  # Assemble the three sites and the landing page into the Pages artifact.
+  site:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     needs: [python, julia, r]
     runs-on: ubuntu-latest
-    permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
@@ -97,9 +92,22 @@ jobs:
           name: docs-r
           path: site/r
       - run: cp pages/index.html site/index.html && touch site/.nojekyll
-      - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site
+
+  # A separate job, as GitHub recommends: deploy-pages run in the same job as the upload sometimes
+  # did not yet see the new artifact ("No artifacts named github-pages were found").
+  deploy:
+    needs: site
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/configure-pages@v5
       - id: deployment
         uses: actions/deploy-pages@v4
