@@ -29,10 +29,10 @@ Suggested order: phase 1, then `load_distribution` and caching from phase 2, the
 - [ ] Dump support: one-off converter from the full metadata dump to Parquet or DuckDB (see `metadata-dump.md`); keep it an optional helper, not a core dependency.
 
 ## 4. Make it adoptable
-- [ ] Docs sites (mkdocs, Documenter.jl, pkgdown) with the same worked examples in all three languages; notebooks as examples. Sites live at https://randsley.github.io/dataeuropa/ (home, getting started, reference); worked examples and notebooks still to do.
+- [ ] Docs sites (mkdocs, Documenter.jl, pkgdown) with the same worked examples in all three languages; notebooks as examples. Sites live at https://randsley.github.io/dataeuropa/ (home, getting started, worked examples, reference); notebooks still to do.
 - [ ] Releases: PyPI, Julia General registry, r-universe first, CRAN later.
 - [x] Full MIT licence text, recognised by GitHub, with a copy in each package folder.
-- [ ] CHANGELOG, `CITATION.cff`, Zenodo DOI.
+- [ ] CHANGELOG, `CITATION.cff`, Zenodo DOI. CHANGELOG and `CITATION.cff` done; the DOI comes with the first GitHub release (Zenodo's GitHub integration).
 - [x] Replace the placeholder email in `r/DESCRIPTION` before any CRAN submission.
 - [ ] Announce: Julia Discourse, rOpenSci, the portal's own community.
 

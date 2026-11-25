@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+type: software
+title: "dataeuropa: Python, Julia and R clients for the data.europa.eu open data portal"
+abstract: >-
+  Three equivalent clients (Python, Julia and R) for data.europa.eu, the official portal for
+  European open data. They search the portal's datasets, list and download their files with
+  checksum checks, read tables and geodata (including WFS and OGC API Features services) into
+  data frames, and query the portal's SPARQL endpoint.
+authors:
+  - given-names: Nigel
+    family-names: Randsley
+    email: nigel.randsley@protonmail.com
+version: 0.1.0
+license: MIT
+repository-code: "https://github.com/randsley/dataeuropa"
+url: "https://randsley.github.io/dataeuropa/"
+keywords:
+  - open data
+  - data.europa.eu
+  - European data portal
+  - DCAT-AP
+  - SPARQL
+  - geodata
+  - Python
+  - Julia
+  - R

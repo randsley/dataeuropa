@@ -17,6 +17,13 @@ navbar:
       href: https://github.com/randsley/dataeuropa
       aria-label: GitHub
 
+articles:
+  - title: Guides
+    navbar: ~
+    contents:
+      - articles/getting-started
+      - articles/examples
+
 reference:
   - title: Search
     contents:

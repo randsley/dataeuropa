@@ -4,6 +4,8 @@
 import dataeuropa as de
 ```
 
+For complete tasks from search to result, see the [worked examples](examples.md).
+
 ## Search
 
 `search_datasets` returns one row per dataset, with the title and description in your chosen

@@ -6,6 +6,8 @@ Description: Search, retrieve and download open data from the European data
     portal <https://data.europa.eu> through its Search API, Registry API and
     SPARQL endpoint. Returns data frames of datasets, distributions and facets.
 License: MIT + file LICENSE
+URL: https://github.com/randsley/dataeuropa, https://randsley.github.io/dataeuropa/r/
+BugReports: https://github.com/randsley/dataeuropa/issues
 Encoding: UTF-8
 Depends: R (>= 4.1.0)
 Imports: httr2 (>= 1.1.0), jsonlite, openssl

@@ -20,6 +20,7 @@ theme:
 nav:
   - Home: index.md
   - Getting started: getting-started.md
+  - Worked examples: examples.md
   - Reference: reference.md
   - All languages: https://randsley.github.io/dataeuropa/
 

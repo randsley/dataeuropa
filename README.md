@@ -3,7 +3,7 @@
 [![CI](https://github.com/randsley/dataeuropa/actions/workflows/ci.yml/badge.svg?branch=main&event=push)](https://github.com/randsley/dataeuropa/actions/workflows/ci.yml)
 [![Docs](https://github.com/randsley/dataeuropa/actions/workflows/pages.yml/badge.svg?branch=main&event=push)](https://randsley.github.io/dataeuropa/)
 
-**Documentation:** https://randsley.github.io/dataeuropa/ ([Python](https://randsley.github.io/dataeuropa/python/) · [Julia](https://randsley.github.io/dataeuropa/julia/) · [R](https://randsley.github.io/dataeuropa/r/))
+**Documentation:** https://randsley.github.io/dataeuropa/ ([Python](https://randsley.github.io/dataeuropa/python/) · [Julia](https://randsley.github.io/dataeuropa/julia/) · [R](https://randsley.github.io/dataeuropa/r/)). Worked examples: [Python](https://randsley.github.io/dataeuropa/python/examples/) · [Julia](https://randsley.github.io/dataeuropa/julia/examples/) · [R](https://randsley.github.io/dataeuropa/r/articles/examples.html).
 
 Three small, equivalent clients for the European data portal (~1.9 M dataset records harvested
 from EU institutions and national/regional portals), built on:

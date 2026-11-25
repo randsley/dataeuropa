@@ -1,0 +1,176 @@
+---
+title: "Worked examples"
+---
+
+```{r, include = FALSE}
+# The examples query the live portal, so they are not run when the site is built.
+knitr::opts_chunk$set(eval = FALSE, comment = "#>")
+```
+
+Three tasks from start to finish. The same examples are in the
+[Python](https://randsley.github.io/dataeuropa/python/examples/) and
+[Julia](https://randsley.github.io/dataeuropa/julia/examples/) documentation.
+
+The outputs shown were taken in November 2026. The portal changes all the time, so counts and
+search results will differ when you run the code.
+
+## 1. Air quality in Lisbon: from a search to a summary table
+
+Find air-quality data from Portugal that comes as CSV. Quotes make the search match the phrase,
+not the separate words.
+
+```{r}
+library(dataeuropa)
+
+hits <- de_search_datasets('"air quality"', country = "pt", format = "CSV")
+hits[, c("id", "title", "publisher")]
+```
+
+```
+#>                         id                                         title                  publisher
+#> 1 67a5e928a3ee7360b61cd5e4  Sensing: Monthly reports with Air Quality... Câmara Municipal de Oeiras
+#> 2 6689f1686e4bd9bc98ed011b  Monitoring of Environmental Parameters o...         Município de Lisboa
+```
+
+The Lisbon dataset has one file per period: `QA` files hold air quality, `ME` files weather. List
+the files only (no services or web pages):
+
+```{r}
+files <- de_distributions("6689f1686e4bd9bc98ed011b", files_only = TRUE)
+files[, c("title", "format")]
+```
+
+```
+#>         title format
+#> 1  ME_2024_S1    CSV
+#> 2     QA_2023    ZIP
+#> ...
+#> 6  QA_2024_Q1    CSV
+#> ...
+```
+
+Read the first quarter of 2024 into a data frame. `de_load_distribution()` takes a row of the
+table and checks the file's checksum when the portal has one.
+
+```{r}
+qa <- de_load_distribution(files[files$title == "QA_2024_Q1", ])
+head(qa[, c("DTM_LOCAL", "PARAMETRO", "LOCAL", "UNIDADE", "VALOR")], 3)
+```
+
+```
+#>               DTM_LOCAL PARAMETRO            LOCAL UNIDADE VALOR
+#> 1 2024-01-05 19:00:00.0      PM25 Calçada da Ajuda   µg/m3     6
+#> 2 2024-01-06 03:00:00.0      PM25 Calçada da Ajuda   µg/m3     5
+#> 3 2024-01-06 04:00:00.0      PM25 Calçada da Ajuda   µg/m3     3
+```
+
+The file is in long format: one row per reading, with the pollutant in `PARAMETRO`. `-99` marks a
+missing reading. Some stations have only a few readings, so count them too and keep the stations
+with at least 300 before comparing NO₂ means:
+
+```{r}
+no2 <- qa[qa$PARAMETRO == "NO2" & qa$VALOR >= 0, ]
+by_station <- data.frame(mean = tapply(no2$VALOR, no2$LOCAL, mean),
+                         count = tapply(no2$VALOR, no2$LOCAL, length))
+by_station <- by_station[by_station$count >= 300, ]
+head(round(by_station[order(-by_station$mean), ], 1), 5)
+```
+
+```
+#>                                    mean count
+#> Avenida António Augusto de Aguiar 111.9   356
+#> Campo de Ourique                   95.3   356
+#> Praça São Francisco de Assis       93.9   356
+#> Rua Morais Soares                  92.0   356
+#> Estrada de Monsanto                78.0   356
+```
+
+Without the count filter, a station with 35 readings (one of them 564) would come first.
+
+## 2. Who publishes air-quality data, and in what formats
+
+Counts and facets need no records, so they are fast (and cached when `de_cache_on()` is set).
+
+```{r}
+de_count('"air quality"')                              # 3583
+de_facet_values("country", '"air quality"', top = 8)
+```
+
+```
+#>       id          label count
+#> 1 EUROPE         Europe   621
+#> 2     de        Germany   538
+#> 3     fr         France   449
+#> 4     gb United Kingdom   372
+#> 5     es          Spain   347
+#> 6     it          Italy   247
+#> 7     ro        Romania   189
+#> 8     bg       Bulgaria   147
+```
+
+`EUROPE` is the value for datasets about Europe as a whole. Formats:
+
+```{r}
+de_facet_values("format", '"air quality"', top = 6)
+```
+
+```
+#>         id label count
+#> 1      CSV   CSV   868
+#> 2     JSON  JSON   536
+#> 3      XML   XML   391
+#> 4 WMS_SRVC   WMS   245
+#> 5      ZIP   ZIP   172
+#> 6     HTML  HTML   145
+```
+
+Use the `id` column in filters: `de_search_datasets('"air quality"', format = "WMS_SRVC")`. A
+dataset with several formats counts once for each, so format counts can add up to more than the
+total.
+
+## 3. Boundaries of Gelsenkirchen from a feature service
+
+The city of Gelsenkirchen publishes its administrative boundaries as a GeoServer service, which
+the portal lists as OGC API Features and as WFS. This needs the sf package
+(`install.packages("sf")`).
+
+```{r}
+dists <- de_distributions("eac1e504-9d63-4670-95b3-3ef04e22aa6e~~1")
+dists[, c("format", "kind")]
+```
+
+```
+#>     format    kind
+#> 1  OGCFEAT service
+#> 2     JSON    file
+#> 3 WFS_SRVC service
+```
+
+The OGC API Features entry points to one collection, the cadastral districts. The data comes in
+ETRS89 / UTM zone 32N (EPSG:25832), which is in metres, so areas can be computed directly:
+
+```{r}
+districts <- de_load_geodata(dists[dists$format == "OGCFEAT", ])
+districts$area_km2 <- round(as.numeric(sf::st_area(districts)) / 1e6, 2)
+head(sf::st_drop_geometry(districts)[order(-districts$area_km2), c("gemarkung_name", "area_km2")], 3)
+```
+
+```
+#>    gemarkung_name area_km2
+#> 6            Buer    61.29
+#> 5        Bismarck    10.08
+#> 10         Heßler     6.88
+```
+
+The WFS entry is the whole service, with 22 layers. Without `layer`, `de_load_geodata()` reads the
+first and lists them all in a message. Pick the city quarters by name; the namespace prefix
+(`verwaltungsgrenzen:`) can be left out. `crs` reprojects, here to longitude and latitude:
+
+```{r}
+quarters <- de_load_geodata(dists[dists$format == "WFS_SRVC", ], layer = "stadtteil", crs = "EPSG:4326")
+nrow(quarters)                                         # 18
+plot(sf::st_geometry(quarters))
+```
+
+Services can be large, so `de_load_geodata()` reads at most 10,000 features and warns when there
+are more. Pass `max_features = Inf` to read all of them.

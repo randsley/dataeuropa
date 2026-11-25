@@ -10,7 +10,22 @@ readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
 license-files = ["LICENSE"]
+authors = [{ name = "Nigel Randsley", email = "nigel.randsley@protonmail.com" }]
+keywords = ["open data", "data.europa.eu", "European data portal", "DCAT-AP", "SPARQL", "geodata"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+]
 dependencies = ["requests>=2.28"]
+
+[project.urls]
+Homepage = "https://github.com/randsley/dataeuropa"
+Documentation = "https://randsley.github.io/dataeuropa/python/"
+Issues = "https://github.com/randsley/dataeuropa/issues"
+Changelog = "https://github.com/randsley/dataeuropa/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 pandas = ["pandas>=1.5"]

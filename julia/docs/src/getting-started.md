@@ -4,6 +4,8 @@
 using DataEuropa
 ```
 
+For complete tasks from search to result, see the [worked examples](examples.md).
+
 ## Search
 
 [`search_datasets`](@ref) returns a `DataFrame` with one row per dataset, with the title and

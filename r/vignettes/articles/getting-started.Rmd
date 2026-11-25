@@ -10,6 +10,8 @@ knitr::opts_chunk$set(eval = FALSE)
 library(dataeuropa)
 ```
 
+For complete tasks from search to result, see the [worked examples](examples.html).
+
 ## Search
 
 `de_search_datasets()` returns a data frame with one row per dataset, with the title and
