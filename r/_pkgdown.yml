@@ -3,6 +3,18 @@ url: https://randsley.github.io/dataeuropa/r/
 template:
   bootstrap: 5
   light-switch: true
+  bslib:                  # the palette and fonts of the landing page; font files in pkgdown/extra.css
+    primary: "#1C6B66"
+    link-color: "#1C6B66"
+    body-bg: "#F5F8F7"
+    body-color: "#17242B"
+    border-color: "#D3DDDA"
+    code-color: "#17242B"
+    pre-bg: "#EBF1EF"
+    navbar-bg: "#17242B"
+    base_font: "Schibsted Grotesk"
+    heading_font: "Schibsted Grotesk"
+    code_font: "JetBrains Mono"
 
 navbar:
   structure:

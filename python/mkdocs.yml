@@ -9,13 +9,21 @@ theme:
   features:
     - content.code.copy
     - navigation.sections
+  font: false             # fonts come from stylesheets/dataeuropa.css, not Google Fonts
   palette:
     - media: "(prefers-color-scheme: light)"
       scheme: default
+      primary: custom
+      accent: custom
       toggle: {icon: material/brightness-7, name: Dark mode}
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
+      primary: custom
+      accent: custom
       toggle: {icon: material/brightness-4, name: Light mode}
+
+extra_css:
+  - stylesheets/dataeuropa.css
 
 nav:
   - Home: index.md

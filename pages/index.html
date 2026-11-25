@@ -4,132 +4,292 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>dataeuropa</title>
-<meta name="description" content="Python, Julia and R clients for data.europa.eu, the European open data portal.">
+<meta name="description" content="Python, Julia and R clients for data.europa.eu, the European open data portal: search datasets, download files, read tables and geodata.">
+<link rel="preload" href="fonts/schibsted-grotesk-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <style>
+  /* Fonts are self-hosted (SIL Open Font Licence, see fonts/), so no visitor data goes to a font service. */
+  @font-face { font-family: "Schibsted Grotesk"; font-weight: 400 900; font-display: swap;
+    src: url("fonts/schibsted-grotesk-latin-wght-normal.woff2") format("woff2");
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+  @font-face { font-family: "Schibsted Grotesk"; font-weight: 400 900; font-display: swap;
+    src: url("fonts/schibsted-grotesk-latin-ext-wght-normal.woff2") format("woff2");
+    unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+  @font-face { font-family: "JetBrains Mono"; font-weight: 100 800; font-display: swap;
+    src: url("fonts/jetbrains-mono-latin-wght-normal.woff2") format("woff2"); }
+
   :root {
-    --bg: #ffffff; --fg: #1c2024; --muted: #5b6470; --line: #e2e5e9;
-    --card: #f6f7f9; --accent: #1f4fa3; --code: #f1f3f6;
+    --paper: #f5f8f7; --ink: #17242b; --muted: #56676e; --rule: #d3ddda;
+    --teal: #1c6b66; --marker: #f3d46e; --string: #4d6b2f; --code-bg: #ebf1ef;
+    --sans: "Schibsted Grotesk", system-ui, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
+    color-scheme: light dark;
   }
   @media (prefers-color-scheme: dark) {
-    :root { --bg: #14171b; --fg: #e6e8eb; --muted: #9aa3ad; --line: #2a2f36;
-            --card: #1b1f24; --accent: #8fb3ff; --code: #1f242a; }
+    :root { --paper: #0f181c; --ink: #e2eae7; --muted: #93a5ab; --rule: #26363c;
+            --teal: #6cc3b9; --marker: #6b5a1c; --string: #b4cf8c; --code-bg: #15232a; }
   }
+
   * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--fg);
-         font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
-  main { max-width: 860px; margin: 0 auto; padding: 48px 16px 64px; }
-  h1 { font-size: 2rem; margin: 0 0 8px; }
-  h2 { font-size: 1.2rem; margin: 40px 0 12px; }
-  p.lead { color: var(--muted); margin: 0 0 32px; font-size: 1.1rem; }
-  a { color: var(--accent); }
-  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
-  .card { display: block; padding: 16px; border: 1px solid var(--line); border-radius: 8px;
-          background: var(--card); text-decoration: none; color: var(--fg); }
-  .card:hover { border-color: var(--accent); }
-  .card strong { display: block; color: var(--accent); margin-bottom: 4px; }
-  .card span { color: var(--muted); font-size: .92rem; }
-  .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); }
-  .tabs button { font: inherit; padding: 6px 14px; border: 1px solid transparent; border-bottom: none;
-                 background: none; color: var(--muted); cursor: pointer; border-radius: 6px 6px 0 0; }
-  .tabs button[aria-selected="true"] { color: var(--fg); border-color: var(--line); background: var(--code); }
-  pre { margin: 0; padding: 14px 16px; background: var(--code); border: 1px solid var(--line);
-        border-top: none; border-radius: 0 0 6px 6px; overflow-x: auto; font-size: .88rem; }
-  code { font-family: ui-monospace, "Cascadia Code", Menlo, Consolas, monospace; }
-  table { width: 100%; border-collapse: collapse; font-size: .9rem; }
-  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); }
-  th { color: var(--muted); font-weight: 600; }
+  [hidden] { display: none !important; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; background: var(--paper); color: var(--ink);
+         font: 400 1.0625rem/1.6 var(--sans); font-optical-sizing: auto; }
+  a { color: var(--teal); text-underline-offset: .18em; text-decoration-thickness: 1px; }
+  a:hover { text-decoration-thickness: 2px; }
+  :focus-visible { outline: 2px solid var(--teal); outline-offset: 3px; border-radius: 2px; }
+  code, pre { font-family: var(--mono); font-size: .875rem; font-variant-ligatures: none; }
+
+  .wrap { max-width: 960px; margin: 0 auto; padding: 0 16px; }
+  .prose { max-width: 40rem; }
+
+  header.site { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between;
+                gap: 8px 24px; padding-top: 20px; padding-bottom: 20px; }
+  .wordmark { font-weight: 800; font-size: 1.125rem; letter-spacing: -.01em; color: var(--ink); text-decoration: none; }
+  header.site nav { display: flex; flex-wrap: wrap; gap: 4px 20px; font-size: .9375rem; }
+  header.site nav a { color: var(--muted); text-decoration: none; }
+  header.site nav a:hover { color: var(--ink); text-decoration: underline; }
+
+  .hero { padding-top: 56px; padding-bottom: 40px; }
+  h1 { font-weight: 750; font-size: clamp(2.25rem, 5.2vw, 3.6rem); line-height: 1.04;
+       letter-spacing: -.028em; margin: 0 0 24px; max-width: 15ch; text-wrap: balance; }
+  .lead { font-size: 1.1875rem; color: var(--muted); margin: 0; max-width: 38rem; }
+
+  h2 { font-weight: 700; font-size: 1.5rem; line-height: 1.2; letter-spacing: -.012em; margin: 0 0 8px; }
+  section { padding-top: 48px; padding-bottom: 8px; }
+  section > p { margin: 0 0 20px; color: var(--muted); max-width: 40rem; }
+
+  /* The language filter: one choice for every code block on the page. */
+  .filter { display: inline-flex; flex-wrap: wrap; gap: 2px; padding: 3px; margin: 4px 0 24px;
+            border: 1px solid var(--rule); border-radius: 8px; }
+  .filter button { font: 500 .9375rem/1 var(--sans); color: var(--muted); background: none; border: 0;
+                   padding: 8px 14px; border-radius: 5px; cursor: pointer; }
+  .filter button:hover { color: var(--ink); }
+  .filter button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+
+  /* The Rosetta block: each step, then the same line in each language, stacked. */
+  ol.steps { list-style: none; margin: 0; padding: 0; counter-reset: step; }
+  ol.steps > li { counter-increment: step; display: grid; grid-template-columns: 2.25rem minmax(0, 1fr); gap: 0 12px;
+                  padding: 18px 0; border-top: 1px solid var(--rule); }
+  ol.steps > li::before { content: counter(step); font-weight: 750; font-size: 1.375rem; line-height: 1.3;
+                          color: var(--teal); font-variant-numeric: tabular-nums; }
+  .step-title { font-weight: 600; margin: 0 0 10px; line-height: 1.3; padding-top: .2rem; }
+  .lines { grid-column: 2; min-width: 0; }
+  .line { display: grid; grid-template-columns: 4.25rem minmax(0, 1fr); align-items: baseline; gap: 0 8px; }
+  .line + .line { margin-top: 2px; }
+  .lang { font-size: .8125rem; color: var(--muted); }
+  .line pre { margin: 0; padding: 7px 12px; background: var(--code-bg); border-radius: 4px;
+              overflow-x: auto; line-height: 1.5; }
+  .s { color: var(--string); }
+  mark { color: inherit; padding: 0 .08em; margin: 0 -.08em; border-radius: 2px;
+         background: linear-gradient(var(--marker), var(--marker)) no-repeat 0 85% / 100% 62%; }
+  @media (prefers-reduced-motion: no-preference) {
+    .js mark { background-size: 0% 62%; transition: background-size .5s cubic-bezier(.3,.7,.2,1); }
+    .js .drawn mark { background-size: 100% 62%; }
+    .js .drawn li:nth-child(2) mark { transition-delay: .18s; }
+    .js .drawn li:nth-child(3) mark { transition-delay: .36s; }
+  }
+  .only .line { grid-template-columns: minmax(0, 1fr); }
+  .only .lang { display: none; }
+
+  .result { grid-column: 2; margin-top: 14px; }
+  .result-caption { font-size: .875rem; color: var(--muted); margin: 0 0 6px; }
+  table { border-collapse: collapse; width: 100%; font-size: .875rem; }
   .scroll { overflow-x: auto; }
-  footer { margin-top: 48px; color: var(--muted); font-size: .9rem; }
+  .result td, .result th { font-family: var(--mono); padding: 4px 14px 4px 0; text-align: left; white-space: nowrap; }
+  .result th { font-weight: 600; color: var(--muted); border-bottom: 1px solid var(--rule); }
+  .result td.num, .result th.num { text-align: right; padding-right: 0; }
+
+  /* Functions, grouped by the stage of a task. */
+  table.verbs th, table.verbs td { padding: 8px 16px 8px 0; text-align: left; vertical-align: top;
+                                   border-bottom: 1px solid var(--rule); }
+  table.verbs thead th { font-weight: 600; color: var(--muted); font-size: .875rem; }
+  table.verbs tbody th { font-weight: 400; }
+  table.verbs tr.group th { padding-top: 22px; font-weight: 700; font-size: 1rem; border-bottom-color: var(--ink); }
+  table.verbs code { font-size: .8125rem; white-space: nowrap; }
+
+  ul.plain { list-style: none; margin: 0; padding: 0; max-width: 46rem; }
+  ul.plain li { padding: 14px 0; border-top: 1px solid var(--rule); }
+  ul.plain li:last-child { border-bottom: 1px solid var(--rule); }
+  ul.plain strong { display: block; font-weight: 600; }
+  ul.plain span { color: var(--muted); }
+
+  footer { margin-top: 64px; padding-top: 20px; padding-bottom: 40px; border-top: 1px solid var(--rule);
+           color: var(--muted); font-size: .9375rem; }
+  footer p { margin: 0 0 4px; }
+
+  @media (max-width: 560px) {
+    .hero { padding-top: 32px; }
+    ol.steps > li { grid-template-columns: 1.5rem minmax(0, 1fr); gap: 0 8px; }
+    .line { grid-template-columns: minmax(0, 1fr); }
+    .lang { margin-top: 4px; }
+  }
 </style>
 </head>
 <body>
-<main>
-  <h1>dataeuropa</h1>
-  <p class="lead">Python, Julia and R clients for <a href="https://data.europa.eu">data.europa.eu</a>,
-  the European open data portal: about 1.9 million dataset records from EU institutions and
-  national and regional portals. Same verbs, same behaviour in all three languages. No API key needed.</p>
+<header class="site wrap">
+  <a class="wordmark" href="./">dataeuropa</a>
+  <nav aria-label="Documentation">
+    <a href="python/">Python docs</a>
+    <a href="julia/">Julia docs</a>
+    <a href="r/">R docs</a>
+    <a href="https://github.com/randsley/dataeuropa">GitHub</a>
+  </nav>
+</header>
 
-  <div class="cards">
-    <a class="card" href="python/"><strong>Python</strong><span>dataeuropa · requests, optional pandas</span></a>
-    <a class="card" href="julia/"><strong>Julia</strong><span>DataEuropa.jl · HTTP, JSON3, DataFrames, CSV</span></a>
-    <a class="card" href="r/"><strong>R</strong><span>dataeuropa · httr2, jsonlite, openssl, base data frames</span></a>
-  </div>
-  <p>Worked examples, the same in all three languages: air quality in Lisbon from a search to a
-  summary table, who publishes what, and boundaries from a feature service
-  (<a href="python/examples/">Python</a> · <a href="julia/examples/">Julia</a> ·
-  <a href="r/articles/examples.html">R</a>).</p>
-
-  <h2>Search, then download</h2>
-  <div class="tabs" role="tablist">
-    <button role="tab" aria-selected="true" data-lang="python">Python</button>
-    <button role="tab" aria-selected="false" data-lang="julia">Julia</button>
-    <button role="tab" aria-selected="false" data-lang="r">R</button>
-  </div>
-  <pre data-lang="python"><code>import dataeuropa as de
-
-df = de.search_datasets("water quality", country="pt", format="CSV", limit=5)
-dist = de.distributions(df.id[0])
-de.download(dist.iloc[0], "data/")</code></pre>
-  <pre data-lang="julia" hidden><code>using DataEuropa
-
-df = search_datasets("water quality"; country="pt", format="CSV", limit=5)
-dist = distributions(df.id[1])
-download_distribution(dist[1, :], "data/")</code></pre>
-  <pre data-lang="r" hidden><code>library(dataeuropa)
-
-df &lt;- de_search_datasets("water quality", country = "pt", format = "CSV", limit = 5)
-dist &lt;- de_distributions(df$id[1])
-de_download(dist[1, ], "data/")</code></pre>
-
-  <h2>Install</h2>
-  <div class="tabs" role="tablist">
-    <button role="tab" aria-selected="true" data-lang="python">Python</button>
-    <button role="tab" aria-selected="false" data-lang="julia">Julia</button>
-    <button role="tab" aria-selected="false" data-lang="r">R</button>
-  </div>
-  <pre data-lang="python"><code>pip install "dataeuropa[pandas] @ git+https://github.com/randsley/dataeuropa#subdirectory=python"</code></pre>
-  <pre data-lang="julia" hidden><code>using Pkg
-Pkg.add(url="https://github.com/randsley/dataeuropa", subdir="julia")</code></pre>
-  <pre data-lang="r" hidden><code>remotes::install_github("randsley/dataeuropa", subdir = "r")</code></pre>
-
-  <h2>Same verbs in each language</h2>
-  <div class="scroll">
-  <table>
-    <tr><th>Task</th><th>Python</th><th>Julia</th><th>R</th></tr>
-    <tr><td>Search to table</td><td><code>search_datasets</code></td><td><code>search_datasets</code></td><td><code>de_search_datasets</code></td></tr>
-    <tr><td>Raw Search API result</td><td><code>search</code></td><td><code>search</code></td><td><code>de_search</code></td></tr>
-    <tr><td>Bulk retrieval (scroll)</td><td><code>fetch_datasets</code></td><td><code>fetch_datasets</code></td><td><code>de_fetch_datasets</code></td></tr>
-    <tr><td>One dataset</td><td><code>get_dataset</code></td><td><code>get_dataset</code></td><td><code>de_get_dataset</code></td></tr>
-    <tr><td>Files and services</td><td><code>distributions</code></td><td><code>distributions</code></td><td><code>de_distributions</code></td></tr>
-    <tr><td>Download a file</td><td><code>download</code></td><td><code>download_distribution</code></td><td><code>de_download</code></td></tr>
-    <tr><td>Response cache</td><td><code>cache_on</code></td><td><code>cache_on</code></td><td><code>de_cache_on</code></td></tr>
-    <tr><td>Download into a table</td><td><code>load_distribution</code></td><td><code>load_distribution</code></td><td><code>de_load_distribution</code></td></tr>
-    <tr><td>Download geodata</td><td><code>load_geodata</code></td><td><code>load_geodata</code></td><td><code>de_load_geodata</code></td></tr>
-    <tr><td>Facet values and counts</td><td><code>facet_values</code></td><td><code>facet_values</code></td><td><code>de_facet_values</code></td></tr>
-    <tr><td>Hit count only</td><td><code>count</code></td><td><code>count_datasets</code></td><td><code>de_count</code></td></tr>
-    <tr><td>Harvested catalogues</td><td><code>catalogues</code></td><td><code>catalogues</code></td><td><code>de_catalogues</code></td></tr>
-    <tr><td>Dataset as RDF</td><td><code>get_rdf</code></td><td><code>get_rdf</code></td><td><code>de_get_rdf</code></td></tr>
-    <tr><td>SPARQL</td><td><code>sparql</code></td><td><code>sparql</code></td><td><code>de_sparql</code></td></tr>
-  </table>
+<main class="wrap">
+  <div class="hero">
+    <h1>European open data, read straight into a data frame</h1>
+    <p class="lead">Clients for <a href="https://data.europa.eu">data.europa.eu</a> in Python, Julia and R.
+    Search about 1.9 million dataset records from EU institutions and national portals, download files
+    with checksum checks, and read tables and geodata. The functions have the same names in all three
+    languages, and no API key is needed.</p>
   </div>
 
-  <footer>
-    Source, issues and roadmap on <a href="https://github.com/randsley/dataeuropa">GitHub</a>. MIT licence.
-    Not affiliated with the Publications Office of the European Union.
-  </footer>
+  <section aria-labelledby="task">
+    <h2 id="task">From a search to a table</h2>
+    <p>Air-quality readings from Lisbon, in three steps. Each language uses the same functions;
+    only the prefix changes.</p>
+
+    <div class="filter" role="group" aria-label="Show code for">
+      <button type="button" data-lang="all" aria-pressed="true">All three</button>
+      <button type="button" data-lang="python" aria-pressed="false">Python</button>
+      <button type="button" data-lang="julia" aria-pressed="false">Julia</button>
+      <button type="button" data-lang="r" aria-pressed="false">R</button>
+    </div>
+
+    <ol class="steps" id="rosetta">
+      <li>
+        <p class="step-title">Find datasets: Portuguese air-quality data published as CSV</p>
+        <div class="lines">
+          <div class="line" data-lang="python"><span class="lang">Python</span><pre><code>hits = de.<mark>search_datasets</mark>(<span class="s">'"air quality"'</span>, country=<span class="s">"pt"</span>, format=<span class="s">"CSV"</span>)</code></pre></div>
+          <div class="line" data-lang="julia"><span class="lang">Julia</span><pre><code>hits = <mark>search_datasets</mark>(<span class="s">"\"air quality\""</span>; country=<span class="s">"pt"</span>, format=<span class="s">"CSV"</span>)</code></pre></div>
+          <div class="line" data-lang="r"><span class="lang">R</span><pre><code>hits &lt;- de_<mark>search_datasets</mark>(<span class="s">'"air quality"'</span>, country = <span class="s">"pt"</span>, format = <span class="s">"CSV"</span>)</code></pre></div>
+        </div>
+      </li>
+      <li>
+        <p class="step-title">List the files of the Lisbon dataset, without services or web pages</p>
+        <div class="lines">
+          <div class="line" data-lang="python"><span class="lang">Python</span><pre><code>files = de.<mark>distributions</mark>(<span class="s">"6689f1686e4bd9bc98ed011b"</span>, files_only=True)</code></pre></div>
+          <div class="line" data-lang="julia"><span class="lang">Julia</span><pre><code>files = <mark>distributions</mark>(<span class="s">"6689f1686e4bd9bc98ed011b"</span>; files_only=true)</code></pre></div>
+          <div class="line" data-lang="r"><span class="lang">R</span><pre><code>files &lt;- de_<mark>distributions</mark>(<span class="s">"6689f1686e4bd9bc98ed011b"</span>, files_only = TRUE)</code></pre></div>
+        </div>
+      </li>
+      <li>
+        <p class="step-title">Read the first quarter of 2024 into a data frame</p>
+        <div class="lines">
+          <div class="line" data-lang="python"><span class="lang">Python</span><pre><code>qa = de.<mark>load_distribution</mark>(files[files.title == <span class="s">"QA_2024_Q1"</span>].iloc[0])</code></pre></div>
+          <div class="line" data-lang="julia"><span class="lang">Julia</span><pre><code>qa = <mark>load_distribution</mark>(files[findfirst(==(<span class="s">"QA_2024_Q1"</span>), files.title), :])</code></pre></div>
+          <div class="line" data-lang="r"><span class="lang">R</span><pre><code>qa &lt;- de_<mark>load_distribution</mark>(files[files$title == <span class="s">"QA_2024_Q1"</span>, ])</code></pre></div>
+        </div>
+        <div class="result">
+          <p class="result-caption">The first rows of <code>qa</code>: 73,969 readings, one per row</p>
+          <div class="scroll">
+          <table>
+            <thead><tr><th>DTM_LOCAL</th><th>PARAMETRO</th><th>LOCAL</th><th>UNIDADE</th><th class="num">VALOR</th></tr></thead>
+            <tbody>
+              <tr><td>2024-01-05 19:00:00.0</td><td>PM25</td><td>Calçada da Ajuda</td><td>µg/m3</td><td class="num">6.0</td></tr>
+              <tr><td>2024-01-06 03:00:00.0</td><td>PM25</td><td>Calçada da Ajuda</td><td>µg/m3</td><td class="num">5.0</td></tr>
+              <tr><td>2024-01-06 04:00:00.0</td><td>PM25</td><td>Calçada da Ajuda</td><td>µg/m3</td><td class="num">3.0</td></tr>
+            </tbody>
+          </table>
+          </div>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <section aria-labelledby="install">
+    <h2 id="install">Install</h2>
+    <p>Not yet on PyPI, the Julia registry or CRAN; install from GitHub for now.</p>
+    <div class="lines install">
+      <div class="line" data-lang="python"><span class="lang">Python</span><pre><code>pip install <span class="s">"dataeuropa[pandas] @ git+https://github.com/randsley/dataeuropa#subdirectory=python"</span></code></pre></div>
+      <div class="line" data-lang="julia"><span class="lang">Julia</span><pre><code>using Pkg; Pkg.add(url=<span class="s">"https://github.com/randsley/dataeuropa"</span>, subdir=<span class="s">"julia"</span>)</code></pre></div>
+      <div class="line" data-lang="r"><span class="lang">R</span><pre><code>remotes::install_github(<span class="s">"randsley/dataeuropa"</span>, subdir = <span class="s">"r"</span>)</code></pre></div>
+    </div>
+    <p style="margin-top:14px">Then <code>import dataeuropa as de</code>, <code>using DataEuropa</code> or <code>library(dataeuropa)</code>.</p>
+  </section>
+
+  <section aria-labelledby="functions">
+    <h2 id="functions">What you can do</h2>
+    <p>The same functions in each language. R adds the prefix <code>de_</code>.</p>
+    <div class="scroll">
+    <table class="verbs">
+      <thead><tr><th scope="col">Task</th><th scope="col">Python</th><th scope="col">Julia</th><th scope="col">R</th></tr></thead>
+      <tbody>
+        <tr class="group"><th colspan="4" scope="colgroup">Find datasets</th></tr>
+        <tr><th scope="row">Search, as a table</th><td><code>search_datasets</code></td><td><code>search_datasets</code></td><td><code>de_search_datasets</code></td></tr>
+        <tr><th scope="row">More than 1,000 results</th><td><code>fetch_datasets</code></td><td><code>fetch_datasets</code></td><td><code>de_fetch_datasets</code></td></tr>
+        <tr><th scope="row">Count the matches</th><td><code>count</code></td><td><code>count_datasets</code></td><td><code>de_count</code></td></tr>
+        <tr><th scope="row">Values of a filter, with counts</th><td><code>facet_values</code></td><td><code>facet_values</code></td><td><code>de_facet_values</code></td></tr>
+        <tr><th scope="row">The raw search result</th><td><code>search</code></td><td><code>search</code></td><td><code>de_search</code></td></tr>
+        <tr><th scope="row">Harvested catalogues</th><td><code>catalogues</code></td><td><code>catalogues</code></td><td><code>de_catalogues</code></td></tr>
+        <tr class="group"><th colspan="4" scope="colgroup">Look inside a dataset</th></tr>
+        <tr><th scope="row">Full metadata</th><td><code>get_dataset</code></td><td><code>get_dataset</code></td><td><code>de_get_dataset</code></td></tr>
+        <tr><th scope="row">Its files and services</th><td><code>distributions</code></td><td><code>distributions</code></td><td><code>de_distributions</code></td></tr>
+        <tr class="group"><th colspan="4" scope="colgroup">Get the data</th></tr>
+        <tr><th scope="row">Read a file into a table</th><td><code>load_distribution</code></td><td><code>load_distribution</code></td><td><code>de_load_distribution</code></td></tr>
+        <tr><th scope="row">Read geodata or a feature service</th><td><code>load_geodata</code></td><td><code>load_geodata</code></td><td><code>de_load_geodata</code></td></tr>
+        <tr><th scope="row">Download a file</th><td><code>download</code></td><td><code>download_distribution</code></td><td><code>de_download</code></td></tr>
+        <tr><th scope="row">Cache responses</th><td><code>cache_on</code></td><td><code>cache_on</code></td><td><code>de_cache_on</code></td></tr>
+        <tr class="group"><th colspan="4" scope="colgroup">Query linked data</th></tr>
+        <tr><th scope="row">A dataset as RDF</th><td><code>get_rdf</code></td><td><code>get_rdf</code></td><td><code>de_get_rdf</code></td></tr>
+        <tr><th scope="row">SPARQL</th><td><code>sparql</code></td><td><code>sparql</code></td><td><code>de_sparql</code></td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section aria-labelledby="examples">
+    <h2 id="examples">Worked examples</h2>
+    <p>Complete tasks, the same in each language.</p>
+    <ul class="plain">
+      <li><strong>Air quality in Lisbon</strong>
+        <span>From a search to mean NO₂ per station, with the data's missing-value code and a minimum
+        number of readings.</span></li>
+      <li><strong>Who publishes air-quality data, and in what formats</strong>
+        <span>Counts and filter values without downloading any records.</span></li>
+      <li><strong>Boundaries of Gelsenkirchen from a feature service</strong>
+        <span>The same layer through OGC API Features and WFS, with areas and reprojection.</span></li>
+    </ul>
+    <p style="margin-top:14px">Read them in <a href="python/examples/">Python</a>, <a href="julia/examples/">Julia</a>
+    or <a href="r/articles/examples.html">R</a>.</p>
+  </section>
+
+  <section aria-labelledby="docs">
+    <h2 id="docs">Documentation</h2>
+    <ul class="plain">
+      <li><strong><a href="python/">Python</a></strong>
+        <span>Package <code>dataeuropa</code>. Needs only requests; pandas, geopandas, openpyxl and pyarrow are optional.</span></li>
+      <li><strong><a href="julia/">Julia</a></strong>
+        <span>Package <code>DataEuropa</code>, built on HTTP, JSON3, DataFrames and CSV. GeoDataFrames, XLSX and Parquet2 are optional.</span></li>
+      <li><strong><a href="r/">R</a></strong>
+        <span>Package <code>dataeuropa</code>, built on httr2 and jsonlite, returning base data frames. sf, readxl and arrow are optional.</span></li>
+    </ul>
+  </section>
 </main>
+
+<footer class="wrap">
+  <p>Source, issues and roadmap on <a href="https://github.com/randsley/dataeuropa">GitHub</a>. MIT licence.</p>
+  <p>Not affiliated with the Publications Office of the European Union, which runs data.europa.eu.</p>
+</footer>
+
 <script>
-  // One language choice drives every tab group on the page; remembered per viewer.
+  // One language choice drives every code block on the page, remembered per viewer.
+  document.documentElement.classList.add("js");
+  const blocks = document.querySelectorAll("#rosetta, .install");
   function show(lang) {
-    document.querySelectorAll(".tabs button").forEach(b =>
-      b.setAttribute("aria-selected", String(b.dataset.lang === lang)));
-    document.querySelectorAll("pre[data-lang]").forEach(p => { p.hidden = p.dataset.lang !== lang; });
+    document.querySelectorAll(".filter button").forEach(b =>
+      b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
+    document.querySelectorAll(".line[data-lang]").forEach(l => { l.hidden = lang !== "all" && l.dataset.lang !== lang; });
+    blocks.forEach(b => b.classList.toggle("only", lang !== "all"));
     try { localStorage.setItem("dataeuropa-lang", lang); } catch (e) {}
   }
-  document.querySelectorAll(".tabs button").forEach(b => b.addEventListener("click", () => show(b.dataset.lang)));
+  document.querySelectorAll(".filter button").forEach(b => b.addEventListener("click", () => show(b.dataset.lang)));
   let saved = null;
   try { saved = localStorage.getItem("dataeuropa-lang"); } catch (e) {}
-  if (saved) show(saved);
+  if (saved && document.querySelector(`.filter button[data-lang="${saved}"]`)) show(saved);
+  // The one motion on the page: the shared function names are marked, step by step.
+  requestAnimationFrame(() => requestAnimationFrame(() => document.getElementById("rosetta").classList.add("drawn")));
 </script>
 </body>
 </html>

@@ -91,7 +91,7 @@ jobs:
         with:
           name: docs-r
           path: site/r
-      - run: cp pages/index.html site/index.html && touch site/.nojekyll
+      - run: cp -r pages/. site/ && touch site/.nojekyll   # the landing page and its fonts
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site

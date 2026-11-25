@@ -8,6 +8,7 @@ makedocs(
         canonical = "https://randsley.github.io/dataeuropa/julia/",
         edit_link = "main",
         prettyurls = get(ENV, "CI", "false") == "true",
+        assets = ["assets/dataeuropa.css"],   # the palette and fonts of the landing page
     ),
     pages = [
         "Home" => "index.md",

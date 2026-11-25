@@ -1,0 +1,28 @@
+/* The look of https://randsley.github.io/dataeuropa/ (pages/index.html): its palette and fonts.
+   The fonts are served once, by the landing page (/dataeuropa/fonts/); local builds fall back
+   to system fonts. */
+@font-face { font-family: "Schibsted Grotesk"; font-weight: 400 900; font-display: swap;
+  src: url("/dataeuropa/fonts/schibsted-grotesk-latin-wght-normal.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2212; }
+@font-face { font-family: "Schibsted Grotesk"; font-weight: 400 900; font-display: swap;
+  src: url("/dataeuropa/fonts/schibsted-grotesk-latin-ext-wght-normal.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+1E00-1E9F, U+A720-A7FF; }
+@font-face { font-family: "JetBrains Mono"; font-weight: 100 800; font-display: swap;
+  src: url("/dataeuropa/fonts/jetbrains-mono-latin-wght-normal.woff2") format("woff2"); }
+
+
+code, pre { font-variant-ligatures: none; }
+h1, h2, h3, .h1, .h2, .h3 { letter-spacing: -.015em; }
+h1, .h1 { font-weight: 750; letter-spacing: -.025em; }
+h2, h3, h4, .h2, .h3, .h4 { font-weight: 700; }
+pre, div.sourceCode, pre.sourceCode { background-color: #ebf1ef; border-color: #d3ddda; }
+code a:any-link { color: inherit; text-decoration-color: rgba(28, 107, 102, .5); }
+.navbar-brand { font-weight: 800; }
+[data-bs-theme="dark"] {
+  --bs-body-bg: #0f181c; --bs-body-color: #e2eae7; --bs-secondary-color: #93a5ab; --bs-border-color: #26363c;
+  --bs-link-color: #6cc3b9; --bs-link-color-rgb: 108, 195, 185; --bs-link-hover-color: #9ddbd3;
+  --bs-link-hover-color-rgb: 157, 219, 211; --bs-tertiary-bg: #15232a; --bs-code-color: #e2eae7;
+}
+[data-bs-theme="dark"] .navbar { --bs-navbar-active-color: #6cc3b9; }
+[data-bs-theme="dark"] pre, [data-bs-theme="dark"] div.sourceCode, [data-bs-theme="dark"] pre.sourceCode {
+  background-color: #15232a; border-color: #26363c; }

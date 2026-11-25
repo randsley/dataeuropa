@@ -1,0 +1,47 @@
+/* The look of https://randsley.github.io/dataeuropa/ (pages/index.html): its palette and fonts.
+   The fonts are served once, by the landing page (/dataeuropa/fonts/); local builds fall back
+   to system fonts. */
+@font-face { font-family: "Schibsted Grotesk"; font-weight: 400 900; font-display: swap;
+  src: url("/dataeuropa/fonts/schibsted-grotesk-latin-wght-normal.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2212; }
+@font-face { font-family: "Schibsted Grotesk"; font-weight: 400 900; font-display: swap;
+  src: url("/dataeuropa/fonts/schibsted-grotesk-latin-ext-wght-normal.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+1E00-1E9F, U+A720-A7FF; }
+@font-face { font-family: "JetBrains Mono"; font-weight: 100 800; font-display: swap;
+  src: url("/dataeuropa/fonts/jetbrains-mono-latin-wght-normal.woff2") format("woff2"); }
+
+:root {
+  --md-text-font: "Schibsted Grotesk";
+  --md-code-font: "JetBrains Mono";
+}
+[data-md-color-scheme="default"] {
+  --md-primary-fg-color: #17242b;
+  --md-primary-fg-color--light: #2c3d45;
+  --md-primary-fg-color--dark: #0f181c;
+  --md-primary-bg-color: #f5f8f7;
+  --md-accent-fg-color: #1c6b66;
+  --md-typeset-a-color: #1c6b66;
+  --md-default-bg-color: #f5f8f7;
+  --md-default-fg-color: #17242b;
+  --md-default-fg-color--light: #56676e;
+  --md-code-bg-color: #ebf1ef;
+  --md-typeset-mark-color: #f3d46e;
+}
+[data-md-color-scheme="slate"] {
+  --md-primary-fg-color: #15232a;
+  --md-primary-fg-color--light: #26363c;
+  --md-primary-fg-color--dark: #0f181c;
+  --md-primary-bg-color: #e2eae7;
+  --md-accent-fg-color: #6cc3b9;
+  --md-typeset-a-color: #6cc3b9;
+  --md-default-bg-color: #0f181c;
+  --md-default-fg-color: #e2eae7;
+  --md-default-fg-color--light: #93a5ab;
+  --md-code-bg-color: #15232a;
+  --md-typeset-mark-color: #6b5a1c;
+  --md-hue: 190;
+}
+.md-typeset code, .md-typeset pre { font-variant-ligatures: none; }
+.md-typeset h1, .md-typeset h2, .md-typeset h3 { font-weight: 700; letter-spacing: -.015em; color: var(--md-default-fg-color); }
+.md-typeset h1 { font-weight: 750; letter-spacing: -.025em; }
+.md-header__title { font-weight: 800; }

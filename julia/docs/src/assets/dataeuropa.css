@@ -1,0 +1,56 @@
+/* The look of https://randsley.github.io/dataeuropa/ (pages/index.html): its palette and fonts.
+   The fonts are served once, by the landing page (/dataeuropa/fonts/); local builds fall back
+   to system fonts. */
+@font-face { font-family: "Schibsted Grotesk"; font-weight: 400 900; font-display: swap;
+  src: url("/dataeuropa/fonts/schibsted-grotesk-latin-wght-normal.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2212; }
+@font-face { font-family: "Schibsted Grotesk"; font-weight: 400 900; font-display: swap;
+  src: url("/dataeuropa/fonts/schibsted-grotesk-latin-ext-wght-normal.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+1E00-1E9F, U+A720-A7FF; }
+@font-face { font-family: "JetBrains Mono"; font-weight: 100 800; font-display: swap;
+  src: url("/dataeuropa/fonts/jetbrains-mono-latin-wght-normal.woff2") format("woff2"); }
+
+
+/* Documenter's light theme, then its dark theme (html.theme--documenter-dark). The rules use html:root to
+   match the specificity of Documenter's dark-theme rules, and win by coming later. */
+html { --de-paper: #f5f8f7; --de-ink: #17242b; --de-muted: #56676e; --de-rule: #d3ddda;
+       --de-teal: #1c6b66; --de-code: #ebf1ef; --de-side: #17242b; --de-side-fg: #e2eae7; }
+html.theme--documenter-dark { --de-paper: #0f181c; --de-ink: #e2eae7; --de-muted: #93a5ab; --de-rule: #26363c;
+       --de-teal: #6cc3b9; --de-code: #15232a; --de-side: #0b1316; --de-side-fg: #e2eae7; }
+
+html:root body, html:root #documenter .docs-main, html:root #documenter .docs-sidebar,
+html:root .content h1, html:root .content h2, html:root .content h3, html:root .content h4 {
+  font-family: "Schibsted Grotesk", system-ui, sans-serif; }
+html:root code, html:root pre, html:root kbd, html:root samp {
+  font-family: "JetBrains Mono", ui-monospace, Consolas, monospace; font-variant-ligatures: none; }
+html:root body { background-color: var(--de-paper); color: var(--de-ink); }
+html:root #documenter .docs-main { background-color: var(--de-paper); }
+html:root #documenter .docs-main header.docs-navbar { background-color: var(--de-paper); border-bottom-color: var(--de-rule); }
+html:root .content h1, html:root .content h2, html:root .content h3 { color: var(--de-ink); letter-spacing: -.015em; font-weight: 700; }
+html:root .content h1 { font-weight: 750; letter-spacing: -.025em; }
+html:root #documenter .docs-main a:not(.docs-heading-anchor) { color: var(--de-teal); }
+html:root #documenter .docs-main a.docs-heading-anchor { color: var(--de-ink); }
+html:root .content pre, html:root .content code { background-color: var(--de-code); }
+html:root .content pre code { background: none; }
+html:root .content table th, html:root .content table td { border-color: var(--de-rule); }
+
+html:root #documenter .docs-sidebar { background-color: var(--de-side); color: var(--de-side-fg); border-right: 0; }
+html:root #documenter .docs-sidebar .docs-package-name a { color: var(--de-side-fg); font-weight: 800; }
+html:root #documenter .docs-sidebar ul.docs-menu a.tocitem,
+html:root #documenter .docs-sidebar ul.docs-menu .tocitem { color: var(--de-side-fg); background: none; }
+html:root #documenter .docs-sidebar ul.docs-menu a.tocitem:hover { background-color: rgba(255, 255, 255, .06); color: #fff; }
+html:root #documenter .docs-sidebar ul.docs-menu li.is-active,
+html:root #documenter .docs-sidebar ul.docs-menu li.is-active .tocitem,
+html:root #documenter .docs-sidebar ul.docs-menu li.is-active .tocitem:hover,
+html:root #documenter .docs-sidebar ul.docs-menu li.is-active ul.internal,
+html:root #documenter .docs-sidebar ul.docs-menu li.is-active ul.internal li { background-color: transparent; }
+html:root #documenter .docs-sidebar ul.docs-menu ul.internal { border-top-color: rgba(255, 255, 255, .12); }
+html:root #documenter .docs-sidebar ul.docs-menu li.is-active > .tocitem { color: #6cc3b9; }
+html:root #documenter .docs-sidebar ul.docs-menu li.is-active ul.internal .tocitem { color: rgba(226, 234, 231, .78); }
+html:root #documenter .docs-sidebar ul.docs-menu li.is-active ul.internal .tocitem:hover { color: #fff; }
+html:root #documenter .docs-sidebar ul.docs-menu li.is-active { border-color: #6cc3b9; }
+html:root #documenter .docs-sidebar .docs-version-selector label,
+html:root #documenter .docs-sidebar ul.docs-menu .tocitem::before { color: var(--de-side-fg); }
+html:root #documenter .docs-sidebar #documenter-search-query { background-color: rgba(255, 255, 255, .08); color: var(--de-side-fg);
+  border-color: rgba(255, 255, 255, .15); }
+html:root #documenter .docs-sidebar ul.docs-menu { border-top-color: rgba(255, 255, 255, .1); }
