@@ -16,7 +16,7 @@ Equivalent clients with the same verbs exist for [Julia](https://randsley.github
 ## Install
 
 ```bash
-pip install "dataeuropa[pandas] @ git+https://github.com/randsley/dataeuropa#subdirectory=python"
+pip install "dataeuropa[pandas]"
 ```
 
 `requests` is the only required dependency. With `pandas` installed, table-returning functions

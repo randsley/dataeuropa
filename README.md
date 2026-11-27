@@ -2,6 +2,8 @@
 
 [![CI](https://github.com/randsley/dataeuropa/actions/workflows/ci.yml/badge.svg?branch=main&event=push)](https://github.com/randsley/dataeuropa/actions/workflows/ci.yml)
 [![Docs](https://github.com/randsley/dataeuropa/actions/workflows/pages.yml/badge.svg?branch=main&event=push)](https://randsley.github.io/dataeuropa/)
+[![PyPI](https://img.shields.io/pypi/v/dataeuropa)](https://pypi.org/project/dataeuropa/)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.24611428.svg)](https://doi.org/10.5281/zenodo.24611428)
 
 **Documentation:** https://randsley.github.io/dataeuropa/ ([Python](https://randsley.github.io/dataeuropa/python/) · [Julia](https://randsley.github.io/dataeuropa/julia/) · [R](https://randsley.github.io/dataeuropa/r/)). Worked examples: [Python](https://randsley.github.io/dataeuropa/python/examples/) · [Julia](https://randsley.github.io/dataeuropa/julia/examples/) · [R](https://randsley.github.io/dataeuropa/r/articles/examples.html).
 
@@ -63,18 +65,20 @@ dist <- de_distributions(df$id[1]); de_download(dist[1, ], "data/")
 table <- de_load_distribution(dist[1, ])
 ```
 
-## Install (from this folder)
+## Install
+
+Python from PyPI; Julia and R from this repository until they are registered:
 
 ```
-pip install ./python[pandas]                       # Python  (needs requests; pandas optional)
+pip install "dataeuropa[pandas]"                   # Python  (needs requests; pandas optional)
 julia -e 'using Pkg; Pkg.develop(path="julia")'    # Julia   (HTTP, JSON3, DataFrames, CSV, SHA, MD5)
 R CMD INSTALL r                                    # R       (httr2, jsonlite, openssl)
 ```
 
 Reading XLSX and Parquet with `load_distribution` needs an optional package: Python
-`pip install "./python[xlsx,parquet]"` (openpyxl, pyarrow); Julia `using XLSX` / `using Parquet2`;
+`pip install "dataeuropa[xlsx,parquet]"` (openpyxl, pyarrow); Julia `using XLSX` / `using Parquet2`;
 R `install.packages(c("readxl", "arrow"))`. Reading geodata with `load_geodata` (GeoJSON, Shapefile,
-GeoPackage, KML, GML, ... through GDAL) needs Python `pip install "./python[geo]"` (geopandas,
+GeoPackage, KML, GML, ... through GDAL) needs Python `pip install "dataeuropa[geo]"` (geopandas,
 pyogrio); Julia `using GeoDataFrames`; R `install.packages("sf")`.
 
 ```

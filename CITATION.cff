@@ -13,6 +13,7 @@ authors:
     email: nigel.randsley@protonmail.com
 version: 0.1.0
 date-released: "2026-11-27"
+doi: 10.5281/zenodo.24611428
 license: MIT
 repository-code: "https://github.com/randsley/dataeuropa"
 url: "https://randsley.github.io/dataeuropa/"
