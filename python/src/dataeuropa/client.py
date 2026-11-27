@@ -531,9 +531,11 @@ def _fetch(url: str, part: str, *, resume: bool, chunk: int, max_bytes: int | No
     return r
 
 
-def download(url_or_row: str | dict, dest: str | os.PathLike | None = None, *, chunk: int = 1 << 20,
+def download(url_or_row: str | dict, dest: str | os.PathLike, *, chunk: int = 1 << 20,
              verify: bool = True, resume: bool = True, max_bytes: int | None = None) -> str:
-    """Download a distribution to ``dest`` (file or directory). Returns the local path.
+    """Download a distribution to ``dest`` (a file path, or an existing directory to save it in under
+    its own name). Returns the local path. ``dest`` is required: nothing is written to the working
+    directory unless you pass it (e.g. ``"."``).
 
     Accepts a URL, or a row/dict from :func:`distributions` (uses its ``url``). Streams to disk.
 
@@ -555,7 +557,7 @@ def download(url_or_row: str | dict, dest: str | os.PathLike | None = None, *, c
     url = url_or_row if isinstance(url_or_row, str) else url_or_row.get("url")
     if not url:
         raise ValueError("no URL available for this distribution")
-    folder = None if dest is not None and not os.path.isdir(dest) else (str(dest) if dest is not None else "")
+    folder = str(dest) if os.path.isdir(dest) else None
     guess = unquote(os.path.basename(urlparse(url).path)) or "download"
     part = (os.path.join(folder, guess) if folder is not None else str(dest)) + ".part"
     r = _fetch(url, part, resume=resume, chunk=chunk, max_bytes=max_bytes)

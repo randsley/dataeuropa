@@ -11,7 +11,7 @@ authors:
   - given-names: Nigel
     family-names: Randsley
     email: nigel.randsley@protonmail.com
-version: 0.1.0
+version: 0.1.1
 date-released: "2026-11-27"
 doi: 10.5281/zenodo.24611428
 license: MIT

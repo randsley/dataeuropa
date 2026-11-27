@@ -208,6 +208,12 @@ def test_live_download_checksum(tmp_path):
     assert de.download(row, tmp_path)
 
 
+def test_download_needs_dest():
+    # No default: nothing is written to the working directory unless asked
+    with pytest.raises(TypeError, match="dest"):
+        de.download("https://example.org/x.csv")
+
+
 def test_load_distribution_refuses_pages():
     with pytest.raises(ValueError, match="web page"):
         de.load_distribution({"url": "https://example.org/dataset/1", "format": "HTML"})

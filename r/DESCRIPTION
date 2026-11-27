@@ -1,6 +1,6 @@
 Package: dataeuropa
 Title: Access the 'data.europa.eu' European Open Data Portal
-Version: 0.1.0
+Version: 0.1.1
 Authors@R: person("Nigel", "Randsley", role = c("aut", "cre"), email = "nigel.randsley@protonmail.com")
 Description: Search, retrieve and download open data from the European data
     portal <https://data.europa.eu> through its Search API, Registry API and

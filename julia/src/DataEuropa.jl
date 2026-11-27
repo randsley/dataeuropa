@@ -544,10 +544,11 @@ function _fetch(url, part; resume::Bool, max_bytes::Union{Nothing,Integer}=nothi
 end
 
 """
-    download_distribution(url_or_row, dest="."; verify=true, resume=true, max_bytes=nothing) -> String
+    download_distribution(url_or_row, dest; verify=true, resume=true, max_bytes=nothing) -> String
 
-Download a distribution (URL string, or a row of [`distributions`](@ref)) to `dest`
-(file path or directory). Returns the local path.
+Download a distribution (URL string, or a row of [`distributions`](@ref)) to `dest`: a file path,
+or an existing directory to save it in under its own name. Returns the local path. `dest` is
+required: nothing is written to the working directory unless you pass it (e.g. `"."`).
 
 If the row has a checksum (`checksum` and `checksum_algorithm`; MD5, SHA-1 or SHA-256), the file
 is checked against it. On a mismatch the file is deleted and an error is thrown; `verify=false`
@@ -562,7 +563,9 @@ start.
 `max_bytes` stops a download that is (or is announced as) larger, deletes the partial file and
 throws an error. Default: no limit.
 """
-function download_distribution(x, dest::AbstractString="."; verify::Bool=true, resume::Bool=true,
+download_distribution(x; kw...) = throw(ArgumentError(
+    "download_distribution needs a destination: a file path or a directory, e.g. download_distribution(x, tempdir())"))
+function download_distribution(x, dest::AbstractString; verify::Bool=true, resume::Bool=true,
                                max_bytes::Union{Nothing,Integer}=nothing)
     url = x isa AbstractString ? String(x) : _field(x, :url)
     (url === nothing || isempty(url)) && throw(ArgumentError("no URL available for this distribution"))

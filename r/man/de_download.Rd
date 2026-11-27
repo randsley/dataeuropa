@@ -4,12 +4,13 @@
 \alias{de_download}
 \title{Download a distribution to disk}
 \usage{
-de_download(x, dest = ".", verify = TRUE, resume = TRUE, max_bytes = NULL)
+de_download(x, dest, verify = TRUE, resume = TRUE, max_bytes = NULL)
 }
 \arguments{
 \item{x}{A URL, or a one-row data frame from \code{\link[=de_distributions]{de_distributions()}}.}
 
-\item{dest}{File path or directory (default: current directory).}
+\item{dest}{A file path, or an existing directory to save the file in under its own name.
+Required: nothing is written to the working directory unless you pass it (e.g. \code{"."}).}
 
 \item{verify}{Check the file against the row's checksum, if it has one.}
 

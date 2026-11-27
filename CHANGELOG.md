@@ -3,6 +3,18 @@
 All three packages (Python `dataeuropa`, Julia `DataEuropa`, R `dataeuropa`) share one version
 number and one changelog, because every change lands in all three.
 
+## 0.1.1 (unreleased)
+
+### Changed
+- `download` (Julia: `download_distribution`; R: `de_download`) needs a destination: a file path,
+  or a directory to save the file in under its own name. It used to default to the working
+  directory; now nothing is written anywhere you did not name. Without `dest` it stops with an
+  error that says so. Pass `"."` for the old behaviour.
+
+### Fixed
+- The Python package's page on PyPI showed a from-source install command; it now shows
+  `pip install "dataeuropa[pandas]"`.
+
 ## 0.1.0 (2026-11-27)
 
 First release.

@@ -97,6 +97,11 @@ test_that("live download checked against a SHA-1 checksum", {
   expect_true(file.exists(de_download(row, scratch)))
 })
 
+test_that("de_download needs a destination", {
+  # No default: nothing is written to the working directory unless asked
+  expect_error(de_download("https://example.org/x.csv"), "needs a destination")
+})
+
 test_that("pages are refused, and files_only keeps only files", {
   expect_error(de_load_distribution(list(url = "https://example.org/dataset/1", format = "HTML")), "web page")
   skip_if_not(dir.exists(files), "fixtures folder not available")

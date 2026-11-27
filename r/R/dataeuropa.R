@@ -528,7 +528,8 @@ de_fetch_to <- function(url, part, resume = TRUE, max_bytes = NULL) {
 #' meanwhile is downloaded again from the start. `resume = FALSE` always starts from the start.
 #'
 #' @param x A URL, or a one-row data frame from [de_distributions()].
-#' @param dest File path or directory (default: current directory).
+#' @param dest A file path, or an existing directory to save the file in under its own name.
+#'   Required: nothing is written to the working directory unless you pass it (e.g. `"."`).
 #' @param verify Check the file against the row's checksum, if it has one.
 #' @param resume Continue an interrupted download of the same URL to the same place.
 #' @param max_bytes Stop a download that is (or is announced as) larger than this, delete the
@@ -539,7 +540,10 @@ de_fetch_to <- function(url, part, resume = TRUE, max_bytes = NULL) {
 #' path <- de_download(files[files$title == "QA_2024_Q1", ], tempdir())
 #' file.size(path)
 #' @export
-de_download <- function(x, dest = ".", verify = TRUE, resume = TRUE, max_bytes = NULL) {
+de_download <- function(x, dest, verify = TRUE, resume = TRUE, max_bytes = NULL) {
+  if (missing(dest))
+    stop("de_download() needs a destination: a file path or a directory, e.g. de_download(x, tempdir())",
+         call. = FALSE)
   url <- if (is.character(x)) x else str1(x$url)
   if (is.null(url) || !nzchar(url)) stop("no URL available for this distribution", call. = FALSE)
   name <- utils::URLdecode(basename(sub("[?#].*$", "", url)))

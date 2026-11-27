@@ -5,6 +5,8 @@ const DE = DataEuropa
 const LIVE = get(ENV, "DATAEUROPA_OFFLINE", "0") != "1"
 
 @testset "offline helpers" begin
+    # No default destination: nothing is written to the working directory unless asked
+    @test_throws "needs a destination" download_distribution("https://example.org/x.csv")
     @test pick_lang(JSON3.read("""{"pt":"olá","en":"hi"}"""), "pt") == "olá"
     @test pick_lang(JSON3.read("""{"pt":"olá","en":"hi"}"""), "fr") == "hi"
     @test pick_lang(JSON3.read("""{"de":"hallo"}"""), "fr") == "hallo"
