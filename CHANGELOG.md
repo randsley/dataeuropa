@@ -3,7 +3,7 @@
 All three packages (Python `dataeuropa`, Julia `DataEuropa`, R `dataeuropa`) share one version
 number and one changelog, because every change lands in all three.
 
-## 0.1.1 (unreleased)
+## 0.1.1 (2026-11-27)
 
 ### Changed
 - `download` (Julia: `download_distribution`; R: `de_download`) needs a destination: a file path,
