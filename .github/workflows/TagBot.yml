@@ -1,0 +1,42 @@
+name: TagBot
+
+# Tags Julia versions after the General registry merges them (JuliaTagBot comments on the
+# registration issue). The repository makes its own GitHub release v<version> for all three
+# packages, which is what Zenodo archives, so TagBot only adds the git tag:
+#   subdir: julia         the package lives in julia/
+#   tag_prefix: NO_PREFIX plain v<version> tags, not DataEuropa-v<version> (one Julia package here)
+#   release: false        no GitHub release, so Zenodo makes no second record; versions that are
+#                         already tagged are skipped
+on:
+  issue_comment:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      lookback:
+        default: "3"
+
+permissions:
+  actions: read
+  checks: read
+  contents: write
+  deployments: read
+  issues: read
+  discussions: read
+  packages: read
+  pages: read
+  pull-requests: read
+  repository-projects: read
+  security-events: read
+  statuses: read
+
+jobs:
+  TagBot:
+    if: github.event_name == 'workflow_dispatch' || github.actor == 'JuliaTagBot'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: JuliaRegistries/TagBot@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          subdir: julia
+          tag_prefix: NO_PREFIX
+          release: false

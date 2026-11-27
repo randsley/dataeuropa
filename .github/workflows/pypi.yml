@@ -1,0 +1,60 @@
+name: PyPI
+
+# Publishes the Python package to PyPI when a GitHub release is published. The release tag must be
+# v<version> with the version in python/pyproject.toml, or nothing is uploaded. Uploads use PyPI's
+# trusted publishing (no token): the PyPI project trusts this repository, this workflow file
+# (pypi.yml) and the environment "pypi". A version can never be uploaded twice, so CI must be
+# green on the tagged commit before the release is published.
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Tag matches the package version
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          python - <<'EOF'
+          import os, pathlib, tomllib
+          version = tomllib.loads(pathlib.Path("python/pyproject.toml").read_text(encoding="utf-8"))["project"]["version"]
+          tag = os.environ["TAG"]
+          if tag != f"v{version}":
+              raise SystemExit(f"release tag {tag!r} does not match python/pyproject.toml version {version!r} (expected 'v{version}')")
+          print(f"tag {tag} matches version {version}")
+          EOF
+      - run: pip install build twine
+      - run: python -m build python --outdir dist
+      - run: python -m twine check --strict dist/*
+      - name: Contents
+        run: |
+          tar tzf dist/*.tar.gz
+          python -m zipfile -l dist/*.whl
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/dataeuropa/
+    permissions:
+      id-token: write   # trusted publishing
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1
