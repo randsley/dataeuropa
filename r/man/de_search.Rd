@@ -32,20 +32,20 @@ de_search(
 
 \item{filters}{Document type: "dataset" (default), "catalogue", "dataservice", "resource"...}
 
-\item{facets}{Named list of facet filters, e.g. `list(country = "pt")`.}
+\item{facets}{Named list of facet filters, e.g. \code{list(country = "pt")}.}
 
 \item{limit}{Results per page (0-1000).}
 
 \item{page}{Zero-based page.}
 
-\item{sort}{e.g. `"modified+desc"`.}
+\item{sort}{e.g. \code{"modified+desc"}.}
 
 \item{country, catalog, format, license, category, publisher, keywords, hvd}{Convenience facet filters.
-`country` takes ISO-2 codes, `format` ids like "CSV", `category` DCAT-AP theme codes ("ENVI").}
+\code{country} takes ISO-2 codes, \code{format} ids like "CSV", \code{category} DCAT-AP theme codes ("ENVI").}
 
-\item{min_date, max_date, date_type}{Date range; `date_type` one of issued, modified, temporal.}
+\item{min_date, max_date, date_type}{Date range; \code{date_type} one of issued, modified, temporal.}
 
-\item{bbox}{Numeric `c(min_lon, min_lat, max_lon, max_lat)` in WGS84 degrees. A dataset matches
+\item{bbox}{Numeric \code{c(min_lon, min_lat, max_lon, max_lat)} in WGS84 degrees. A dataset matches
 when its spatial extent overlaps the box, so datasets covering all of Europe or the world match
 any box. Datasets without a spatial extent (about half the portal) never match.}
 
@@ -53,10 +53,21 @@ any box. Datasets without a spatial extent (about half the portal) never match.}
 
 \item{extra}{Named list of additional raw query parameters.}
 }
+\value{
+The \code{result} object of the response, a nested list with \code{count}, \code{results} (the
+records), \code{facets} when \code{aggregation = TRUE}, and \code{scrollId} in scroll mode.
+}
 \description{
-Returns the `result` object of the Search API as a nested list
-(`count`, `results`, `facets`, ...).
+Returns the \code{result} object of the Search API as a nested list
+(\code{count}, \code{results}, \code{facets}, ...).
 }
 \details{
-With `limit = 0` the result can come from the response cache (see [de_cache_on()]).
+With \code{limit = 0} the result can come from the response cache (see \code{\link[=de_cache_on]{de_cache_on()}}).
+}
+\examples{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
+res <- de_search("air quality", country = "pt", limit = 5)
+res$count
+de_pick_lang(res$results[[1]]$title)
+\dontshow{\}) # examplesIf}
 }

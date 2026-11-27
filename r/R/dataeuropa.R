@@ -65,8 +65,12 @@ de_cache_ttl <- function() {
 #'   `tools::R_user_dir("dataeuropa", "cache")`.
 #' @param ttl How long a response stays valid, in seconds. Defaults to `DATAEUROPA_CACHE_TTL`,
 #'   else one day.
-#' @return `de_cache_on()`: the cache folder, invisibly. `de_clear_cache()`: the number of
-#'   responses deleted.
+#' @return `de_cache_on()`: the cache folder, invisibly. `de_cache_off()`: `NULL`, invisibly.
+#'   `de_clear_cache()`: the number of responses deleted.
+#' @examples
+#' de_cache_on(dir = file.path(tempdir(), "dataeuropa-cache"), ttl = 3600)
+#' de_clear_cache()
+#' de_cache_off()
 #' @export
 de_cache_on <- function(dir = NULL, ttl = NULL) {
   .de_cache$on <- TRUE
@@ -135,6 +139,10 @@ de_get_json <- function(url, query = list(), cacheable = FALSE) {
 #' @param x A named list of translations (or a string).
 #' @param lang Preferred language code; falls back to English, then any.
 #' @return A character scalar, or `NA_character_`.
+#' @examples
+#' de_pick_lang(list(de = "Wasser", en = "Water"), lang = "de")
+#' de_pick_lang(list(de = "Wasser", en = "Water"), lang = "fr")   # falls back to English
+#' de_pick_lang(list(pt = "Qualidade do ar"))                     # else any language
 #' @export
 de_pick_lang <- function(x, lang = "en") {
   if (is.null(x) || length(x) == 0) return(NA_character_)
@@ -193,6 +201,12 @@ de_bbox_params <- function(bbox) {
 #' @param aggregation Return facet counts?
 #' @param extra Named list of additional raw query parameters.
 #' @details With `limit = 0` the result can come from the response cache (see [de_cache_on()]).
+#' @return The `result` object of the response, a nested list with `count`, `results` (the
+#'   records), `facets` when `aggregation = TRUE`, and `scrollId` in scroll mode.
+#' @examplesIf interactive()
+#' res <- de_search("air quality", country = "pt", limit = 5)
+#' res$count
+#' de_pick_lang(res$results[[1]]$title)
 #' @export
 de_search <- function(q = NULL, filters = "dataset", facets = NULL, limit = 10, page = 0,
                       sort = NULL, country = NULL, catalog = NULL, format = NULL, license = NULL,
@@ -244,6 +258,14 @@ bind_rows_base <- function(rows) {
 #' @param lang Language for titles/descriptions.
 #' @inheritParams de_search
 #' @param ... Passed to [de_search()].
+#' @return A data frame with one row per dataset: `id`, `title`, `description`, `country`,
+#'   `catalog`, `publisher`, `issued`, `modified`, `formats`, `n_distributions`, `is_hvd`,
+#'   `quality_score`, `landing_page` and `portal_url`. The total number of hits is in
+#'   `attr(x, "count")`.
+#' @examplesIf interactive()
+#' ds <- de_search_datasets("air quality", country = "pt", format = "CSV", limit = 5)
+#' ds[, c("id", "title", "formats")]
+#' attr(ds, "count")
 #' @export
 de_search_datasets <- function(q = NULL, ..., lang = "en") {
   res <- de_search(q, ...)
@@ -258,6 +280,11 @@ de_search_datasets <- function(q = NULL, ..., lang = "en") {
 #' @param page_size Records per request (max 1000).
 #' @param raw Return the raw list of records instead of a data frame.
 #' @inheritParams de_search_datasets
+#' @return A data frame with the columns of [de_search_datasets()], one row per dataset, or with
+#'   `raw = TRUE` a list of the raw records. At most `max_results` either way.
+#' @examplesIf interactive()
+#' ds <- de_fetch_datasets(country = "pt", max_results = 2500, page_size = 1000)   # three requests
+#' nrow(ds)
 #' @export
 de_fetch_datasets <- function(q = NULL, ..., max_results = 1000, page_size = 500, lang = "en", raw = FALSE) {
   args <- list(...)
@@ -278,6 +305,10 @@ de_fetch_datasets <- function(q = NULL, ..., max_results = 1000, page_size = 500
 
 #' Number of hits for a query (no records transferred)
 #' @inheritParams de_search_datasets
+#' @return An integer.
+#' @examplesIf interactive()
+#' de_count(country = "pt")
+#' de_count("water", format = "CSV")
 #' @export
 de_count <- function(q = NULL, ...) as.integer(de_search(q, limit = 0, ...)$count)
 
@@ -286,6 +317,13 @@ de_count <- function(q = NULL, ...) as.integer(de_search(q, limit = 0, ...)$coun
 #' @param id Dataset id as shown in search results.
 #' @param raw If `TRUE` return the untouched nested list.
 #' @param lang Preferred language.
+#' @return A list with `summary` (a one-row data frame with the columns of
+#'   [de_search_datasets()]), `keywords` (a character vector) and `raw` (the record as a nested
+#'   list). With `raw = TRUE`, the record alone.
+#' @examplesIf interactive()
+#' d <- de_get_dataset("6689f1686e4bd9bc98ed011b")
+#' d$summary$title
+#' d$summary[, c("publisher", "modified", "formats")]
 #' @export
 de_get_dataset <- function(id, raw = FALSE, lang = "en") {
   d <- de_get_json(paste0(SEARCH_URL, "/datasets/", id), cacheable = TRUE)$result
@@ -307,6 +345,12 @@ de_keywords <- function(d, lang = "en") {
 #' `"unknown"`.
 #' @inheritParams de_get_dataset
 #' @param files_only Keep only distributions whose `kind` is `"file"`.
+#' @return A data frame with one row per distribution: `id`, `title`, `format`, `media_type`,
+#'   `byte_size`, `checksum`, `checksum_algorithm`, `license`, `modified`, `download_url`,
+#'   `access_url`, `url` and `kind`. An empty data frame when the dataset has none.
+#' @examplesIf interactive()
+#' files <- de_distributions("6689f1686e4bd9bc98ed011b", files_only = TRUE)
+#' files[, c("title", "format", "kind")]
 #' @export
 de_distributions <- function(id, lang = "en", files_only = FALSE) {
   df <- de_distribution_table(de_get_dataset(id, raw = TRUE), lang)
@@ -490,6 +534,10 @@ de_fetch_to <- function(url, part, resume = TRUE, max_bytes = NULL) {
 #' @param max_bytes Stop a download that is (or is announced as) larger than this, delete the
 #'   partial file and raise an error. Default: no limit.
 #' @return The local path, invisibly.
+#' @examplesIf interactive()
+#' files <- de_distributions("6689f1686e4bd9bc98ed011b", files_only = TRUE)
+#' path <- de_download(files[files$title == "QA_2024_Q1", ], tempdir())
+#' file.size(path)
 #' @export
 de_download <- function(x, dest = ".", verify = TRUE, resume = TRUE, max_bytes = NULL) {
   url <- if (is.character(x)) x else str1(x$url)
@@ -715,6 +763,10 @@ de_read_table <- function(path, fmt, sheet = NULL) {
 #' @param format Override the detected format: "csv", "json", "xlsx" or "parquet".
 #' @param sheet XLSX sheet name or 1-based index (default: the first sheet).
 #' @return A data frame.
+#' @examplesIf interactive()
+#' files <- de_distributions("6689f1686e4bd9bc98ed011b", files_only = TRUE)
+#' qa <- de_load_distribution(files[files$title == "QA_2024_Q1", ])
+#' head(qa)
 #' @export
 de_load_distribution <- function(x, format = NULL, sheet = NULL) {
   row <- if (is.character(x)) list(url = x) else x
@@ -981,6 +1033,10 @@ de_geo_summary <- function(df, columns = NULL) {
 #' @param max_features Read at most this many features from a service, with a warning when there
 #'   are more; `Inf` reads all.
 #' @return An sf data frame.
+#' @examplesIf interactive() && requireNamespace("sf", quietly = TRUE)
+#' dists <- de_distributions("eac1e504-9d63-4670-95b3-3ef04e22aa6e~~1")
+#' districts <- de_load_geodata(dists[dists$format == "OGCFEAT", ])
+#' sf::st_crs(districts)$epsg
 #' @export
 de_load_geodata <- function(x, layer = NULL, crs = NULL, max_mb = 200, max_features = 10000) {
   if (!requireNamespace("sf", quietly = TRUE))
@@ -1017,6 +1073,9 @@ de_load_geodata <- function(x, layer = NULL, crs = NULL, max_mb = 200, max_featu
 #' @param facet e.g. "country", "format", "categories", "catalog", "publisher".
 #' @param top Keep the `top` most frequent values (NULL for all).
 #' @inheritParams de_search_datasets
+#' @return A data frame with columns `id`, `label` and `count`, most frequent first.
+#' @examplesIf interactive()
+#' de_facet_values("format", country = "pt", top = 10)
 #' @export
 de_facet_values <- function(facet, q = NULL, top = 50, ...) {
   fid <- if (facet %in% names(.facet_aliases)) unname(.facet_aliases[facet]) else facet
@@ -1048,12 +1107,19 @@ de_facet_table <- function(res, fid, top = NULL) {
 }
 
 #' Ids of all harvested catalogues
+#' @return A character vector of catalogue ids.
+#' @examplesIf interactive()
+#' head(de_catalogues())
 #' @export
 de_catalogues <- function() unlist(de_get_json(paste0(SEARCH_URL, "/catalogues"), cacheable = TRUE))
 
 #' Dataset metadata as RDF text
 #' @param id Dataset id.
 #' @param fmt "ttl" (Turtle) or "jsonld".
+#' @return The RDF document as a single string.
+#' @examplesIf interactive()
+#' ttl <- de_get_rdf("6689f1686e4bd9bc98ed011b")
+#' cat(substr(ttl, 1, 500))
 #' @export
 de_get_rdf <- function(id, fmt = c("ttl", "jsonld")) {
   fmt <- match.arg(fmt)
@@ -1064,6 +1130,8 @@ de_get_rdf <- function(id, fmt = c("ttl", "jsonld")) {
 #'
 #' @param query SPARQL SELECT or ASK text.
 #' @return A data frame of plain string values (SELECT) or a logical (ASK).
+#' @examplesIf interactive()
+#' de_sparql("SELECT ?d WHERE { ?d a <http://www.w3.org/ns/dcat#Dataset> } LIMIT 3")
 #' @export
 de_sparql <- function(query) {
   req <- de_req(SPARQL_URL) |>

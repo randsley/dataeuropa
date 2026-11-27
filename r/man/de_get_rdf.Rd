@@ -11,6 +11,15 @@ de_get_rdf(id, fmt = c("ttl", "jsonld"))
 
 \item{fmt}{"ttl" (Turtle) or "jsonld".}
 }
+\value{
+The RDF document as a single string.
+}
 \description{
 Dataset metadata as RDF text
+}
+\examples{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
+ttl <- de_get_rdf("6689f1686e4bd9bc98ed011b")
+cat(substr(ttl, 1, 500))
+\dontshow{\}) # examplesIf}
 }

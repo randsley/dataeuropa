@@ -152,6 +152,7 @@ test_that("a feature limit stops reading services early", {
 
 test_that("live feature services", {
   skip_if(Sys.getenv("DATAEUROPA_OFFLINE") == "1", "offline")
+  skip_on_cran()
   skip_if_not_installed("sf")
   for (fmt in c("WFS_SRVC", "OGCFEAT")) {
     found <- FALSE
@@ -174,6 +175,7 @@ test_that("live feature services", {
 
 test_that("live GeoJSON", {
   skip_if(Sys.getenv("DATAEUROPA_OFFLINE") == "1", "offline")
+  skip_on_cran()
   skip_if_not_installed("sf")
   ids <- de_search_datasets(facets = list(format = "GEOJSON"), limit = 20)$id
   for (id in ids) {

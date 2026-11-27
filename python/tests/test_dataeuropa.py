@@ -168,6 +168,9 @@ def fake_http(monkeypatch):
     """Make download() fetch the bytes of fixtures/files/<last part of the URL>."""
     import dataeuropa.client as client
 
+    if not FILES.exists():
+        pytest.skip("fixtures folder not available")
+
     class Session:
         def get(self, url, **kw):
             return _FakeResponse(url, (FILES / url.rsplit("/", 1)[-1]).read_bytes())
@@ -210,6 +213,7 @@ def test_load_distribution_refuses_pages():
         de.load_distribution({"url": "https://example.org/dataset/1", "format": "HTML"})
 
 
+@pytest.mark.skipif(not FILES.exists(), reason="fixtures folder not available")
 def test_distributions_files_only(monkeypatch):
     import dataeuropa.client as client
     record = json.loads((FILES.parent / "responses" / "edge_cases.json").read_text(encoding="utf-8"))["dataset"]

@@ -11,11 +11,22 @@ de_distributions(id, lang = "en", files_only = FALSE)
 
 \item{lang}{Preferred language.}
 
-\item{files_only}{Keep only distributions whose `kind` is `"file"`.}
+\item{files_only}{Keep only distributions whose \code{kind} is \code{"file"}.}
+}
+\value{
+A data frame with one row per distribution: \code{id}, \code{title}, \code{format}, \code{media_type},
+\code{byte_size}, \code{checksum}, \code{checksum_algorithm}, \code{license}, \code{modified}, \code{download_url},
+\code{access_url}, \code{url} and \code{kind}. An empty data frame when the dataset has none.
 }
 \description{
-One row per distribution. The `url` column is the download URL if present, otherwise the
-access URL. The `kind` column says what each one is: `"file"`, `"service"` (WMS, WFS, APIs,
-feeds), `"page"` (a web page), `"none"` (no usable URL, e.g. a localhost placeholder) or
-`"unknown"`.
+One row per distribution. The \code{url} column is the download URL if present, otherwise the
+access URL. The \code{kind} column says what each one is: \code{"file"}, \code{"service"} (WMS, WFS, APIs,
+feeds), \code{"page"} (a web page), \code{"none"} (no usable URL, e.g. a localhost placeholder) or
+\code{"unknown"}.
+}
+\examples{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
+files <- de_distributions("6689f1686e4bd9bc98ed011b", files_only = TRUE)
+files[, c("title", "format", "kind")]
+\dontshow{\}) # examplesIf}
 }

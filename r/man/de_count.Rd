@@ -9,8 +9,17 @@ de_count(q = NULL, ...)
 \arguments{
 \item{q}{Free-text query.}
 
-\item{...}{Passed to [de_search()].}
+\item{...}{Passed to \code{\link[=de_search]{de_search()}}.}
+}
+\value{
+An integer.
 }
 \description{
 Number of hits for a query (no records transferred)
+}
+\examples{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
+de_count(country = "pt")
+de_count("water", format = "CSV")
+\dontshow{\}) # examplesIf}
 }

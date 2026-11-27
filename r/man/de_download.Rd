@@ -7,7 +7,7 @@
 de_download(x, dest = ".", verify = TRUE, resume = TRUE, max_bytes = NULL)
 }
 \arguments{
-\item{x}{A URL, or a one-row data frame from [de_distributions()].}
+\item{x}{A URL, or a one-row data frame from \code{\link[=de_distributions]{de_distributions()}}.}
 
 \item{dest}{File path or directory (default: current directory).}
 
@@ -22,14 +22,21 @@ partial file and raise an error. Default: no limit.}
 The local path, invisibly.
 }
 \description{
-If the row has a checksum (`checksum` and `checksum_algorithm`; MD5, SHA-1 or SHA-256), the
+If the row has a checksum (\code{checksum} and \code{checksum_algorithm}; MD5, SHA-1 or SHA-256), the
 file is checked against it. On a mismatch the file is deleted and an error is raised;
-`verify = FALSE` skips the check. `byte_size` is not checked: on the portal it is often a
+\code{verify = FALSE} skips the check. \code{byte_size} is not checked: on the portal it is often a
 placeholder (0, 1, 1024).
 }
 \details{
-The file is written as `<file>.part` and renamed when complete. If a download is interrupted,
-calling `de_download()` again for the same URL and destination continues where it stopped, when
+The file is written as \verb{<file>.part} and renamed when complete. If a download is interrupted,
+calling \code{de_download()} again for the same URL and destination continues where it stopped, when
 the server supports ranges and identifies the file (ETag or Last-Modified); a file that changed
-meanwhile is downloaded again from the start. `resume = FALSE` always starts from the start.
+meanwhile is downloaded again from the start. \code{resume = FALSE} always starts from the start.
+}
+\examples{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
+files <- de_distributions("6689f1686e4bd9bc98ed011b", files_only = TRUE)
+path <- de_download(files[files$title == "QA_2024_Q1", ], tempdir())
+file.size(path)
+\dontshow{\}) # examplesIf}
 }

@@ -9,10 +9,23 @@ de_search_datasets(q = NULL, ..., lang = "en")
 \arguments{
 \item{q}{Free-text query.}
 
-\item{...}{Passed to [de_search()].}
+\item{...}{Passed to \code{\link[=de_search]{de_search()}}.}
 
 \item{lang}{Language for titles/descriptions.}
 }
+\value{
+A data frame with one row per dataset: \code{id}, \code{title}, \code{description}, \code{country},
+\code{catalog}, \code{publisher}, \code{issued}, \code{modified}, \code{formats}, \code{n_distributions}, \code{is_hvd},
+\code{quality_score}, \code{landing_page} and \code{portal_url}. The total number of hits is in
+\code{attr(x, "count")}.
+}
 \description{
-Accepts all arguments of [de_search()]. Total hits are in `attr(x, "count")`.
+Accepts all arguments of \code{\link[=de_search]{de_search()}}. Total hits are in \code{attr(x, "count")}.
+}
+\examples{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
+ds <- de_search_datasets("air quality", country = "pt", format = "CSV", limit = 5)
+ds[, c("id", "title", "formats")]
+attr(ds, "count")
+\dontshow{\}) # examplesIf}
 }

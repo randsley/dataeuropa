@@ -13,17 +13,17 @@ de_load_geodata(
 )
 }
 \arguments{
-\item{x}{A URL, or a one-row data frame from [de_distributions()].}
+\item{x}{A URL, or a one-row data frame from \code{\link[=de_distributions]{de_distributions()}}.}
 
 \item{layer}{A layer by name or 1-based position, in files with several (GeoPackage, file
 geodatabase). Default: the first, with a message if there are more.}
 
-\item{crs}{Reproject to this coordinate reference system, e.g. `"EPSG:4326"`.}
+\item{crs}{Reproject to this coordinate reference system, e.g. \code{"EPSG:4326"}.}
 
-\item{max_mb}{Do not download files larger than this many megabytes; `Inf` lifts the limit.}
+\item{max_mb}{Do not download files larger than this many megabytes; \code{Inf} lifts the limit.}
 
 \item{max_features}{Read at most this many features from a service, with a warning when there
-are more; `Inf` reads all.}
+are more; \code{Inf} reads all.}
 }
 \value{
 An sf data frame.
@@ -31,21 +31,28 @@ An sf data frame.
 \description{
 Needs the sf package. GDAL does the reading, so any vector format it knows works: GeoJSON,
 Shapefile, GeoPackage, KML/KMZ, GML, GPX, MapInfo TAB, FlatGeobuf, file geodatabase. The
-geometry column is always called `geometry`.
+geometry column is always called \code{geometry}.
 }
 \details{
 ZIP archives (how shapefiles are published) are opened in place. Inside, the one geodata file is
 read (a .shp with its .dbf/.shx/.prj, .gpkg, .geojson, .kml, .gml, .gpx, .tab, .fgb, or a .gdb
-folder); if there are several, `layer` picks one by file name (without extension), otherwise an
+folder); if there are several, \code{layer} picks one by file name (without extension), otherwise an
 error lists them. Archives inside archives are not opened.
 
 The source coordinate reference system is kept; a file without one (a shapefile without .prj)
 is read as stored, with a warning.
 
-Feature services are read too: WFS (`service=WFS` URLs, WFS format ids) and OGC API Features
+Feature services are read too: WFS (\code{service=WFS} URLs, WFS format ids) and OGC API Features
 (collection or landing-page URLs, OGCFEAT format ids). GDAL pages through the results. Each
 collection or feature type is a layer.
 
 Raises an error for other services (WMS, ...), web pages, HTML served instead of data, files or
 services GDAL cannot read, and checksum mismatches.
+}
+\examples{
+\dontshow{if (interactive() && requireNamespace("sf", quietly = TRUE)) withAutoprint(\{ # examplesIf}
+dists <- de_distributions("eac1e504-9d63-4670-95b3-3ef04e22aa6e~~1")
+districts <- de_load_geodata(dists[dists$format == "OGCFEAT", ])
+sf::st_crs(districts)$epsg
+\dontshow{\}) # examplesIf}
 }

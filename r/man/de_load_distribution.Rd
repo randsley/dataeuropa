@@ -7,7 +7,7 @@
 de_load_distribution(x, format = NULL, sheet = NULL)
 }
 \arguments{
-\item{x}{A URL, or a one-row data frame from [de_distributions()].}
+\item{x}{A URL, or a one-row data frame from \code{\link[=de_distributions]{de_distributions()}}.}
 
 \item{format}{Override the detected format: "csv", "json", "xlsx" or "parquet".}
 
@@ -18,15 +18,22 @@ A data frame.
 }
 \description{
 Reads CSV and JSON; XLSX with the readxl package and Parquet with the arrow package (both
-optional). The format comes from `format` if given (`"csv"`, `"json"`, `"xlsx"`, `"parquet"`),
+optional). The format comes from \code{format} if given (\code{"csv"}, \code{"json"}, \code{"xlsx"}, \code{"parquet"}),
 else from the row's format id, its media type, then the URL's file extension.
 }
 \details{
-CSV: the delimiter (`,` `;` tab `|`) is taken from the header line, text is read as UTF-8 with
+CSV: the delimiter (\verb{,} \verb{;} tab \code{|}) is taken from the header line, text is read as UTF-8 with
 a Latin-1 fallback, only empty cells count as missing, and dates stay text. JSON: an array of
 objects, or an object holding exactly one such array; keys become columns.
 
 Stops with an error for services (WMS, WFS, APIs), compressed archives, HTML pages served
 instead of data, formats it cannot tell or read, and files that fail their checksum (see
-[de_download()]).
+\code{\link[=de_download]{de_download()}}).
+}
+\examples{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
+files <- de_distributions("6689f1686e4bd9bc98ed011b", files_only = TRUE)
+qa <- de_load_distribution(files[files$title == "QA_2024_Q1", ])
+head(qa)
+\dontshow{\}) # examplesIf}
 }

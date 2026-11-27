@@ -16,7 +16,7 @@ de_fetch_datasets(
 \arguments{
 \item{q}{Free-text query.}
 
-\item{...}{Passed to [de_search()].}
+\item{...}{Passed to \code{\link[=de_search]{de_search()}}.}
 
 \item{max_results}{Stop after this many records.}
 
@@ -26,6 +26,16 @@ de_fetch_datasets(
 
 \item{raw}{Return the raw list of records instead of a data frame.}
 }
+\value{
+A data frame with the columns of \code{\link[=de_search_datasets]{de_search_datasets()}}, one row per dataset, or with
+\code{raw = TRUE} a list of the raw records. At most \code{max_results} either way.
+}
 \description{
 Fetch many datasets with the scroll API
+}
+\examples{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
+ds <- de_fetch_datasets(country = "pt", max_results = 2500, page_size = 1000)   # three requests
+nrow(ds)
+\dontshow{\}) # examplesIf}
 }

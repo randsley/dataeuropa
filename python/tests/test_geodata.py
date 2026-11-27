@@ -38,6 +38,8 @@ class _Handler(http.server.BaseHTTPRequestHandler):
 
 @pytest.fixture(scope="module")
 def server():
+    if not GEO.exists():   # an sdist has the tests but not the repository's fixtures folder
+        pytest.skip("fixtures folder not available")
     httpd = http.server.ThreadingHTTPServer(("127.0.0.1", 0), _Handler)
     threading.Thread(target=httpd.serve_forever, daemon=True).start()
     yield f"http://127.0.0.1:{httpd.server_address[1]}"
@@ -101,10 +103,13 @@ def oapif():
 
     import requests
 
+    script = pathlib.Path(__file__).with_name("oapif_server.py")
+    if not GEO.exists() or not script.exists():
+        pytest.skip("fixtures folder not available")
     with socket.socket() as s:
         s.bind(("127.0.0.1", 0))
         port = s.getsockname()[1]
-    proc = subprocess.Popen([sys.executable, str(pathlib.Path(__file__).with_name("oapif_server.py")), str(port)])
+    proc = subprocess.Popen([sys.executable, str(script), str(port)])
     base = f"http://127.0.0.1:{port}/ogc"
     for _ in range(100):
         try:

@@ -17,6 +17,8 @@ concurrency:
 
 env:
   DATAEUROPA_OFFLINE: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && '0' || '1' }}
+  # R's live tests also call skip_on_cran(), which skips unless NOT_CRAN is "true".
+  NOT_CRAN: "true"
 
 jobs:
   python:
@@ -85,3 +87,67 @@ jobs:
       - run: R CMD INSTALL r
       - name: Run tests
         run: Rscript -e 'library(testthat); library(dataeuropa); test_dir("r/tests/testthat", stop_on_failure = TRUE)'
+
+  # The package as CRAN and r-universe see it: R CMD build, then R CMD check --as-cran on the
+  # tarball. The fixtures are outside the package, so the conformance tests skip here (the job
+  # above runs them); live tests skip too (skip_on_cran).
+  r-check:
+    name: R CMD check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          working-directory: r
+          extra-packages: any::rcmdcheck
+          needs: check
+      - uses: r-lib/actions/check-r-package@v2
+        with:
+          working-directory: r
+          args: 'c("--no-manual", "--as-cran")'
+          error-on: '"warning"'
+
+  # The Python package as PyPI will see it: sdist and wheel from a clean checkout, twine check,
+  # their contents in the log, and the wheel installed alone (no source tree) and imported.
+  # Also checks that every package and CITATION.cff carry the same version.
+  python-package:
+    name: Python package
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Versions agree
+        run: |
+          python - <<'EOF'
+          import pathlib, re, tomllib
+          read = lambda p: pathlib.Path(p).read_text(encoding="utf-8")
+          found = {
+              "python/pyproject.toml": tomllib.loads(read("python/pyproject.toml"))["project"]["version"],
+              "python/src/dataeuropa/__init__.py": re.search(r'^__version__ = "([^"]+)"', read("python/src/dataeuropa/__init__.py"), re.M)[1],
+              "julia/Project.toml": tomllib.loads(read("julia/Project.toml"))["version"],
+              "r/DESCRIPTION": re.search(r"^Version:\s*(\S+)", read("r/DESCRIPTION"), re.M)[1],
+              "CITATION.cff": re.search(r"^version:\s*(\S+)", read("CITATION.cff"), re.M)[1],
+          }
+          for path, version in found.items():
+              print(f"{version:12} {path}")
+          if len(set(found.values())) != 1:
+              raise SystemExit("versions differ: " + ", ".join(f"{p} = {v}" for p, v in found.items()))
+          EOF
+      - run: pip install build twine
+      - run: python -m build python --outdir dist
+      - run: python -m twine check --strict dist/*
+      - name: Contents
+        run: |
+          tar tzf dist/*.tar.gz
+          python -m zipfile -l dist/*.whl
+      - name: Wheel installs and imports on its own
+        run: |
+          python -m venv "$RUNNER_TEMP/venv"
+          "$RUNNER_TEMP/venv/bin/pip" install dist/*.whl
+          cd "$RUNNER_TEMP"
+          "$RUNNER_TEMP/venv/bin/python" -c "import dataeuropa; print(dataeuropa.__version__, dataeuropa.__file__)"

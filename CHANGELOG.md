@@ -22,8 +22,9 @@ First release.
 - `distributions`: a dataset's files and services, one row each, with a `kind` column (file,
   service, page, none, unknown) and `files_only`. Junk and look-alike format ids (`.csv`,
   Cyrillic `сsv`) are recognised.
-- `download`: checks the portal's checksum (MD5, SHA-1, SHA-256) when there is one, resumes
-  interrupted downloads, and can refuse files over a size limit.
+- `download` (Julia: `download_distribution`): checks the portal's checksum (MD5, SHA-1,
+  SHA-256) when there is one, resumes interrupted downloads, and can refuse files over a size
+  limit.
 - `load_distribution`: a distribution straight into a data frame (CSV, JSON, XLSX, Parquet).
   Refuses services, archives and HTML pages served instead of data.
 - `load_geodata`: geodata into a GeoDataFrame (Python), an sf data frame (R) or a GeoDataFrames.jl

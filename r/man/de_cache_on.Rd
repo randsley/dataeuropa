@@ -13,23 +13,28 @@ de_cache_off()
 de_clear_cache()
 }
 \arguments{
-\item{dir}{Cache folder. Defaults to `DATAEUROPA_CACHE_DIR`, else
-`tools::R_user_dir("dataeuropa", "cache")`.}
+\item{dir}{Cache folder. Defaults to \code{DATAEUROPA_CACHE_DIR}, else
+\code{tools::R_user_dir("dataeuropa", "cache")}.}
 
-\item{ttl}{How long a response stays valid, in seconds. Defaults to `DATAEUROPA_CACHE_TTL`,
+\item{ttl}{How long a response stays valid, in seconds. Defaults to \code{DATAEUROPA_CACHE_TTL},
 else one day.}
 }
 \value{
-`de_cache_on()`: the cache folder, invisibly. `de_clear_cache()`: the number of
-  responses deleted.
+\code{de_cache_on()}: the cache folder, invisibly. \code{de_cache_off()}: \code{NULL}, invisibly.
+\code{de_clear_cache()}: the number of responses deleted.
 }
 \description{
-Cached: dataset records ([de_get_dataset()], [de_distributions()]), the catalogue list
-([de_catalogues()]), and searches with `limit = 0` ([de_facet_values()], [de_count()]). Other
+Cached: dataset records (\code{\link[=de_get_dataset]{de_get_dataset()}}, \code{\link[=de_distributions]{de_distributions()}}), the catalogue list
+(\code{\link[=de_catalogues]{de_catalogues()}}), and searches with \code{limit = 0} (\code{\link[=de_facet_values]{de_facet_values()}}, \code{\link[=de_count]{de_count()}}). Other
 searches, SPARQL and file downloads are never cached.
 }
 \details{
-The cache is off unless `de_cache_on()` is called or the environment variable
-`DATAEUROPA_CACHE=1` is set. `de_cache_off()` turns it off for the session; cached files stay
-until `de_clear_cache()`.
+The cache is off unless \code{de_cache_on()} is called or the environment variable
+\code{DATAEUROPA_CACHE=1} is set. \code{de_cache_off()} turns it off for the session; cached files stay
+until \code{de_clear_cache()}.
+}
+\examples{
+de_cache_on(dir = file.path(tempdir(), "dataeuropa-cache"), ttl = 3600)
+de_clear_cache()
+de_cache_off()
 }

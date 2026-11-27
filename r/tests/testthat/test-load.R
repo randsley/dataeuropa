@@ -46,6 +46,7 @@ test_that("de_load_distribution refuses what it cannot read", {
 
 test_that("live load of a real CSV", {
   skip_if(Sys.getenv("DATAEUROPA_OFFLINE") == "1", "offline")
+  skip_on_cran()
   # A small, dated Latin-1 CSV with semicolons on data.gouv.fr (2018 budget of a French commune).
   dist <- de_distributions("5be153fa8b4c417561300530")
   df <- de_load_distribution(dist[dist$format == "CSV", ][1, ])
@@ -89,6 +90,7 @@ test_that("de_download checks the checksum", {
 
 test_that("live download checked against a SHA-1 checksum", {
   skip_if(Sys.getenv("DATAEUROPA_OFFLINE") == "1", "offline")
+  skip_on_cran()
   # A 2 MB CSV on dados.gov.pt whose distribution carries a SHA-1 checksum.
   dist <- de_distributions("68c2be5c43136b247fe74d41")
   row <- dist[!is.na(dist$checksum_algorithm) & dist$checksum_algorithm == "sha1", ][1, ]
@@ -97,6 +99,7 @@ test_that("live download checked against a SHA-1 checksum", {
 
 test_that("pages are refused, and files_only keeps only files", {
   expect_error(de_load_distribution(list(url = "https://example.org/dataset/1", format = "HTML")), "web page")
+  skip_if_not(dir.exists(files), "fixtures folder not available")
   record <- jsonlite::fromJSON(file.path(files, "..", "responses", "edge_cases.json"), simplifyVector = FALSE)$dataset
   local_mocked_bindings(de_get_dataset = function(...) record, .package = "dataeuropa")
   every <- de_distributions("x")
@@ -107,6 +110,7 @@ test_that("pages are refused, and files_only keeps only files", {
 
 test_that("live files_only", {
   skip_if(Sys.getenv("DATAEUROPA_OFFLINE") == "1", "offline")
+  skip_on_cran()
   every <- de_distributions("3b26eacb-825d-4bf9-9ef2-9278c4a481ad")
   only <- de_distributions("3b26eacb-825d-4bf9-9ef2-9278c4a481ad", files_only = TRUE)
   expect_true(nrow(only) > 0 && nrow(only) < nrow(every) && all(only$kind == "file"))

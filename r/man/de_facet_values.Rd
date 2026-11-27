@@ -11,10 +11,18 @@ de_facet_values(facet, q = NULL, top = 50, ...)
 
 \item{q}{Free-text query.}
 
-\item{top}{Keep the `top` most frequent values (NULL for all).}
+\item{top}{Keep the \code{top} most frequent values (NULL for all).}
 
-\item{...}{Passed to [de_search()].}
+\item{...}{Passed to \code{\link[=de_search]{de_search()}}.}
+}
+\value{
+A data frame with columns \code{id}, \code{label} and \code{count}, most frequent first.
 }
 \description{
 Values and counts of a facet
+}
+\examples{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
+de_facet_values("format", country = "pt", top = 10)
+\dontshow{\}) # examplesIf}
 }

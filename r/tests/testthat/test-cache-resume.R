@@ -188,6 +188,7 @@ test_that("resume = FALSE and a partial file of another URL start from the start
 
 test_that("live resume, checked by SHA-1", {
   skip_if(Sys.getenv("DATAEUROPA_OFFLINE") == "1", "offline")
+  skip_on_cran()
   # Resume the dados.gov.pt CSV from half way; its SHA-1 checksum proves the result is exact.
   tmp <- withr::local_tempdir()
   dist <- de_distributions("68c2be5c43136b247fe74d41")

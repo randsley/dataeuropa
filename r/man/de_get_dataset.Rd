@@ -9,10 +9,22 @@ de_get_dataset(id, raw = FALSE, lang = "en")
 \arguments{
 \item{id}{Dataset id as shown in search results.}
 
-\item{raw}{If `TRUE` return the untouched nested list.}
+\item{raw}{If \code{TRUE} return the untouched nested list.}
 
 \item{lang}{Preferred language.}
 }
+\value{
+A list with \code{summary} (a one-row data frame with the columns of
+\code{\link[=de_search_datasets]{de_search_datasets()}}), \code{keywords} (a character vector) and \code{raw} (the record as a nested
+list). With \code{raw = TRUE}, the record alone.
+}
 \description{
 Full metadata for one dataset
+}
+\examples{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
+d <- de_get_dataset("6689f1686e4bd9bc98ed011b")
+d$summary$title
+d$summary[, c("publisher", "modified", "formats")]
+\dontshow{\}) # examplesIf}
 }

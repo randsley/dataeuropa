@@ -2,7 +2,7 @@
 % Please edit documentation in R/dataeuropa.R
 \name{de_pick_lang}
 \alias{de_pick_lang}
-\title{Collapse a multilingual `{lang: text}` list to one string}
+\title{Collapse a multilingual \code{{lang: text}} list to one string}
 \usage{
 de_pick_lang(x, lang = "en")
 }
@@ -12,8 +12,13 @@ de_pick_lang(x, lang = "en")
 \item{lang}{Preferred language code; falls back to English, then any.}
 }
 \value{
-A character scalar, or `NA_character_`.
+A character scalar, or \code{NA_character_}.
 }
 \description{
-Collapse a multilingual `{lang: text}` list to one string
+Collapse a multilingual \code{{lang: text}} list to one string
+}
+\examples{
+de_pick_lang(list(de = "Wasser", en = "Water"), lang = "de")
+de_pick_lang(list(de = "Wasser", en = "Water"), lang = "fr")   # falls back to English
+de_pick_lang(list(pt = "Qualidade do ar"))                     # else any language
 }

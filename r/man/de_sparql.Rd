@@ -15,3 +15,8 @@ A data frame of plain string values (SELECT) or a logical (ASK).
 \description{
 Run a SPARQL query against data.europa.eu
 }
+\examples{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
+de_sparql("SELECT ?d WHERE { ?d a <http://www.w3.org/ns/dcat#Dataset> } LIMIT 3")
+\dontshow{\}) # examplesIf}
+}

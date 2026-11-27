@@ -33,6 +33,7 @@ test_that("de_bbox_params checks the box", {
 })
 
 skip_if(Sys.getenv("DATAEUROPA_OFFLINE") == "1", "offline")
+skip_on_cran()
 
 test_that("live search / dataset / distributions / rdf", {
   df <- de_search_datasets("water", country = "pt", format = "CSV", limit = 3)

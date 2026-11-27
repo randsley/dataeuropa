@@ -6,6 +6,14 @@
 \usage{
 de_catalogues()
 }
+\value{
+A character vector of catalogue ids.
+}
 \description{
 Ids of all harvested catalogues
+}
+\examples{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
+head(de_catalogues())
+\dontshow{\}) # examplesIf}
 }

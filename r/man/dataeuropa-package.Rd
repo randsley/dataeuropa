@@ -8,6 +8,15 @@
 \description{
 Search, retrieve and download open data from the European data portal \url{https://data.europa.eu} through its Search API, Registry API and SPARQL endpoint. Returns data frames of datasets, distributions and facets.
 }
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://github.com/randsley/dataeuropa}
+  \item \url{https://randsley.github.io/dataeuropa/r/}
+  \item Report bugs at \url{https://github.com/randsley/dataeuropa/issues}
+}
+
+}
 \author{
 \strong{Maintainer}: Nigel Randsley \email{nigel.randsley@protonmail.com}
 
