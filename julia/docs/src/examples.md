@@ -7,6 +7,8 @@ Three tasks from start to finish. The same examples are in the
 The outputs shown were taken in November 2026. The portal changes all the time, so counts and
 search results will differ when you run the code.
 
+The examples are also a [Jupyter notebook](https://github.com/randsley/dataeuropa/blob/main/notebooks/julia.ipynb), with its outputs stored.
+
 ## 1. Air quality in Lisbon: from a search to a summary table
 
 Find air-quality data from Portugal that comes as CSV. Quotes make the search match the phrase,

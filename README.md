@@ -5,7 +5,7 @@
 [![PyPI](https://img.shields.io/pypi/v/dataeuropa)](https://pypi.org/project/dataeuropa/)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.24611428.svg)](https://doi.org/10.5281/zenodo.24611428)
 
-**Documentation:** https://randsley.github.io/dataeuropa/ ([Python](https://randsley.github.io/dataeuropa/python/) · [Julia](https://randsley.github.io/dataeuropa/julia/) · [R](https://randsley.github.io/dataeuropa/r/)). Worked examples: [Python](https://randsley.github.io/dataeuropa/python/examples/) · [Julia](https://randsley.github.io/dataeuropa/julia/examples/) · [R](https://randsley.github.io/dataeuropa/r/articles/examples.html).
+**Documentation:** https://randsley.github.io/dataeuropa/ ([Python](https://randsley.github.io/dataeuropa/python/) · [Julia](https://randsley.github.io/dataeuropa/julia/) · [R](https://randsley.github.io/dataeuropa/r/)). Worked examples: [Python](https://randsley.github.io/dataeuropa/python/examples/) · [Julia](https://randsley.github.io/dataeuropa/julia/examples/) · [R](https://randsley.github.io/dataeuropa/r/articles/examples.html); the same as notebooks: [Python](https://github.com/randsley/dataeuropa/blob/main/notebooks/python.ipynb) · [Julia](https://github.com/randsley/dataeuropa/blob/main/notebooks/julia.ipynb) · [R](https://github.com/randsley/dataeuropa/blob/main/notebooks/r.ipynb).
 
 Three small, equivalent clients for the European data portal (~1.9 M dataset records harvested
 from EU institutions and national/regional portals), built on:
