@@ -8,13 +8,17 @@ portal for European open data (Search API, Registry and SPARQL endpoint).
 0 errors | 0 warnings | 1 note
 
 * This is a new release.
+* "Possibly misspelled words in DESCRIPTION: SPARQL": SPARQL is the W3C query language for RDF
+  data (https://www.w3.org/TR/sparql11-query/), the name of the portal's query endpoint.
 
 ## Test environments
 
-* local: Windows 11, R 4.6.2
-* GitHub Actions: ubuntu-latest, R release
-* win-builder: R-devel
-* mac-builder: R release
+* local: Windows 11, R 4.6.2 (R CMD check --as-cran, also with internet access blocked)
+* win-builder: R-devel (2026-11-17 r90926 ucrt): 1 NOTE (the two items above)
+* GitHub Actions: ubuntu-latest, R release (R CMD check --as-cran)
+* R-universe, version 0.1.0 (the same code except that `de_download()` then had a default
+  destination): Linux (R-devel, R-release), Windows (R-devel, R-release, R-oldrel), macOS
+  (R-release, R-oldrel)
 
 ## Web services and files
 
